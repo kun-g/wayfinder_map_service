@@ -1,4 +1,4 @@
-import type { Command, CommandErrorCode, CommandRejection, Result, StoredMapState, TicketId } from './types.js';
+import type { Command, CommandErrorCode, CommandRejection, Result, StoredMapState, StoredTicket, TicketId } from './types.js';
 import { calculateFrontier } from './frontier.js';
 
 export function applyCommand(state: StoredMapState, command: Command, commandIndex: number): Result<StoredMapState, CommandRejection> {
@@ -32,15 +32,13 @@ export function applyCommand(state: StoredMapState, command: Command, commandInd
   if (command.kind === 'claim.acquire') {
     if (ticket.claim !== null) return reject('ticket_already_claimed', ticket.id);
     if (!calculateFrontier(state).includes(ticket.id)) return reject('unsettled_dependency', ticket.id);
-    return { kind: 'ok', value: { ...state, tickets: state.tickets.map(existing => existing.id === ticket.id
-      ? { ...ticket, claim: command.claimantId } : existing) } };
+    return { kind: 'ok', value: replaceTicket(state, { ...ticket, claim: command.claimantId }) };
   }
   if (command.kind === 'claim.release' || command.kind === 'claim.clear') {
     if (ticket.claim === null) return reject('claim_not_found', ticket.id);
     const claimantId = command.kind === 'claim.clear' ? command.expectedClaimantId : command.claimantId;
     if (claimantId !== ticket.claim) return reject('claim_mismatch', ticket.id);
-    return { kind: 'ok', value: { ...state, tickets: state.tickets.map(existing => existing.id === ticket.id
-      ? { ...ticket, claim: null } : existing) } };
+    return { kind: 'ok', value: replaceTicket(state, { ...ticket, claim: null }) };
   }
   if (ticket.claim !== null) {
     if (!command.claimantId) return reject('claim_required', ticket.id);
@@ -57,5 +55,9 @@ export function applyCommand(state: StoredMapState, command: Command, commandInd
     updated = { ...ticket, prerequisites: command.kind === 'dependency.add'
       ? [...ticket.prerequisites, command.prerequisiteId] : ticket.prerequisites.filter(identity => identity !== command.prerequisiteId) };
   }
-  return { kind: 'ok', value: { ...state, tickets: state.tickets.map(existing => existing.id === updated.id ? updated : existing) } };
+  return { kind: 'ok', value: replaceTicket(state, updated) };
+}
+
+function replaceTicket(state: StoredMapState, updated: StoredTicket): StoredMapState {
+  return { ...state, tickets: state.tickets.map(existing => existing.id === updated.id ? updated : existing) };
 }
