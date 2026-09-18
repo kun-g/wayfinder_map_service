@@ -1,0 +1,4140 @@
+{
+  "status": "L01-L04 passed; L05 pending live human verdict",
+  "serverCommit": "2c9f196c7f252f2d76efa85550312f0f5a5190a7",
+  "installedClient": "codex-cli 0.153.0",
+  "node": "v26.3.0",
+  "sqliteVersion": "3.53.4",
+  "sdk": "1.30.0",
+  "protocolVersions": [
+    "2025-06-18"
+  ],
+  "mapId": "Acceptance.Codex.Workflow",
+  "sessions": [
+    {
+      "label": "A-workflow",
+      "threadId": "01a0b4f1-c05a-7600-8b18-73fa2db7dbca",
+      "calls": [
+        {
+          "tool": "map_list",
+          "arguments": {},
+          "result": {
+            "content": [],
+            "structured_content": {
+              "kind": "listed",
+              "maps": [],
+              "nextAfterMapId": null
+            }
+          },
+          "status": "completed"
+        },
+        {
+          "tool": "map_create",
+          "arguments": {
+            "mapId": "Acceptance.Codex.Workflow",
+            "title": "Installed Codex isolated acceptance",
+            "destination": "Prove real M1 workflow through Codex, SQLite and HTTP"
+          },
+          "result": {
+            "content": [],
+            "structured_content": {
+              "kind": "committed",
+              "mapId": "Acceptance.Codex.Workflow",
+              "revision": 1,
+              "changes": [
+                {
+                  "commandIndex": 0,
+                  "command": "map.create",
+                  "subjectId": "Acceptance.Codex.Workflow"
+                }
+              ]
+            }
+          },
+          "status": "completed"
+        },
+        {
+          "tool": "map_apply",
+          "arguments": {
+            "mapId": "Acceptance.Codex.Workflow",
+            "expectedRevision": 1,
+            "commands": [
+              {
+                "kind": "ticket.create",
+                "ticket": {
+                  "id": "Prep",
+                  "title": "Prep",
+                  "question": "Verify Prep?",
+                  "type": "task"
+                }
+              },
+              {
+                "kind": "ticket.create",
+                "ticket": {
+                  "id": "Next",
+                  "title": "Next",
+                  "question": "Verify Next?",
+                  "type": "research"
+                }
+              },
+              {
+                "kind": "ticket.create",
+                "ticket": {
+                  "id": "Handoff",
+                  "title": "Handoff",
+                  "question": "Verify Handoff?",
+                  "type": "task"
+                }
+              },
+              {
+                "kind": "dependency.add",
+                "dependentId": "Next",
+                "prerequisiteId": "Prep"
+              },
+              {
+                "kind": "content.add",
+                "section": "fog",
+                "item": {
+                  "id": "Fog",
+                  "text": "Further exploration needs a separate adoption gate",
+                  "references": []
+                }
+              },
+              {
+                "kind": "content.add",
+                "section": "scopeExclusions",
+                "item": {
+                  "id": "Scope",
+                  "text": "No authority switch in this acceptance",
+                  "references": []
+                }
+              }
+            ],
+            "includeSnapshot": true
+          },
+          "result": {
+            "content": [],
+            "structured_content": {
+              "kind": "committed",
+              "revision": {
+                "mapId": "Acceptance.Codex.Workflow",
+                "revision": 2,
+                "priorRevision": 1,
+                "kind": "apply",
+                "author": {
+                  "actorId": "acceptance-operator",
+                  "clientId": "codex-live-acceptance",
+                  "occurredAt": "2026-09-18T14:35:57.828Z"
+                },
+                "changes": [
+                  {
+                    "commandIndex": 0,
+                    "command": "ticket.create",
+                    "subjectId": "Prep"
+                  },
+                  {
+                    "commandIndex": 1,
+                    "command": "ticket.create",
+                    "subjectId": "Next"
+                  },
+                  {
+                    "commandIndex": 2,
+                    "command": "ticket.create",
+                    "subjectId": "Handoff"
+                  },
+                  {
+                    "commandIndex": 3,
+                    "command": "dependency.add",
+                    "subjectId": "Next"
+                  },
+                  {
+                    "commandIndex": 4,
+                    "command": "content.add",
+                    "subjectId": "Fog"
+                  },
+                  {
+                    "commandIndex": 5,
+                    "command": "content.add",
+                    "subjectId": "Scope"
+                  }
+                ],
+                "state": {
+                  "id": "Acceptance.Codex.Workflow",
+                  "title": "Installed Codex isolated acceptance",
+                  "destination": "Prove real M1 workflow through Codex, SQLite and HTTP",
+                  "notes": "",
+                  "extensions": {},
+                  "fog": [
+                    {
+                      "id": "Fog",
+                      "text": "Further exploration needs a separate adoption gate",
+                      "references": []
+                    }
+                  ],
+                  "scopeExclusions": [
+                    {
+                      "id": "Scope",
+                      "text": "No authority switch in this acceptance",
+                      "references": []
+                    }
+                  ],
+                  "tickets": [
+                    {
+                      "id": "Prep",
+                      "title": "Prep",
+                      "question": "Verify Prep?",
+                      "type": "task",
+                      "extensions": {},
+                      "prerequisites": [],
+                      "status": "open",
+                      "claim": null
+                    },
+                    {
+                      "id": "Next",
+                      "title": "Next",
+                      "question": "Verify Next?",
+                      "type": "research",
+                      "extensions": {},
+                      "prerequisites": [
+                        "Prep"
+                      ],
+                      "status": "open",
+                      "claim": null
+                    },
+                    {
+                      "id": "Handoff",
+                      "title": "Handoff",
+                      "question": "Verify Handoff?",
+                      "type": "task",
+                      "extensions": {},
+                      "prerequisites": [],
+                      "status": "open",
+                      "claim": null
+                    }
+                  ],
+                  "currentRevision": 2
+                }
+              },
+              "frontier": [
+                "Handoff",
+                "Prep"
+              ]
+            }
+          },
+          "status": "completed"
+        },
+        {
+          "tool": "map_apply",
+          "arguments": {
+            "mapId": "Acceptance.Codex.Workflow",
+            "expectedRevision": 2,
+            "commands": [
+              {
+                "kind": "claim.acquire",
+                "ticketId": "Prep",
+                "claimantId": "codex:A"
+              }
+            ],
+            "includeSnapshot": true
+          },
+          "result": {
+            "content": [],
+            "structured_content": {
+              "kind": "committed",
+              "revision": {
+                "mapId": "Acceptance.Codex.Workflow",
+                "revision": 3,
+                "priorRevision": 2,
+                "kind": "apply",
+                "author": {
+                  "actorId": "acceptance-operator",
+                  "clientId": "codex-live-acceptance",
+                  "occurredAt": "2026-09-18T14:36:01.191Z"
+                },
+                "changes": [
+                  {
+                    "commandIndex": 0,
+                    "command": "claim.acquire",
+                    "subjectId": "Prep"
+                  }
+                ],
+                "state": {
+                  "id": "Acceptance.Codex.Workflow",
+                  "title": "Installed Codex isolated acceptance",
+                  "destination": "Prove real M1 workflow through Codex, SQLite and HTTP",
+                  "notes": "",
+                  "extensions": {},
+                  "fog": [
+                    {
+                      "id": "Fog",
+                      "text": "Further exploration needs a separate adoption gate",
+                      "references": []
+                    }
+                  ],
+                  "scopeExclusions": [
+                    {
+                      "id": "Scope",
+                      "text": "No authority switch in this acceptance",
+                      "references": []
+                    }
+                  ],
+                  "tickets": [
+                    {
+                      "id": "Prep",
+                      "title": "Prep",
+                      "question": "Verify Prep?",
+                      "type": "task",
+                      "extensions": {},
+                      "prerequisites": [],
+                      "status": "open",
+                      "claim": "codex:A"
+                    },
+                    {
+                      "id": "Next",
+                      "title": "Next",
+                      "question": "Verify Next?",
+                      "type": "research",
+                      "extensions": {},
+                      "prerequisites": [
+                        "Prep"
+                      ],
+                      "status": "open",
+                      "claim": null
+                    },
+                    {
+                      "id": "Handoff",
+                      "title": "Handoff",
+                      "question": "Verify Handoff?",
+                      "type": "task",
+                      "extensions": {},
+                      "prerequisites": [],
+                      "status": "open",
+                      "claim": null
+                    }
+                  ],
+                  "currentRevision": 3
+                }
+              },
+              "frontier": [
+                "Handoff"
+              ]
+            }
+          },
+          "status": "completed"
+        },
+        {
+          "tool": "map_apply",
+          "arguments": {
+            "mapId": "Acceptance.Codex.Workflow",
+            "expectedRevision": 3,
+            "commands": [
+              {
+                "kind": "ticket.settle",
+                "ticketId": "Prep",
+                "ticketType": "task",
+                "claimantId": "codex:A",
+                "settlement": {
+                  "outcome": {
+                    "kind": "completion",
+                    "statement": "Prep fixture finished",
+                    "resultingFacts": {
+                      "observed": true
+                    }
+                  },
+                  "evidence": [],
+                  "references": [
+                    {
+                      "locator": "fixture:codex-acceptance",
+                      "label": "Isolated fixture"
+                    }
+                  ],
+                  "provenance": {
+                    "method": "Installed Codex acceptance fixture",
+                    "sources": []
+                  },
+                  "extensions": {}
+                }
+              }
+            ],
+            "includeSnapshot": true
+          },
+          "result": {
+            "content": [],
+            "structured_content": {
+              "kind": "committed",
+              "revision": {
+                "mapId": "Acceptance.Codex.Workflow",
+                "revision": 4,
+                "priorRevision": 3,
+                "kind": "apply",
+                "author": {
+                  "actorId": "acceptance-operator",
+                  "clientId": "codex-live-acceptance",
+                  "occurredAt": "2026-09-18T14:36:06.095Z"
+                },
+                "changes": [
+                  {
+                    "commandIndex": 0,
+                    "command": "ticket.settle",
+                    "subjectId": "Prep"
+                  }
+                ],
+                "state": {
+                  "id": "Acceptance.Codex.Workflow",
+                  "title": "Installed Codex isolated acceptance",
+                  "destination": "Prove real M1 workflow through Codex, SQLite and HTTP",
+                  "notes": "",
+                  "extensions": {},
+                  "fog": [
+                    {
+                      "id": "Fog",
+                      "text": "Further exploration needs a separate adoption gate",
+                      "references": []
+                    }
+                  ],
+                  "scopeExclusions": [
+                    {
+                      "id": "Scope",
+                      "text": "No authority switch in this acceptance",
+                      "references": []
+                    }
+                  ],
+                  "tickets": [
+                    {
+                      "id": "Prep",
+                      "title": "Prep",
+                      "question": "Verify Prep?",
+                      "type": "task",
+                      "extensions": {},
+                      "prerequisites": [],
+                      "status": "settled",
+                      "claim": null,
+                      "settlement": {
+                        "outcome": {
+                          "kind": "completion",
+                          "statement": "Prep fixture finished",
+                          "resultingFacts": {
+                            "observed": true
+                          }
+                        },
+                        "evidence": [],
+                        "references": [
+                          {
+                            "locator": "fixture:codex-acceptance",
+                            "label": "Isolated fixture"
+                          }
+                        ],
+                        "provenance": {
+                          "method": "Installed Codex acceptance fixture",
+                          "sources": []
+                        },
+                        "extensions": {},
+                        "introducedAtRevision": 4
+                      }
+                    },
+                    {
+                      "id": "Next",
+                      "title": "Next",
+                      "question": "Verify Next?",
+                      "type": "research",
+                      "extensions": {},
+                      "prerequisites": [
+                        "Prep"
+                      ],
+                      "status": "open",
+                      "claim": null
+                    },
+                    {
+                      "id": "Handoff",
+                      "title": "Handoff",
+                      "question": "Verify Handoff?",
+                      "type": "task",
+                      "extensions": {},
+                      "prerequisites": [],
+                      "status": "open",
+                      "claim": null
+                    }
+                  ],
+                  "currentRevision": 4
+                }
+              },
+              "frontier": [
+                "Handoff",
+                "Next"
+              ]
+            }
+          },
+          "status": "completed"
+        },
+        {
+          "tool": "map_apply",
+          "arguments": {
+            "mapId": "Acceptance.Codex.Workflow",
+            "expectedRevision": 4,
+            "commands": [
+              {
+                "kind": "claim.acquire",
+                "ticketId": "Next",
+                "claimantId": "codex:A"
+              }
+            ],
+            "includeSnapshot": true
+          },
+          "result": {
+            "content": [],
+            "structured_content": {
+              "kind": "committed",
+              "revision": {
+                "mapId": "Acceptance.Codex.Workflow",
+                "revision": 5,
+                "priorRevision": 4,
+                "kind": "apply",
+                "author": {
+                  "actorId": "acceptance-operator",
+                  "clientId": "codex-live-acceptance",
+                  "occurredAt": "2026-09-18T14:36:09.271Z"
+                },
+                "changes": [
+                  {
+                    "commandIndex": 0,
+                    "command": "claim.acquire",
+                    "subjectId": "Next"
+                  }
+                ],
+                "state": {
+                  "id": "Acceptance.Codex.Workflow",
+                  "title": "Installed Codex isolated acceptance",
+                  "destination": "Prove real M1 workflow through Codex, SQLite and HTTP",
+                  "notes": "",
+                  "extensions": {},
+                  "fog": [
+                    {
+                      "id": "Fog",
+                      "text": "Further exploration needs a separate adoption gate",
+                      "references": []
+                    }
+                  ],
+                  "scopeExclusions": [
+                    {
+                      "id": "Scope",
+                      "text": "No authority switch in this acceptance",
+                      "references": []
+                    }
+                  ],
+                  "tickets": [
+                    {
+                      "id": "Prep",
+                      "title": "Prep",
+                      "question": "Verify Prep?",
+                      "type": "task",
+                      "extensions": {},
+                      "prerequisites": [],
+                      "status": "settled",
+                      "claim": null,
+                      "settlement": {
+                        "outcome": {
+                          "kind": "completion",
+                          "statement": "Prep fixture finished",
+                          "resultingFacts": {
+                            "observed": true
+                          }
+                        },
+                        "evidence": [],
+                        "references": [
+                          {
+                            "locator": "fixture:codex-acceptance",
+                            "label": "Isolated fixture"
+                          }
+                        ],
+                        "provenance": {
+                          "method": "Installed Codex acceptance fixture",
+                          "sources": []
+                        },
+                        "extensions": {},
+                        "introducedAtRevision": 4
+                      }
+                    },
+                    {
+                      "id": "Next",
+                      "title": "Next",
+                      "question": "Verify Next?",
+                      "type": "research",
+                      "extensions": {},
+                      "prerequisites": [
+                        "Prep"
+                      ],
+                      "status": "open",
+                      "claim": "codex:A"
+                    },
+                    {
+                      "id": "Handoff",
+                      "title": "Handoff",
+                      "question": "Verify Handoff?",
+                      "type": "task",
+                      "extensions": {},
+                      "prerequisites": [],
+                      "status": "open",
+                      "claim": null
+                    }
+                  ],
+                  "currentRevision": 5
+                }
+              },
+              "frontier": [
+                "Handoff"
+              ]
+            }
+          },
+          "status": "completed"
+        },
+        {
+          "tool": "map_apply",
+          "arguments": {
+            "mapId": "Acceptance.Codex.Workflow",
+            "expectedRevision": 5,
+            "commands": [
+              {
+                "kind": "ticket.settle",
+                "ticketId": "Next",
+                "ticketType": "research",
+                "claimantId": "codex:A",
+                "settlement": {
+                  "outcome": {
+                    "kind": "finding",
+                    "statement": "Installed Codex consumed structured results",
+                    "limitations": "Isolated local workflow only"
+                  },
+                  "evidence": [],
+                  "references": [
+                    {
+                      "locator": "fixture:codex-acceptance",
+                      "label": "Isolated fixture"
+                    }
+                  ],
+                  "provenance": {
+                    "method": "Installed Codex acceptance fixture",
+                    "sources": []
+                  },
+                  "extensions": {}
+                }
+              }
+            ],
+            "includeSnapshot": true
+          },
+          "result": {
+            "content": [],
+            "structured_content": {
+              "kind": "committed",
+              "revision": {
+                "mapId": "Acceptance.Codex.Workflow",
+                "revision": 6,
+                "priorRevision": 5,
+                "kind": "apply",
+                "author": {
+                  "actorId": "acceptance-operator",
+                  "clientId": "codex-live-acceptance",
+                  "occurredAt": "2026-09-18T14:36:14.325Z"
+                },
+                "changes": [
+                  {
+                    "commandIndex": 0,
+                    "command": "ticket.settle",
+                    "subjectId": "Next"
+                  }
+                ],
+                "state": {
+                  "id": "Acceptance.Codex.Workflow",
+                  "title": "Installed Codex isolated acceptance",
+                  "destination": "Prove real M1 workflow through Codex, SQLite and HTTP",
+                  "notes": "",
+                  "extensions": {},
+                  "fog": [
+                    {
+                      "id": "Fog",
+                      "text": "Further exploration needs a separate adoption gate",
+                      "references": []
+                    }
+                  ],
+                  "scopeExclusions": [
+                    {
+                      "id": "Scope",
+                      "text": "No authority switch in this acceptance",
+                      "references": []
+                    }
+                  ],
+                  "tickets": [
+                    {
+                      "id": "Prep",
+                      "title": "Prep",
+                      "question": "Verify Prep?",
+                      "type": "task",
+                      "extensions": {},
+                      "prerequisites": [],
+                      "status": "settled",
+                      "claim": null,
+                      "settlement": {
+                        "outcome": {
+                          "kind": "completion",
+                          "statement": "Prep fixture finished",
+                          "resultingFacts": {
+                            "observed": true
+                          }
+                        },
+                        "evidence": [],
+                        "references": [
+                          {
+                            "locator": "fixture:codex-acceptance",
+                            "label": "Isolated fixture"
+                          }
+                        ],
+                        "provenance": {
+                          "method": "Installed Codex acceptance fixture",
+                          "sources": []
+                        },
+                        "extensions": {},
+                        "introducedAtRevision": 4
+                      }
+                    },
+                    {
+                      "id": "Next",
+                      "title": "Next",
+                      "question": "Verify Next?",
+                      "type": "research",
+                      "extensions": {},
+                      "prerequisites": [
+                        "Prep"
+                      ],
+                      "status": "settled",
+                      "claim": null,
+                      "settlement": {
+                        "outcome": {
+                          "kind": "finding",
+                          "statement": "Installed Codex consumed structured results",
+                          "limitations": "Isolated local workflow only"
+                        },
+                        "evidence": [],
+                        "references": [
+                          {
+                            "locator": "fixture:codex-acceptance",
+                            "label": "Isolated fixture"
+                          }
+                        ],
+                        "provenance": {
+                          "method": "Installed Codex acceptance fixture",
+                          "sources": []
+                        },
+                        "extensions": {},
+                        "introducedAtRevision": 6
+                      }
+                    },
+                    {
+                      "id": "Handoff",
+                      "title": "Handoff",
+                      "question": "Verify Handoff?",
+                      "type": "task",
+                      "extensions": {},
+                      "prerequisites": [],
+                      "status": "open",
+                      "claim": null
+                    }
+                  ],
+                  "currentRevision": 6
+                }
+              },
+              "frontier": [
+                "Handoff"
+              ]
+            }
+          },
+          "status": "completed"
+        },
+        {
+          "tool": "map_apply",
+          "arguments": {
+            "mapId": "Acceptance.Codex.Workflow",
+            "expectedRevision": 6,
+            "commands": [
+              {
+                "kind": "ticket.reopen",
+                "ticketId": "Prep",
+                "reason": "Revisit prerequisite fixture"
+              },
+              {
+                "kind": "ticket.reopen",
+                "ticketId": "Next",
+                "reason": "Revisit dependent fixture"
+              }
+            ],
+            "includeSnapshot": true
+          },
+          "result": {
+            "content": [],
+            "structured_content": {
+              "kind": "committed",
+              "revision": {
+                "mapId": "Acceptance.Codex.Workflow",
+                "revision": 7,
+                "priorRevision": 6,
+                "kind": "apply",
+                "author": {
+                  "actorId": "acceptance-operator",
+                  "clientId": "codex-live-acceptance",
+                  "occurredAt": "2026-09-18T14:36:18.153Z"
+                },
+                "changes": [
+                  {
+                    "commandIndex": 0,
+                    "command": "ticket.reopen",
+                    "subjectId": "Prep",
+                    "reason": "Revisit prerequisite fixture"
+                  },
+                  {
+                    "commandIndex": 1,
+                    "command": "ticket.reopen",
+                    "subjectId": "Next",
+                    "reason": "Revisit dependent fixture"
+                  }
+                ],
+                "state": {
+                  "id": "Acceptance.Codex.Workflow",
+                  "title": "Installed Codex isolated acceptance",
+                  "destination": "Prove real M1 workflow through Codex, SQLite and HTTP",
+                  "notes": "",
+                  "extensions": {},
+                  "fog": [
+                    {
+                      "id": "Fog",
+                      "text": "Further exploration needs a separate adoption gate",
+                      "references": []
+                    }
+                  ],
+                  "scopeExclusions": [
+                    {
+                      "id": "Scope",
+                      "text": "No authority switch in this acceptance",
+                      "references": []
+                    }
+                  ],
+                  "tickets": [
+                    {
+                      "id": "Prep",
+                      "title": "Prep",
+                      "question": "Verify Prep?",
+                      "type": "task",
+                      "extensions": {},
+                      "prerequisites": [],
+                      "status": "open",
+                      "claim": null
+                    },
+                    {
+                      "id": "Next",
+                      "title": "Next",
+                      "question": "Verify Next?",
+                      "type": "research",
+                      "extensions": {},
+                      "prerequisites": [
+                        "Prep"
+                      ],
+                      "status": "open",
+                      "claim": null
+                    },
+                    {
+                      "id": "Handoff",
+                      "title": "Handoff",
+                      "question": "Verify Handoff?",
+                      "type": "task",
+                      "extensions": {},
+                      "prerequisites": [],
+                      "status": "open",
+                      "claim": null
+                    }
+                  ],
+                  "currentRevision": 7
+                }
+              },
+              "frontier": [
+                "Handoff",
+                "Prep"
+              ]
+            }
+          },
+          "status": "completed"
+        },
+        {
+          "tool": "map_apply",
+          "arguments": {
+            "mapId": "Acceptance.Codex.Workflow",
+            "expectedRevision": 7,
+            "commands": [
+              {
+                "kind": "claim.acquire",
+                "ticketId": "Prep",
+                "claimantId": "codex:A"
+              }
+            ],
+            "includeSnapshot": true
+          },
+          "result": {
+            "content": [],
+            "structured_content": {
+              "kind": "committed",
+              "revision": {
+                "mapId": "Acceptance.Codex.Workflow",
+                "revision": 8,
+                "priorRevision": 7,
+                "kind": "apply",
+                "author": {
+                  "actorId": "acceptance-operator",
+                  "clientId": "codex-live-acceptance",
+                  "occurredAt": "2026-09-18T14:36:23.022Z"
+                },
+                "changes": [
+                  {
+                    "commandIndex": 0,
+                    "command": "claim.acquire",
+                    "subjectId": "Prep"
+                  }
+                ],
+                "state": {
+                  "id": "Acceptance.Codex.Workflow",
+                  "title": "Installed Codex isolated acceptance",
+                  "destination": "Prove real M1 workflow through Codex, SQLite and HTTP",
+                  "notes": "",
+                  "extensions": {},
+                  "fog": [
+                    {
+                      "id": "Fog",
+                      "text": "Further exploration needs a separate adoption gate",
+                      "references": []
+                    }
+                  ],
+                  "scopeExclusions": [
+                    {
+                      "id": "Scope",
+                      "text": "No authority switch in this acceptance",
+                      "references": []
+                    }
+                  ],
+                  "tickets": [
+                    {
+                      "id": "Prep",
+                      "title": "Prep",
+                      "question": "Verify Prep?",
+                      "type": "task",
+                      "extensions": {},
+                      "prerequisites": [],
+                      "status": "open",
+                      "claim": "codex:A"
+                    },
+                    {
+                      "id": "Next",
+                      "title": "Next",
+                      "question": "Verify Next?",
+                      "type": "research",
+                      "extensions": {},
+                      "prerequisites": [
+                        "Prep"
+                      ],
+                      "status": "open",
+                      "claim": null
+                    },
+                    {
+                      "id": "Handoff",
+                      "title": "Handoff",
+                      "question": "Verify Handoff?",
+                      "type": "task",
+                      "extensions": {},
+                      "prerequisites": [],
+                      "status": "open",
+                      "claim": null
+                    }
+                  ],
+                  "currentRevision": 8
+                }
+              },
+              "frontier": [
+                "Handoff"
+              ]
+            }
+          },
+          "status": "completed"
+        },
+        {
+          "tool": "map_read",
+          "arguments": {
+            "mapId": "Acceptance.Codex.Workflow"
+          },
+          "result": {
+            "content": [],
+            "structured_content": {
+              "kind": "found",
+              "revision": {
+                "mapId": "Acceptance.Codex.Workflow",
+                "revision": 8,
+                "priorRevision": 7,
+                "kind": "apply",
+                "author": {
+                  "actorId": "acceptance-operator",
+                  "clientId": "codex-live-acceptance",
+                  "occurredAt": "2026-09-18T14:36:23.022Z"
+                },
+                "changes": [
+                  {
+                    "commandIndex": 0,
+                    "command": "claim.acquire",
+                    "subjectId": "Prep"
+                  }
+                ],
+                "state": {
+                  "id": "Acceptance.Codex.Workflow",
+                  "title": "Installed Codex isolated acceptance",
+                  "destination": "Prove real M1 workflow through Codex, SQLite and HTTP",
+                  "notes": "",
+                  "extensions": {},
+                  "fog": [
+                    {
+                      "id": "Fog",
+                      "text": "Further exploration needs a separate adoption gate",
+                      "references": []
+                    }
+                  ],
+                  "scopeExclusions": [
+                    {
+                      "id": "Scope",
+                      "text": "No authority switch in this acceptance",
+                      "references": []
+                    }
+                  ],
+                  "tickets": [
+                    {
+                      "id": "Prep",
+                      "title": "Prep",
+                      "question": "Verify Prep?",
+                      "type": "task",
+                      "extensions": {},
+                      "prerequisites": [],
+                      "status": "open",
+                      "claim": "codex:A"
+                    },
+                    {
+                      "id": "Next",
+                      "title": "Next",
+                      "question": "Verify Next?",
+                      "type": "research",
+                      "extensions": {},
+                      "prerequisites": [
+                        "Prep"
+                      ],
+                      "status": "open",
+                      "claim": null
+                    },
+                    {
+                      "id": "Handoff",
+                      "title": "Handoff",
+                      "question": "Verify Handoff?",
+                      "type": "task",
+                      "extensions": {},
+                      "prerequisites": [],
+                      "status": "open",
+                      "claim": null
+                    }
+                  ],
+                  "currentRevision": 8
+                }
+              },
+              "frontier": [
+                "Handoff"
+              ]
+            }
+          },
+          "status": "completed"
+        },
+        {
+          "tool": "map_read",
+          "arguments": {
+            "mapId": "Acceptance.Codex.Workflow",
+            "revision": 1
+          },
+          "result": {
+            "content": [],
+            "structured_content": {
+              "kind": "found",
+              "revision": {
+                "mapId": "Acceptance.Codex.Workflow",
+                "revision": 1,
+                "priorRevision": null,
+                "kind": "create",
+                "author": {
+                  "actorId": "acceptance-operator",
+                  "clientId": "codex-live-acceptance",
+                  "occurredAt": "2026-09-18T14:35:52.055Z"
+                },
+                "changes": [
+                  {
+                    "commandIndex": 0,
+                    "command": "map.create",
+                    "subjectId": "Acceptance.Codex.Workflow"
+                  }
+                ],
+                "state": {
+                  "id": "Acceptance.Codex.Workflow",
+                  "title": "Installed Codex isolated acceptance",
+                  "destination": "Prove real M1 workflow through Codex, SQLite and HTTP",
+                  "notes": "",
+                  "extensions": {},
+                  "fog": [],
+                  "scopeExclusions": [],
+                  "tickets": [],
+                  "currentRevision": 1
+                }
+              },
+              "frontier": []
+            }
+          },
+          "status": "completed"
+        },
+        {
+          "tool": "map_read",
+          "arguments": {
+            "mapId": "Acceptance.Codex.Workflow",
+            "revision": 2
+          },
+          "result": {
+            "content": [],
+            "structured_content": {
+              "kind": "found",
+              "revision": {
+                "mapId": "Acceptance.Codex.Workflow",
+                "revision": 2,
+                "priorRevision": 1,
+                "kind": "apply",
+                "author": {
+                  "actorId": "acceptance-operator",
+                  "clientId": "codex-live-acceptance",
+                  "occurredAt": "2026-09-18T14:35:57.828Z"
+                },
+                "changes": [
+                  {
+                    "commandIndex": 0,
+                    "command": "ticket.create",
+                    "subjectId": "Prep"
+                  },
+                  {
+                    "commandIndex": 1,
+                    "command": "ticket.create",
+                    "subjectId": "Next"
+                  },
+                  {
+                    "commandIndex": 2,
+                    "command": "ticket.create",
+                    "subjectId": "Handoff"
+                  },
+                  {
+                    "commandIndex": 3,
+                    "command": "dependency.add",
+                    "subjectId": "Next"
+                  },
+                  {
+                    "commandIndex": 4,
+                    "command": "content.add",
+                    "subjectId": "Fog"
+                  },
+                  {
+                    "commandIndex": 5,
+                    "command": "content.add",
+                    "subjectId": "Scope"
+                  }
+                ],
+                "state": {
+                  "id": "Acceptance.Codex.Workflow",
+                  "title": "Installed Codex isolated acceptance",
+                  "destination": "Prove real M1 workflow through Codex, SQLite and HTTP",
+                  "notes": "",
+                  "extensions": {},
+                  "fog": [
+                    {
+                      "id": "Fog",
+                      "text": "Further exploration needs a separate adoption gate",
+                      "references": []
+                    }
+                  ],
+                  "scopeExclusions": [
+                    {
+                      "id": "Scope",
+                      "text": "No authority switch in this acceptance",
+                      "references": []
+                    }
+                  ],
+                  "tickets": [
+                    {
+                      "id": "Prep",
+                      "title": "Prep",
+                      "question": "Verify Prep?",
+                      "type": "task",
+                      "extensions": {},
+                      "prerequisites": [],
+                      "status": "open",
+                      "claim": null
+                    },
+                    {
+                      "id": "Next",
+                      "title": "Next",
+                      "question": "Verify Next?",
+                      "type": "research",
+                      "extensions": {},
+                      "prerequisites": [
+                        "Prep"
+                      ],
+                      "status": "open",
+                      "claim": null
+                    },
+                    {
+                      "id": "Handoff",
+                      "title": "Handoff",
+                      "question": "Verify Handoff?",
+                      "type": "task",
+                      "extensions": {},
+                      "prerequisites": [],
+                      "status": "open",
+                      "claim": null
+                    }
+                  ],
+                  "currentRevision": 2
+                }
+              },
+              "frontier": [
+                "Handoff",
+                "Prep"
+              ]
+            }
+          },
+          "status": "completed"
+        },
+        {
+          "tool": "map_read",
+          "arguments": {
+            "mapId": "Acceptance.Codex.Workflow",
+            "revision": 3
+          },
+          "result": {
+            "content": [],
+            "structured_content": {
+              "kind": "found",
+              "revision": {
+                "mapId": "Acceptance.Codex.Workflow",
+                "revision": 3,
+                "priorRevision": 2,
+                "kind": "apply",
+                "author": {
+                  "actorId": "acceptance-operator",
+                  "clientId": "codex-live-acceptance",
+                  "occurredAt": "2026-09-18T14:36:01.191Z"
+                },
+                "changes": [
+                  {
+                    "commandIndex": 0,
+                    "command": "claim.acquire",
+                    "subjectId": "Prep"
+                  }
+                ],
+                "state": {
+                  "id": "Acceptance.Codex.Workflow",
+                  "title": "Installed Codex isolated acceptance",
+                  "destination": "Prove real M1 workflow through Codex, SQLite and HTTP",
+                  "notes": "",
+                  "extensions": {},
+                  "fog": [
+                    {
+                      "id": "Fog",
+                      "text": "Further exploration needs a separate adoption gate",
+                      "references": []
+                    }
+                  ],
+                  "scopeExclusions": [
+                    {
+                      "id": "Scope",
+                      "text": "No authority switch in this acceptance",
+                      "references": []
+                    }
+                  ],
+                  "tickets": [
+                    {
+                      "id": "Prep",
+                      "title": "Prep",
+                      "question": "Verify Prep?",
+                      "type": "task",
+                      "extensions": {},
+                      "prerequisites": [],
+                      "status": "open",
+                      "claim": "codex:A"
+                    },
+                    {
+                      "id": "Next",
+                      "title": "Next",
+                      "question": "Verify Next?",
+                      "type": "research",
+                      "extensions": {},
+                      "prerequisites": [
+                        "Prep"
+                      ],
+                      "status": "open",
+                      "claim": null
+                    },
+                    {
+                      "id": "Handoff",
+                      "title": "Handoff",
+                      "question": "Verify Handoff?",
+                      "type": "task",
+                      "extensions": {},
+                      "prerequisites": [],
+                      "status": "open",
+                      "claim": null
+                    }
+                  ],
+                  "currentRevision": 3
+                }
+              },
+              "frontier": [
+                "Handoff"
+              ]
+            }
+          },
+          "status": "completed"
+        },
+        {
+          "tool": "map_read",
+          "arguments": {
+            "mapId": "Acceptance.Codex.Workflow",
+            "revision": 4
+          },
+          "result": {
+            "content": [],
+            "structured_content": {
+              "kind": "found",
+              "revision": {
+                "mapId": "Acceptance.Codex.Workflow",
+                "revision": 4,
+                "priorRevision": 3,
+                "kind": "apply",
+                "author": {
+                  "actorId": "acceptance-operator",
+                  "clientId": "codex-live-acceptance",
+                  "occurredAt": "2026-09-18T14:36:06.095Z"
+                },
+                "changes": [
+                  {
+                    "commandIndex": 0,
+                    "command": "ticket.settle",
+                    "subjectId": "Prep"
+                  }
+                ],
+                "state": {
+                  "id": "Acceptance.Codex.Workflow",
+                  "title": "Installed Codex isolated acceptance",
+                  "destination": "Prove real M1 workflow through Codex, SQLite and HTTP",
+                  "notes": "",
+                  "extensions": {},
+                  "fog": [
+                    {
+                      "id": "Fog",
+                      "text": "Further exploration needs a separate adoption gate",
+                      "references": []
+                    }
+                  ],
+                  "scopeExclusions": [
+                    {
+                      "id": "Scope",
+                      "text": "No authority switch in this acceptance",
+                      "references": []
+                    }
+                  ],
+                  "tickets": [
+                    {
+                      "id": "Prep",
+                      "title": "Prep",
+                      "question": "Verify Prep?",
+                      "type": "task",
+                      "extensions": {},
+                      "prerequisites": [],
+                      "status": "settled",
+                      "claim": null,
+                      "settlement": {
+                        "outcome": {
+                          "kind": "completion",
+                          "statement": "Prep fixture finished",
+                          "resultingFacts": {
+                            "observed": true
+                          }
+                        },
+                        "evidence": [],
+                        "references": [
+                          {
+                            "locator": "fixture:codex-acceptance",
+                            "label": "Isolated fixture"
+                          }
+                        ],
+                        "provenance": {
+                          "method": "Installed Codex acceptance fixture",
+                          "sources": []
+                        },
+                        "extensions": {},
+                        "introducedAtRevision": 4
+                      }
+                    },
+                    {
+                      "id": "Next",
+                      "title": "Next",
+                      "question": "Verify Next?",
+                      "type": "research",
+                      "extensions": {},
+                      "prerequisites": [
+                        "Prep"
+                      ],
+                      "status": "open",
+                      "claim": null
+                    },
+                    {
+                      "id": "Handoff",
+                      "title": "Handoff",
+                      "question": "Verify Handoff?",
+                      "type": "task",
+                      "extensions": {},
+                      "prerequisites": [],
+                      "status": "open",
+                      "claim": null
+                    }
+                  ],
+                  "currentRevision": 4
+                }
+              },
+              "frontier": [
+                "Handoff",
+                "Next"
+              ]
+            }
+          },
+          "status": "completed"
+        },
+        {
+          "tool": "map_read",
+          "arguments": {
+            "mapId": "Acceptance.Codex.Workflow",
+            "revision": 5
+          },
+          "result": {
+            "content": [],
+            "structured_content": {
+              "kind": "found",
+              "revision": {
+                "mapId": "Acceptance.Codex.Workflow",
+                "revision": 5,
+                "priorRevision": 4,
+                "kind": "apply",
+                "author": {
+                  "actorId": "acceptance-operator",
+                  "clientId": "codex-live-acceptance",
+                  "occurredAt": "2026-09-18T14:36:09.271Z"
+                },
+                "changes": [
+                  {
+                    "commandIndex": 0,
+                    "command": "claim.acquire",
+                    "subjectId": "Next"
+                  }
+                ],
+                "state": {
+                  "id": "Acceptance.Codex.Workflow",
+                  "title": "Installed Codex isolated acceptance",
+                  "destination": "Prove real M1 workflow through Codex, SQLite and HTTP",
+                  "notes": "",
+                  "extensions": {},
+                  "fog": [
+                    {
+                      "id": "Fog",
+                      "text": "Further exploration needs a separate adoption gate",
+                      "references": []
+                    }
+                  ],
+                  "scopeExclusions": [
+                    {
+                      "id": "Scope",
+                      "text": "No authority switch in this acceptance",
+                      "references": []
+                    }
+                  ],
+                  "tickets": [
+                    {
+                      "id": "Prep",
+                      "title": "Prep",
+                      "question": "Verify Prep?",
+                      "type": "task",
+                      "extensions": {},
+                      "prerequisites": [],
+                      "status": "settled",
+                      "claim": null,
+                      "settlement": {
+                        "outcome": {
+                          "kind": "completion",
+                          "statement": "Prep fixture finished",
+                          "resultingFacts": {
+                            "observed": true
+                          }
+                        },
+                        "evidence": [],
+                        "references": [
+                          {
+                            "locator": "fixture:codex-acceptance",
+                            "label": "Isolated fixture"
+                          }
+                        ],
+                        "provenance": {
+                          "method": "Installed Codex acceptance fixture",
+                          "sources": []
+                        },
+                        "extensions": {},
+                        "introducedAtRevision": 4
+                      }
+                    },
+                    {
+                      "id": "Next",
+                      "title": "Next",
+                      "question": "Verify Next?",
+                      "type": "research",
+                      "extensions": {},
+                      "prerequisites": [
+                        "Prep"
+                      ],
+                      "status": "open",
+                      "claim": "codex:A"
+                    },
+                    {
+                      "id": "Handoff",
+                      "title": "Handoff",
+                      "question": "Verify Handoff?",
+                      "type": "task",
+                      "extensions": {},
+                      "prerequisites": [],
+                      "status": "open",
+                      "claim": null
+                    }
+                  ],
+                  "currentRevision": 5
+                }
+              },
+              "frontier": [
+                "Handoff"
+              ]
+            }
+          },
+          "status": "completed"
+        },
+        {
+          "tool": "map_read",
+          "arguments": {
+            "mapId": "Acceptance.Codex.Workflow",
+            "revision": 6
+          },
+          "result": {
+            "content": [],
+            "structured_content": {
+              "kind": "found",
+              "revision": {
+                "mapId": "Acceptance.Codex.Workflow",
+                "revision": 6,
+                "priorRevision": 5,
+                "kind": "apply",
+                "author": {
+                  "actorId": "acceptance-operator",
+                  "clientId": "codex-live-acceptance",
+                  "occurredAt": "2026-09-18T14:36:14.325Z"
+                },
+                "changes": [
+                  {
+                    "commandIndex": 0,
+                    "command": "ticket.settle",
+                    "subjectId": "Next"
+                  }
+                ],
+                "state": {
+                  "id": "Acceptance.Codex.Workflow",
+                  "title": "Installed Codex isolated acceptance",
+                  "destination": "Prove real M1 workflow through Codex, SQLite and HTTP",
+                  "notes": "",
+                  "extensions": {},
+                  "fog": [
+                    {
+                      "id": "Fog",
+                      "text": "Further exploration needs a separate adoption gate",
+                      "references": []
+                    }
+                  ],
+                  "scopeExclusions": [
+                    {
+                      "id": "Scope",
+                      "text": "No authority switch in this acceptance",
+                      "references": []
+                    }
+                  ],
+                  "tickets": [
+                    {
+                      "id": "Prep",
+                      "title": "Prep",
+                      "question": "Verify Prep?",
+                      "type": "task",
+                      "extensions": {},
+                      "prerequisites": [],
+                      "status": "settled",
+                      "claim": null,
+                      "settlement": {
+                        "outcome": {
+                          "kind": "completion",
+                          "statement": "Prep fixture finished",
+                          "resultingFacts": {
+                            "observed": true
+                          }
+                        },
+                        "evidence": [],
+                        "references": [
+                          {
+                            "locator": "fixture:codex-acceptance",
+                            "label": "Isolated fixture"
+                          }
+                        ],
+                        "provenance": {
+                          "method": "Installed Codex acceptance fixture",
+                          "sources": []
+                        },
+                        "extensions": {},
+                        "introducedAtRevision": 4
+                      }
+                    },
+                    {
+                      "id": "Next",
+                      "title": "Next",
+                      "question": "Verify Next?",
+                      "type": "research",
+                      "extensions": {},
+                      "prerequisites": [
+                        "Prep"
+                      ],
+                      "status": "settled",
+                      "claim": null,
+                      "settlement": {
+                        "outcome": {
+                          "kind": "finding",
+                          "statement": "Installed Codex consumed structured results",
+                          "limitations": "Isolated local workflow only"
+                        },
+                        "evidence": [],
+                        "references": [
+                          {
+                            "locator": "fixture:codex-acceptance",
+                            "label": "Isolated fixture"
+                          }
+                        ],
+                        "provenance": {
+                          "method": "Installed Codex acceptance fixture",
+                          "sources": []
+                        },
+                        "extensions": {},
+                        "introducedAtRevision": 6
+                      }
+                    },
+                    {
+                      "id": "Handoff",
+                      "title": "Handoff",
+                      "question": "Verify Handoff?",
+                      "type": "task",
+                      "extensions": {},
+                      "prerequisites": [],
+                      "status": "open",
+                      "claim": null
+                    }
+                  ],
+                  "currentRevision": 6
+                }
+              },
+              "frontier": [
+                "Handoff"
+              ]
+            }
+          },
+          "status": "completed"
+        },
+        {
+          "tool": "map_read",
+          "arguments": {
+            "mapId": "Acceptance.Codex.Workflow",
+            "revision": 7
+          },
+          "result": {
+            "content": [],
+            "structured_content": {
+              "kind": "found",
+              "revision": {
+                "mapId": "Acceptance.Codex.Workflow",
+                "revision": 7,
+                "priorRevision": 6,
+                "kind": "apply",
+                "author": {
+                  "actorId": "acceptance-operator",
+                  "clientId": "codex-live-acceptance",
+                  "occurredAt": "2026-09-18T14:36:18.153Z"
+                },
+                "changes": [
+                  {
+                    "commandIndex": 0,
+                    "command": "ticket.reopen",
+                    "subjectId": "Prep",
+                    "reason": "Revisit prerequisite fixture"
+                  },
+                  {
+                    "commandIndex": 1,
+                    "command": "ticket.reopen",
+                    "subjectId": "Next",
+                    "reason": "Revisit dependent fixture"
+                  }
+                ],
+                "state": {
+                  "id": "Acceptance.Codex.Workflow",
+                  "title": "Installed Codex isolated acceptance",
+                  "destination": "Prove real M1 workflow through Codex, SQLite and HTTP",
+                  "notes": "",
+                  "extensions": {},
+                  "fog": [
+                    {
+                      "id": "Fog",
+                      "text": "Further exploration needs a separate adoption gate",
+                      "references": []
+                    }
+                  ],
+                  "scopeExclusions": [
+                    {
+                      "id": "Scope",
+                      "text": "No authority switch in this acceptance",
+                      "references": []
+                    }
+                  ],
+                  "tickets": [
+                    {
+                      "id": "Prep",
+                      "title": "Prep",
+                      "question": "Verify Prep?",
+                      "type": "task",
+                      "extensions": {},
+                      "prerequisites": [],
+                      "status": "open",
+                      "claim": null
+                    },
+                    {
+                      "id": "Next",
+                      "title": "Next",
+                      "question": "Verify Next?",
+                      "type": "research",
+                      "extensions": {},
+                      "prerequisites": [
+                        "Prep"
+                      ],
+                      "status": "open",
+                      "claim": null
+                    },
+                    {
+                      "id": "Handoff",
+                      "title": "Handoff",
+                      "question": "Verify Handoff?",
+                      "type": "task",
+                      "extensions": {},
+                      "prerequisites": [],
+                      "status": "open",
+                      "claim": null
+                    }
+                  ],
+                  "currentRevision": 7
+                }
+              },
+              "frontier": [
+                "Handoff",
+                "Prep"
+              ]
+            }
+          },
+          "status": "completed"
+        }
+      ],
+      "finalMessage": "All specified operations succeeded in order; no unexpected rejections or write replays. Current revision is **8**.\n\n| Revision | Frontier | Observed transition |\n|---|---|---|\n| 1 | Empty | Map created |\n| 2 | Handoff, Prep | Next blocked by Prep |\n| 3 | Handoff | Prep claimed by `codex:A` |\n| 4 | Handoff, Next | Prep settled; **Next unlocked** |\n| 5 | Handoff | Next claimed by `codex:A` |\n| 6 | Handoff | Next settled |\n| 7 | Handoff, Prep | Both reopened; Next blocked again |\n| 8 | Handoff | Prep claimed again by `codex:A` |\n\nPrep’s typed **Completion** was introduced at revision 4 with `resultingFacts: {\"observed\":true}`. Next’s typed **Finding** was introduced at revision 6 with limitation “Isolated local workflow only.”\n\nHistorical reads preserved Prep’s Claim at revision 3, Next’s Claim at revision 5, and their Settlements in revisions 4–6. Reopening removed Settlements from current state while retaining those historical snapshots.\n\nAt revision 8, Prep remains claimed by `codex:A`; Next is open and blocked; Handoff is open and unclaimed. Retained **`expectedRevision: 8`** for the next turn. No advancement beyond 8."
+    },
+    {
+      "label": "B-independent",
+      "threadId": "01a0b4f2-ff7e-76b2-bb9e-8fd79e29d561",
+      "calls": [
+        {
+          "tool": "map_list",
+          "arguments": {},
+          "result": {
+            "content": [],
+            "structured_content": {
+              "kind": "listed",
+              "maps": [
+                {
+                  "mapId": "Acceptance.Codex.Workflow",
+                  "title": "Installed Codex isolated acceptance",
+                  "destination": "Prove real M1 workflow through Codex, SQLite and HTTP",
+                  "currentRevision": 8
+                }
+              ],
+              "nextAfterMapId": null
+            }
+          },
+          "status": "completed"
+        },
+        {
+          "tool": "map_read",
+          "arguments": {
+            "mapId": "Acceptance.Codex.Workflow"
+          },
+          "result": {
+            "content": [],
+            "structured_content": {
+              "kind": "found",
+              "revision": {
+                "mapId": "Acceptance.Codex.Workflow",
+                "revision": 8,
+                "priorRevision": 7,
+                "kind": "apply",
+                "author": {
+                  "actorId": "acceptance-operator",
+                  "clientId": "codex-live-acceptance",
+                  "occurredAt": "2026-09-18T14:36:23.022Z"
+                },
+                "changes": [
+                  {
+                    "commandIndex": 0,
+                    "command": "claim.acquire",
+                    "subjectId": "Prep"
+                  }
+                ],
+                "state": {
+                  "id": "Acceptance.Codex.Workflow",
+                  "title": "Installed Codex isolated acceptance",
+                  "destination": "Prove real M1 workflow through Codex, SQLite and HTTP",
+                  "notes": "",
+                  "extensions": {},
+                  "fog": [
+                    {
+                      "id": "Fog",
+                      "text": "Further exploration needs a separate adoption gate",
+                      "references": []
+                    }
+                  ],
+                  "scopeExclusions": [
+                    {
+                      "id": "Scope",
+                      "text": "No authority switch in this acceptance",
+                      "references": []
+                    }
+                  ],
+                  "tickets": [
+                    {
+                      "id": "Prep",
+                      "title": "Prep",
+                      "question": "Verify Prep?",
+                      "type": "task",
+                      "extensions": {},
+                      "prerequisites": [],
+                      "status": "open",
+                      "claim": "codex:A"
+                    },
+                    {
+                      "id": "Next",
+                      "title": "Next",
+                      "question": "Verify Next?",
+                      "type": "research",
+                      "extensions": {},
+                      "prerequisites": [
+                        "Prep"
+                      ],
+                      "status": "open",
+                      "claim": null
+                    },
+                    {
+                      "id": "Handoff",
+                      "title": "Handoff",
+                      "question": "Verify Handoff?",
+                      "type": "task",
+                      "extensions": {},
+                      "prerequisites": [],
+                      "status": "open",
+                      "claim": null
+                    }
+                  ],
+                  "currentRevision": 8
+                }
+              },
+              "frontier": [
+                "Handoff"
+              ]
+            }
+          },
+          "status": "completed"
+        },
+        {
+          "tool": "map_apply",
+          "arguments": {
+            "mapId": "Acceptance.Codex.Workflow",
+            "expectedRevision": 8,
+            "includeSnapshot": true,
+            "commands": [
+              {
+                "kind": "claim.acquire",
+                "ticketId": "Handoff",
+                "claimantId": "codex:B"
+              }
+            ]
+          },
+          "result": {
+            "content": [],
+            "structured_content": {
+              "kind": "committed",
+              "revision": {
+                "mapId": "Acceptance.Codex.Workflow",
+                "revision": 9,
+                "priorRevision": 8,
+                "kind": "apply",
+                "author": {
+                  "actorId": "acceptance-operator",
+                  "clientId": "codex-live-acceptance",
+                  "occurredAt": "2026-09-18T14:37:15.120Z"
+                },
+                "changes": [
+                  {
+                    "commandIndex": 0,
+                    "command": "claim.acquire",
+                    "subjectId": "Handoff"
+                  }
+                ],
+                "state": {
+                  "id": "Acceptance.Codex.Workflow",
+                  "title": "Installed Codex isolated acceptance",
+                  "destination": "Prove real M1 workflow through Codex, SQLite and HTTP",
+                  "notes": "",
+                  "extensions": {},
+                  "fog": [
+                    {
+                      "id": "Fog",
+                      "text": "Further exploration needs a separate adoption gate",
+                      "references": []
+                    }
+                  ],
+                  "scopeExclusions": [
+                    {
+                      "id": "Scope",
+                      "text": "No authority switch in this acceptance",
+                      "references": []
+                    }
+                  ],
+                  "tickets": [
+                    {
+                      "id": "Prep",
+                      "title": "Prep",
+                      "question": "Verify Prep?",
+                      "type": "task",
+                      "extensions": {},
+                      "prerequisites": [],
+                      "status": "open",
+                      "claim": "codex:A"
+                    },
+                    {
+                      "id": "Next",
+                      "title": "Next",
+                      "question": "Verify Next?",
+                      "type": "research",
+                      "extensions": {},
+                      "prerequisites": [
+                        "Prep"
+                      ],
+                      "status": "open",
+                      "claim": null
+                    },
+                    {
+                      "id": "Handoff",
+                      "title": "Handoff",
+                      "question": "Verify Handoff?",
+                      "type": "task",
+                      "extensions": {},
+                      "prerequisites": [],
+                      "status": "open",
+                      "claim": "codex:B"
+                    }
+                  ],
+                  "currentRevision": 9
+                }
+              },
+              "frontier": []
+            }
+          },
+          "status": "completed"
+        },
+        {
+          "tool": "map_apply",
+          "arguments": {
+            "mapId": "Acceptance.Codex.Workflow",
+            "expectedRevision": 9,
+            "commands": [
+              {
+                "kind": "ticket.settle",
+                "ticketId": "Handoff",
+                "ticketType": "task",
+                "claimantId": "codex:B",
+                "settlement": {
+                  "outcome": {
+                    "kind": "completion",
+                    "statement": "Session B continuation finished"
+                  },
+                  "evidence": [],
+                  "references": [],
+                  "provenance": {
+                    "method": "Installed Codex session B fixture",
+                    "sources": []
+                  },
+                  "extensions": {}
+                }
+              }
+            ]
+          },
+          "result": {
+            "content": [],
+            "structured_content": {
+              "kind": "committed",
+              "mapId": "Acceptance.Codex.Workflow",
+              "revision": 10,
+              "changes": [
+                {
+                  "commandIndex": 0,
+                  "command": "ticket.settle",
+                  "subjectId": "Handoff"
+                }
+              ]
+            }
+          },
+          "status": "completed"
+        },
+        {
+          "tool": "map_read",
+          "arguments": {
+            "mapId": "Acceptance.Codex.Workflow"
+          },
+          "result": {
+            "content": [],
+            "structured_content": {
+              "kind": "found",
+              "revision": {
+                "mapId": "Acceptance.Codex.Workflow",
+                "revision": 10,
+                "priorRevision": 9,
+                "kind": "apply",
+                "author": {
+                  "actorId": "acceptance-operator",
+                  "clientId": "codex-live-acceptance",
+                  "occurredAt": "2026-09-18T14:37:18.706Z"
+                },
+                "changes": [
+                  {
+                    "commandIndex": 0,
+                    "command": "ticket.settle",
+                    "subjectId": "Handoff"
+                  }
+                ],
+                "state": {
+                  "id": "Acceptance.Codex.Workflow",
+                  "title": "Installed Codex isolated acceptance",
+                  "destination": "Prove real M1 workflow through Codex, SQLite and HTTP",
+                  "notes": "",
+                  "extensions": {},
+                  "fog": [
+                    {
+                      "id": "Fog",
+                      "text": "Further exploration needs a separate adoption gate",
+                      "references": []
+                    }
+                  ],
+                  "scopeExclusions": [
+                    {
+                      "id": "Scope",
+                      "text": "No authority switch in this acceptance",
+                      "references": []
+                    }
+                  ],
+                  "tickets": [
+                    {
+                      "id": "Prep",
+                      "title": "Prep",
+                      "question": "Verify Prep?",
+                      "type": "task",
+                      "extensions": {},
+                      "prerequisites": [],
+                      "status": "open",
+                      "claim": "codex:A"
+                    },
+                    {
+                      "id": "Next",
+                      "title": "Next",
+                      "question": "Verify Next?",
+                      "type": "research",
+                      "extensions": {},
+                      "prerequisites": [
+                        "Prep"
+                      ],
+                      "status": "open",
+                      "claim": null
+                    },
+                    {
+                      "id": "Handoff",
+                      "title": "Handoff",
+                      "question": "Verify Handoff?",
+                      "type": "task",
+                      "extensions": {},
+                      "prerequisites": [],
+                      "status": "settled",
+                      "claim": null,
+                      "settlement": {
+                        "outcome": {
+                          "kind": "completion",
+                          "statement": "Session B continuation finished"
+                        },
+                        "evidence": [],
+                        "references": [],
+                        "provenance": {
+                          "method": "Installed Codex session B fixture",
+                          "sources": []
+                        },
+                        "extensions": {},
+                        "introducedAtRevision": 10
+                      }
+                    }
+                  ],
+                  "currentRevision": 10
+                }
+              },
+              "frontier": []
+            }
+          },
+          "status": "completed"
+        }
+      ],
+      "finalMessage": "Completed successfully with no rejections.\n\n- Stable Map ID: `Acceptance.Codex.Workflow`; final head: `10`.\n- Distinct Claimant: `codex:B`; claimed Handoff at revision `9`, then settled it at `10` with the compact receipt.\n- Handoff completion: “Session B continuation finished”.\n- Prep retains the `codex:A` Claim. Prep and Next were untouched.\n"
+    },
+    {
+      "label": "A-stale-reread",
+      "threadId": "01a0b4f1-c05a-7600-8b18-73fa2db7dbca",
+      "calls": [
+        {
+          "tool": "map_apply",
+          "arguments": {
+            "mapId": "Acceptance.Codex.Workflow",
+            "expectedRevision": 8,
+            "commands": [
+              {
+                "kind": "map.update",
+                "patch": {
+                  "notes": "Stale intention must not publish"
+                }
+              }
+            ]
+          },
+          "result": {
+            "content": [],
+            "structured_content": {
+              "kind": "conflict",
+              "conflict": {
+                "mapId": "Acceptance.Codex.Workflow",
+                "expectedRevision": 8,
+                "currentRevision": 10
+              }
+            }
+          },
+          "status": "failed"
+        },
+        {
+          "tool": "map_read",
+          "arguments": {
+            "mapId": "Acceptance.Codex.Workflow"
+          },
+          "result": {
+            "content": [],
+            "structured_content": {
+              "kind": "found",
+              "revision": {
+                "mapId": "Acceptance.Codex.Workflow",
+                "revision": 10,
+                "priorRevision": 9,
+                "kind": "apply",
+                "author": {
+                  "actorId": "acceptance-operator",
+                  "clientId": "codex-live-acceptance",
+                  "occurredAt": "2026-09-18T14:37:18.706Z"
+                },
+                "changes": [
+                  {
+                    "commandIndex": 0,
+                    "command": "ticket.settle",
+                    "subjectId": "Handoff"
+                  }
+                ],
+                "state": {
+                  "id": "Acceptance.Codex.Workflow",
+                  "title": "Installed Codex isolated acceptance",
+                  "destination": "Prove real M1 workflow through Codex, SQLite and HTTP",
+                  "notes": "",
+                  "extensions": {},
+                  "fog": [
+                    {
+                      "id": "Fog",
+                      "text": "Further exploration needs a separate adoption gate",
+                      "references": []
+                    }
+                  ],
+                  "scopeExclusions": [
+                    {
+                      "id": "Scope",
+                      "text": "No authority switch in this acceptance",
+                      "references": []
+                    }
+                  ],
+                  "tickets": [
+                    {
+                      "id": "Prep",
+                      "title": "Prep",
+                      "question": "Verify Prep?",
+                      "type": "task",
+                      "extensions": {},
+                      "prerequisites": [],
+                      "status": "open",
+                      "claim": "codex:A"
+                    },
+                    {
+                      "id": "Next",
+                      "title": "Next",
+                      "question": "Verify Next?",
+                      "type": "research",
+                      "extensions": {},
+                      "prerequisites": [
+                        "Prep"
+                      ],
+                      "status": "open",
+                      "claim": null
+                    },
+                    {
+                      "id": "Handoff",
+                      "title": "Handoff",
+                      "question": "Verify Handoff?",
+                      "type": "task",
+                      "extensions": {},
+                      "prerequisites": [],
+                      "status": "settled",
+                      "claim": null,
+                      "settlement": {
+                        "outcome": {
+                          "kind": "completion",
+                          "statement": "Session B continuation finished"
+                        },
+                        "evidence": [],
+                        "references": [],
+                        "provenance": {
+                          "method": "Installed Codex session B fixture",
+                          "sources": []
+                        },
+                        "extensions": {},
+                        "introducedAtRevision": 10
+                      }
+                    }
+                  ],
+                  "currentRevision": 10
+                }
+              },
+              "frontier": []
+            }
+          },
+          "status": "completed"
+        },
+        {
+          "tool": "map_read",
+          "arguments": {
+            "mapId": "Acceptance.Codex.Workflow",
+            "revision": 1
+          },
+          "result": {
+            "content": [],
+            "structured_content": {
+              "kind": "found",
+              "revision": {
+                "mapId": "Acceptance.Codex.Workflow",
+                "revision": 1,
+                "priorRevision": null,
+                "kind": "create",
+                "author": {
+                  "actorId": "acceptance-operator",
+                  "clientId": "codex-live-acceptance",
+                  "occurredAt": "2026-09-18T14:35:52.055Z"
+                },
+                "changes": [
+                  {
+                    "commandIndex": 0,
+                    "command": "map.create",
+                    "subjectId": "Acceptance.Codex.Workflow"
+                  }
+                ],
+                "state": {
+                  "id": "Acceptance.Codex.Workflow",
+                  "title": "Installed Codex isolated acceptance",
+                  "destination": "Prove real M1 workflow through Codex, SQLite and HTTP",
+                  "notes": "",
+                  "extensions": {},
+                  "fog": [],
+                  "scopeExclusions": [],
+                  "tickets": [],
+                  "currentRevision": 1
+                }
+              },
+              "frontier": []
+            }
+          },
+          "status": "completed"
+        },
+        {
+          "tool": "map_read",
+          "arguments": {
+            "mapId": "Acceptance.Codex.Workflow",
+            "revision": 2
+          },
+          "result": {
+            "content": [],
+            "structured_content": {
+              "kind": "found",
+              "revision": {
+                "mapId": "Acceptance.Codex.Workflow",
+                "revision": 2,
+                "priorRevision": 1,
+                "kind": "apply",
+                "author": {
+                  "actorId": "acceptance-operator",
+                  "clientId": "codex-live-acceptance",
+                  "occurredAt": "2026-09-18T14:35:57.828Z"
+                },
+                "changes": [
+                  {
+                    "commandIndex": 0,
+                    "command": "ticket.create",
+                    "subjectId": "Prep"
+                  },
+                  {
+                    "commandIndex": 1,
+                    "command": "ticket.create",
+                    "subjectId": "Next"
+                  },
+                  {
+                    "commandIndex": 2,
+                    "command": "ticket.create",
+                    "subjectId": "Handoff"
+                  },
+                  {
+                    "commandIndex": 3,
+                    "command": "dependency.add",
+                    "subjectId": "Next"
+                  },
+                  {
+                    "commandIndex": 4,
+                    "command": "content.add",
+                    "subjectId": "Fog"
+                  },
+                  {
+                    "commandIndex": 5,
+                    "command": "content.add",
+                    "subjectId": "Scope"
+                  }
+                ],
+                "state": {
+                  "id": "Acceptance.Codex.Workflow",
+                  "title": "Installed Codex isolated acceptance",
+                  "destination": "Prove real M1 workflow through Codex, SQLite and HTTP",
+                  "notes": "",
+                  "extensions": {},
+                  "fog": [
+                    {
+                      "id": "Fog",
+                      "text": "Further exploration needs a separate adoption gate",
+                      "references": []
+                    }
+                  ],
+                  "scopeExclusions": [
+                    {
+                      "id": "Scope",
+                      "text": "No authority switch in this acceptance",
+                      "references": []
+                    }
+                  ],
+                  "tickets": [
+                    {
+                      "id": "Prep",
+                      "title": "Prep",
+                      "question": "Verify Prep?",
+                      "type": "task",
+                      "extensions": {},
+                      "prerequisites": [],
+                      "status": "open",
+                      "claim": null
+                    },
+                    {
+                      "id": "Next",
+                      "title": "Next",
+                      "question": "Verify Next?",
+                      "type": "research",
+                      "extensions": {},
+                      "prerequisites": [
+                        "Prep"
+                      ],
+                      "status": "open",
+                      "claim": null
+                    },
+                    {
+                      "id": "Handoff",
+                      "title": "Handoff",
+                      "question": "Verify Handoff?",
+                      "type": "task",
+                      "extensions": {},
+                      "prerequisites": [],
+                      "status": "open",
+                      "claim": null
+                    }
+                  ],
+                  "currentRevision": 2
+                }
+              },
+              "frontier": [
+                "Handoff",
+                "Prep"
+              ]
+            }
+          },
+          "status": "completed"
+        },
+        {
+          "tool": "map_read",
+          "arguments": {
+            "mapId": "Acceptance.Codex.Workflow",
+            "revision": 3
+          },
+          "result": {
+            "content": [],
+            "structured_content": {
+              "kind": "found",
+              "revision": {
+                "mapId": "Acceptance.Codex.Workflow",
+                "revision": 3,
+                "priorRevision": 2,
+                "kind": "apply",
+                "author": {
+                  "actorId": "acceptance-operator",
+                  "clientId": "codex-live-acceptance",
+                  "occurredAt": "2026-09-18T14:36:01.191Z"
+                },
+                "changes": [
+                  {
+                    "commandIndex": 0,
+                    "command": "claim.acquire",
+                    "subjectId": "Prep"
+                  }
+                ],
+                "state": {
+                  "id": "Acceptance.Codex.Workflow",
+                  "title": "Installed Codex isolated acceptance",
+                  "destination": "Prove real M1 workflow through Codex, SQLite and HTTP",
+                  "notes": "",
+                  "extensions": {},
+                  "fog": [
+                    {
+                      "id": "Fog",
+                      "text": "Further exploration needs a separate adoption gate",
+                      "references": []
+                    }
+                  ],
+                  "scopeExclusions": [
+                    {
+                      "id": "Scope",
+                      "text": "No authority switch in this acceptance",
+                      "references": []
+                    }
+                  ],
+                  "tickets": [
+                    {
+                      "id": "Prep",
+                      "title": "Prep",
+                      "question": "Verify Prep?",
+                      "type": "task",
+                      "extensions": {},
+                      "prerequisites": [],
+                      "status": "open",
+                      "claim": "codex:A"
+                    },
+                    {
+                      "id": "Next",
+                      "title": "Next",
+                      "question": "Verify Next?",
+                      "type": "research",
+                      "extensions": {},
+                      "prerequisites": [
+                        "Prep"
+                      ],
+                      "status": "open",
+                      "claim": null
+                    },
+                    {
+                      "id": "Handoff",
+                      "title": "Handoff",
+                      "question": "Verify Handoff?",
+                      "type": "task",
+                      "extensions": {},
+                      "prerequisites": [],
+                      "status": "open",
+                      "claim": null
+                    }
+                  ],
+                  "currentRevision": 3
+                }
+              },
+              "frontier": [
+                "Handoff"
+              ]
+            }
+          },
+          "status": "completed"
+        },
+        {
+          "tool": "map_read",
+          "arguments": {
+            "mapId": "Acceptance.Codex.Workflow",
+            "revision": 4
+          },
+          "result": {
+            "content": [],
+            "structured_content": {
+              "kind": "found",
+              "revision": {
+                "mapId": "Acceptance.Codex.Workflow",
+                "revision": 4,
+                "priorRevision": 3,
+                "kind": "apply",
+                "author": {
+                  "actorId": "acceptance-operator",
+                  "clientId": "codex-live-acceptance",
+                  "occurredAt": "2026-09-18T14:36:06.095Z"
+                },
+                "changes": [
+                  {
+                    "commandIndex": 0,
+                    "command": "ticket.settle",
+                    "subjectId": "Prep"
+                  }
+                ],
+                "state": {
+                  "id": "Acceptance.Codex.Workflow",
+                  "title": "Installed Codex isolated acceptance",
+                  "destination": "Prove real M1 workflow through Codex, SQLite and HTTP",
+                  "notes": "",
+                  "extensions": {},
+                  "fog": [
+                    {
+                      "id": "Fog",
+                      "text": "Further exploration needs a separate adoption gate",
+                      "references": []
+                    }
+                  ],
+                  "scopeExclusions": [
+                    {
+                      "id": "Scope",
+                      "text": "No authority switch in this acceptance",
+                      "references": []
+                    }
+                  ],
+                  "tickets": [
+                    {
+                      "id": "Prep",
+                      "title": "Prep",
+                      "question": "Verify Prep?",
+                      "type": "task",
+                      "extensions": {},
+                      "prerequisites": [],
+                      "status": "settled",
+                      "claim": null,
+                      "settlement": {
+                        "outcome": {
+                          "kind": "completion",
+                          "statement": "Prep fixture finished",
+                          "resultingFacts": {
+                            "observed": true
+                          }
+                        },
+                        "evidence": [],
+                        "references": [
+                          {
+                            "locator": "fixture:codex-acceptance",
+                            "label": "Isolated fixture"
+                          }
+                        ],
+                        "provenance": {
+                          "method": "Installed Codex acceptance fixture",
+                          "sources": []
+                        },
+                        "extensions": {},
+                        "introducedAtRevision": 4
+                      }
+                    },
+                    {
+                      "id": "Next",
+                      "title": "Next",
+                      "question": "Verify Next?",
+                      "type": "research",
+                      "extensions": {},
+                      "prerequisites": [
+                        "Prep"
+                      ],
+                      "status": "open",
+                      "claim": null
+                    },
+                    {
+                      "id": "Handoff",
+                      "title": "Handoff",
+                      "question": "Verify Handoff?",
+                      "type": "task",
+                      "extensions": {},
+                      "prerequisites": [],
+                      "status": "open",
+                      "claim": null
+                    }
+                  ],
+                  "currentRevision": 4
+                }
+              },
+              "frontier": [
+                "Handoff",
+                "Next"
+              ]
+            }
+          },
+          "status": "completed"
+        },
+        {
+          "tool": "map_read",
+          "arguments": {
+            "mapId": "Acceptance.Codex.Workflow",
+            "revision": 5
+          },
+          "result": {
+            "content": [],
+            "structured_content": {
+              "kind": "found",
+              "revision": {
+                "mapId": "Acceptance.Codex.Workflow",
+                "revision": 5,
+                "priorRevision": 4,
+                "kind": "apply",
+                "author": {
+                  "actorId": "acceptance-operator",
+                  "clientId": "codex-live-acceptance",
+                  "occurredAt": "2026-09-18T14:36:09.271Z"
+                },
+                "changes": [
+                  {
+                    "commandIndex": 0,
+                    "command": "claim.acquire",
+                    "subjectId": "Next"
+                  }
+                ],
+                "state": {
+                  "id": "Acceptance.Codex.Workflow",
+                  "title": "Installed Codex isolated acceptance",
+                  "destination": "Prove real M1 workflow through Codex, SQLite and HTTP",
+                  "notes": "",
+                  "extensions": {},
+                  "fog": [
+                    {
+                      "id": "Fog",
+                      "text": "Further exploration needs a separate adoption gate",
+                      "references": []
+                    }
+                  ],
+                  "scopeExclusions": [
+                    {
+                      "id": "Scope",
+                      "text": "No authority switch in this acceptance",
+                      "references": []
+                    }
+                  ],
+                  "tickets": [
+                    {
+                      "id": "Prep",
+                      "title": "Prep",
+                      "question": "Verify Prep?",
+                      "type": "task",
+                      "extensions": {},
+                      "prerequisites": [],
+                      "status": "settled",
+                      "claim": null,
+                      "settlement": {
+                        "outcome": {
+                          "kind": "completion",
+                          "statement": "Prep fixture finished",
+                          "resultingFacts": {
+                            "observed": true
+                          }
+                        },
+                        "evidence": [],
+                        "references": [
+                          {
+                            "locator": "fixture:codex-acceptance",
+                            "label": "Isolated fixture"
+                          }
+                        ],
+                        "provenance": {
+                          "method": "Installed Codex acceptance fixture",
+                          "sources": []
+                        },
+                        "extensions": {},
+                        "introducedAtRevision": 4
+                      }
+                    },
+                    {
+                      "id": "Next",
+                      "title": "Next",
+                      "question": "Verify Next?",
+                      "type": "research",
+                      "extensions": {},
+                      "prerequisites": [
+                        "Prep"
+                      ],
+                      "status": "open",
+                      "claim": "codex:A"
+                    },
+                    {
+                      "id": "Handoff",
+                      "title": "Handoff",
+                      "question": "Verify Handoff?",
+                      "type": "task",
+                      "extensions": {},
+                      "prerequisites": [],
+                      "status": "open",
+                      "claim": null
+                    }
+                  ],
+                  "currentRevision": 5
+                }
+              },
+              "frontier": [
+                "Handoff"
+              ]
+            }
+          },
+          "status": "completed"
+        },
+        {
+          "tool": "map_read",
+          "arguments": {
+            "mapId": "Acceptance.Codex.Workflow",
+            "revision": 6
+          },
+          "result": {
+            "content": [],
+            "structured_content": {
+              "kind": "found",
+              "revision": {
+                "mapId": "Acceptance.Codex.Workflow",
+                "revision": 6,
+                "priorRevision": 5,
+                "kind": "apply",
+                "author": {
+                  "actorId": "acceptance-operator",
+                  "clientId": "codex-live-acceptance",
+                  "occurredAt": "2026-09-18T14:36:14.325Z"
+                },
+                "changes": [
+                  {
+                    "commandIndex": 0,
+                    "command": "ticket.settle",
+                    "subjectId": "Next"
+                  }
+                ],
+                "state": {
+                  "id": "Acceptance.Codex.Workflow",
+                  "title": "Installed Codex isolated acceptance",
+                  "destination": "Prove real M1 workflow through Codex, SQLite and HTTP",
+                  "notes": "",
+                  "extensions": {},
+                  "fog": [
+                    {
+                      "id": "Fog",
+                      "text": "Further exploration needs a separate adoption gate",
+                      "references": []
+                    }
+                  ],
+                  "scopeExclusions": [
+                    {
+                      "id": "Scope",
+                      "text": "No authority switch in this acceptance",
+                      "references": []
+                    }
+                  ],
+                  "tickets": [
+                    {
+                      "id": "Prep",
+                      "title": "Prep",
+                      "question": "Verify Prep?",
+                      "type": "task",
+                      "extensions": {},
+                      "prerequisites": [],
+                      "status": "settled",
+                      "claim": null,
+                      "settlement": {
+                        "outcome": {
+                          "kind": "completion",
+                          "statement": "Prep fixture finished",
+                          "resultingFacts": {
+                            "observed": true
+                          }
+                        },
+                        "evidence": [],
+                        "references": [
+                          {
+                            "locator": "fixture:codex-acceptance",
+                            "label": "Isolated fixture"
+                          }
+                        ],
+                        "provenance": {
+                          "method": "Installed Codex acceptance fixture",
+                          "sources": []
+                        },
+                        "extensions": {},
+                        "introducedAtRevision": 4
+                      }
+                    },
+                    {
+                      "id": "Next",
+                      "title": "Next",
+                      "question": "Verify Next?",
+                      "type": "research",
+                      "extensions": {},
+                      "prerequisites": [
+                        "Prep"
+                      ],
+                      "status": "settled",
+                      "claim": null,
+                      "settlement": {
+                        "outcome": {
+                          "kind": "finding",
+                          "statement": "Installed Codex consumed structured results",
+                          "limitations": "Isolated local workflow only"
+                        },
+                        "evidence": [],
+                        "references": [
+                          {
+                            "locator": "fixture:codex-acceptance",
+                            "label": "Isolated fixture"
+                          }
+                        ],
+                        "provenance": {
+                          "method": "Installed Codex acceptance fixture",
+                          "sources": []
+                        },
+                        "extensions": {},
+                        "introducedAtRevision": 6
+                      }
+                    },
+                    {
+                      "id": "Handoff",
+                      "title": "Handoff",
+                      "question": "Verify Handoff?",
+                      "type": "task",
+                      "extensions": {},
+                      "prerequisites": [],
+                      "status": "open",
+                      "claim": null
+                    }
+                  ],
+                  "currentRevision": 6
+                }
+              },
+              "frontier": [
+                "Handoff"
+              ]
+            }
+          },
+          "status": "completed"
+        },
+        {
+          "tool": "map_read",
+          "arguments": {
+            "mapId": "Acceptance.Codex.Workflow",
+            "revision": 7
+          },
+          "result": {
+            "content": [],
+            "structured_content": {
+              "kind": "found",
+              "revision": {
+                "mapId": "Acceptance.Codex.Workflow",
+                "revision": 7,
+                "priorRevision": 6,
+                "kind": "apply",
+                "author": {
+                  "actorId": "acceptance-operator",
+                  "clientId": "codex-live-acceptance",
+                  "occurredAt": "2026-09-18T14:36:18.153Z"
+                },
+                "changes": [
+                  {
+                    "commandIndex": 0,
+                    "command": "ticket.reopen",
+                    "subjectId": "Prep",
+                    "reason": "Revisit prerequisite fixture"
+                  },
+                  {
+                    "commandIndex": 1,
+                    "command": "ticket.reopen",
+                    "subjectId": "Next",
+                    "reason": "Revisit dependent fixture"
+                  }
+                ],
+                "state": {
+                  "id": "Acceptance.Codex.Workflow",
+                  "title": "Installed Codex isolated acceptance",
+                  "destination": "Prove real M1 workflow through Codex, SQLite and HTTP",
+                  "notes": "",
+                  "extensions": {},
+                  "fog": [
+                    {
+                      "id": "Fog",
+                      "text": "Further exploration needs a separate adoption gate",
+                      "references": []
+                    }
+                  ],
+                  "scopeExclusions": [
+                    {
+                      "id": "Scope",
+                      "text": "No authority switch in this acceptance",
+                      "references": []
+                    }
+                  ],
+                  "tickets": [
+                    {
+                      "id": "Prep",
+                      "title": "Prep",
+                      "question": "Verify Prep?",
+                      "type": "task",
+                      "extensions": {},
+                      "prerequisites": [],
+                      "status": "open",
+                      "claim": null
+                    },
+                    {
+                      "id": "Next",
+                      "title": "Next",
+                      "question": "Verify Next?",
+                      "type": "research",
+                      "extensions": {},
+                      "prerequisites": [
+                        "Prep"
+                      ],
+                      "status": "open",
+                      "claim": null
+                    },
+                    {
+                      "id": "Handoff",
+                      "title": "Handoff",
+                      "question": "Verify Handoff?",
+                      "type": "task",
+                      "extensions": {},
+                      "prerequisites": [],
+                      "status": "open",
+                      "claim": null
+                    }
+                  ],
+                  "currentRevision": 7
+                }
+              },
+              "frontier": [
+                "Handoff",
+                "Prep"
+              ]
+            }
+          },
+          "status": "completed"
+        },
+        {
+          "tool": "map_read",
+          "arguments": {
+            "mapId": "Acceptance.Codex.Workflow",
+            "revision": 8
+          },
+          "result": {
+            "content": [],
+            "structured_content": {
+              "kind": "found",
+              "revision": {
+                "mapId": "Acceptance.Codex.Workflow",
+                "revision": 8,
+                "priorRevision": 7,
+                "kind": "apply",
+                "author": {
+                  "actorId": "acceptance-operator",
+                  "clientId": "codex-live-acceptance",
+                  "occurredAt": "2026-09-18T14:36:23.022Z"
+                },
+                "changes": [
+                  {
+                    "commandIndex": 0,
+                    "command": "claim.acquire",
+                    "subjectId": "Prep"
+                  }
+                ],
+                "state": {
+                  "id": "Acceptance.Codex.Workflow",
+                  "title": "Installed Codex isolated acceptance",
+                  "destination": "Prove real M1 workflow through Codex, SQLite and HTTP",
+                  "notes": "",
+                  "extensions": {},
+                  "fog": [
+                    {
+                      "id": "Fog",
+                      "text": "Further exploration needs a separate adoption gate",
+                      "references": []
+                    }
+                  ],
+                  "scopeExclusions": [
+                    {
+                      "id": "Scope",
+                      "text": "No authority switch in this acceptance",
+                      "references": []
+                    }
+                  ],
+                  "tickets": [
+                    {
+                      "id": "Prep",
+                      "title": "Prep",
+                      "question": "Verify Prep?",
+                      "type": "task",
+                      "extensions": {},
+                      "prerequisites": [],
+                      "status": "open",
+                      "claim": "codex:A"
+                    },
+                    {
+                      "id": "Next",
+                      "title": "Next",
+                      "question": "Verify Next?",
+                      "type": "research",
+                      "extensions": {},
+                      "prerequisites": [
+                        "Prep"
+                      ],
+                      "status": "open",
+                      "claim": null
+                    },
+                    {
+                      "id": "Handoff",
+                      "title": "Handoff",
+                      "question": "Verify Handoff?",
+                      "type": "task",
+                      "extensions": {},
+                      "prerequisites": [],
+                      "status": "open",
+                      "claim": null
+                    }
+                  ],
+                  "currentRevision": 8
+                }
+              },
+              "frontier": [
+                "Handoff"
+              ]
+            }
+          },
+          "status": "completed"
+        },
+        {
+          "tool": "map_read",
+          "arguments": {
+            "mapId": "Acceptance.Codex.Workflow",
+            "revision": 9
+          },
+          "result": {
+            "content": [],
+            "structured_content": {
+              "kind": "found",
+              "revision": {
+                "mapId": "Acceptance.Codex.Workflow",
+                "revision": 9,
+                "priorRevision": 8,
+                "kind": "apply",
+                "author": {
+                  "actorId": "acceptance-operator",
+                  "clientId": "codex-live-acceptance",
+                  "occurredAt": "2026-09-18T14:37:15.120Z"
+                },
+                "changes": [
+                  {
+                    "commandIndex": 0,
+                    "command": "claim.acquire",
+                    "subjectId": "Handoff"
+                  }
+                ],
+                "state": {
+                  "id": "Acceptance.Codex.Workflow",
+                  "title": "Installed Codex isolated acceptance",
+                  "destination": "Prove real M1 workflow through Codex, SQLite and HTTP",
+                  "notes": "",
+                  "extensions": {},
+                  "fog": [
+                    {
+                      "id": "Fog",
+                      "text": "Further exploration needs a separate adoption gate",
+                      "references": []
+                    }
+                  ],
+                  "scopeExclusions": [
+                    {
+                      "id": "Scope",
+                      "text": "No authority switch in this acceptance",
+                      "references": []
+                    }
+                  ],
+                  "tickets": [
+                    {
+                      "id": "Prep",
+                      "title": "Prep",
+                      "question": "Verify Prep?",
+                      "type": "task",
+                      "extensions": {},
+                      "prerequisites": [],
+                      "status": "open",
+                      "claim": "codex:A"
+                    },
+                    {
+                      "id": "Next",
+                      "title": "Next",
+                      "question": "Verify Next?",
+                      "type": "research",
+                      "extensions": {},
+                      "prerequisites": [
+                        "Prep"
+                      ],
+                      "status": "open",
+                      "claim": null
+                    },
+                    {
+                      "id": "Handoff",
+                      "title": "Handoff",
+                      "question": "Verify Handoff?",
+                      "type": "task",
+                      "extensions": {},
+                      "prerequisites": [],
+                      "status": "open",
+                      "claim": "codex:B"
+                    }
+                  ],
+                  "currentRevision": 9
+                }
+              },
+              "frontier": []
+            }
+          },
+          "status": "completed"
+        },
+        {
+          "tool": "map_read",
+          "arguments": {
+            "mapId": "Acceptance.Codex.Workflow",
+            "revision": 10
+          },
+          "result": {
+            "content": [],
+            "structured_content": {
+              "kind": "found",
+              "revision": {
+                "mapId": "Acceptance.Codex.Workflow",
+                "revision": 10,
+                "priorRevision": 9,
+                "kind": "apply",
+                "author": {
+                  "actorId": "acceptance-operator",
+                  "clientId": "codex-live-acceptance",
+                  "occurredAt": "2026-09-18T14:37:18.706Z"
+                },
+                "changes": [
+                  {
+                    "commandIndex": 0,
+                    "command": "ticket.settle",
+                    "subjectId": "Handoff"
+                  }
+                ],
+                "state": {
+                  "id": "Acceptance.Codex.Workflow",
+                  "title": "Installed Codex isolated acceptance",
+                  "destination": "Prove real M1 workflow through Codex, SQLite and HTTP",
+                  "notes": "",
+                  "extensions": {},
+                  "fog": [
+                    {
+                      "id": "Fog",
+                      "text": "Further exploration needs a separate adoption gate",
+                      "references": []
+                    }
+                  ],
+                  "scopeExclusions": [
+                    {
+                      "id": "Scope",
+                      "text": "No authority switch in this acceptance",
+                      "references": []
+                    }
+                  ],
+                  "tickets": [
+                    {
+                      "id": "Prep",
+                      "title": "Prep",
+                      "question": "Verify Prep?",
+                      "type": "task",
+                      "extensions": {},
+                      "prerequisites": [],
+                      "status": "open",
+                      "claim": "codex:A"
+                    },
+                    {
+                      "id": "Next",
+                      "title": "Next",
+                      "question": "Verify Next?",
+                      "type": "research",
+                      "extensions": {},
+                      "prerequisites": [
+                        "Prep"
+                      ],
+                      "status": "open",
+                      "claim": null
+                    },
+                    {
+                      "id": "Handoff",
+                      "title": "Handoff",
+                      "question": "Verify Handoff?",
+                      "type": "task",
+                      "extensions": {},
+                      "prerequisites": [],
+                      "status": "settled",
+                      "claim": null,
+                      "settlement": {
+                        "outcome": {
+                          "kind": "completion",
+                          "statement": "Session B continuation finished"
+                        },
+                        "evidence": [],
+                        "references": [],
+                        "provenance": {
+                          "method": "Installed Codex session B fixture",
+                          "sources": []
+                        },
+                        "extensions": {},
+                        "introducedAtRevision": 10
+                      }
+                    }
+                  ],
+                  "currentRevision": 10
+                }
+              },
+              "frontier": []
+            }
+          },
+          "status": "completed"
+        },
+        {
+          "tool": "map_read",
+          "arguments": {
+            "mapId": "Acceptance.Codex.Workflow",
+            "revision": 11
+          },
+          "result": {
+            "content": [],
+            "structured_content": {
+              "kind": "not_found",
+              "code": "revision_not_found",
+              "mapId": "Acceptance.Codex.Workflow",
+              "revision": 11
+            }
+          },
+          "status": "failed"
+        }
+      ],
+      "finalMessage": "The single stale write returned the expected **Conflict**: `expectedRevision: 8`, `currentRevision: 10`.\n\nLatest observed head is **10**. Notes remain empty, so the stale intention did not publish. Revisions **1–10** were found in order; revision **11** returned **`revision_not_found`**, as required.\n\nRevision 9 records Handoff claimed by `codex:B`; revision 10 records its Completion. Prep remains claimed by `codex:A`, Next remains blocked, and the Frontier is empty.\n\nNo retry, replay, further mutation, or Claim takeover occurred."
+    },
+    {
+      "label": "A-after-service-restart",
+      "threadId": "01a0b4f1-c05a-7600-8b18-73fa2db7dbca",
+      "calls": [
+        {
+          "tool": "map_read",
+          "arguments": {
+            "mapId": "Acceptance.Codex.Workflow"
+          },
+          "result": {
+            "content": [],
+            "structured_content": {
+              "kind": "found",
+              "revision": {
+                "mapId": "Acceptance.Codex.Workflow",
+                "revision": 10,
+                "priorRevision": 9,
+                "kind": "apply",
+                "author": {
+                  "actorId": "acceptance-operator",
+                  "clientId": "codex-live-acceptance",
+                  "occurredAt": "2026-09-18T14:37:18.706Z"
+                },
+                "changes": [
+                  {
+                    "commandIndex": 0,
+                    "command": "ticket.settle",
+                    "subjectId": "Handoff"
+                  }
+                ],
+                "state": {
+                  "id": "Acceptance.Codex.Workflow",
+                  "title": "Installed Codex isolated acceptance",
+                  "destination": "Prove real M1 workflow through Codex, SQLite and HTTP",
+                  "notes": "",
+                  "extensions": {},
+                  "fog": [
+                    {
+                      "id": "Fog",
+                      "text": "Further exploration needs a separate adoption gate",
+                      "references": []
+                    }
+                  ],
+                  "scopeExclusions": [
+                    {
+                      "id": "Scope",
+                      "text": "No authority switch in this acceptance",
+                      "references": []
+                    }
+                  ],
+                  "tickets": [
+                    {
+                      "id": "Prep",
+                      "title": "Prep",
+                      "question": "Verify Prep?",
+                      "type": "task",
+                      "extensions": {},
+                      "prerequisites": [],
+                      "status": "open",
+                      "claim": "codex:A"
+                    },
+                    {
+                      "id": "Next",
+                      "title": "Next",
+                      "question": "Verify Next?",
+                      "type": "research",
+                      "extensions": {},
+                      "prerequisites": [
+                        "Prep"
+                      ],
+                      "status": "open",
+                      "claim": null
+                    },
+                    {
+                      "id": "Handoff",
+                      "title": "Handoff",
+                      "question": "Verify Handoff?",
+                      "type": "task",
+                      "extensions": {},
+                      "prerequisites": [],
+                      "status": "settled",
+                      "claim": null,
+                      "settlement": {
+                        "outcome": {
+                          "kind": "completion",
+                          "statement": "Session B continuation finished"
+                        },
+                        "evidence": [],
+                        "references": [],
+                        "provenance": {
+                          "method": "Installed Codex session B fixture",
+                          "sources": []
+                        },
+                        "extensions": {},
+                        "introducedAtRevision": 10
+                      }
+                    }
+                  ],
+                  "currentRevision": 10
+                }
+              },
+              "frontier": []
+            }
+          },
+          "status": "completed"
+        },
+        {
+          "tool": "map_read",
+          "arguments": {
+            "mapId": "Acceptance.Codex.Workflow",
+            "revision": 3
+          },
+          "result": {
+            "content": [],
+            "structured_content": {
+              "kind": "found",
+              "revision": {
+                "mapId": "Acceptance.Codex.Workflow",
+                "revision": 3,
+                "priorRevision": 2,
+                "kind": "apply",
+                "author": {
+                  "actorId": "acceptance-operator",
+                  "clientId": "codex-live-acceptance",
+                  "occurredAt": "2026-09-18T14:36:01.191Z"
+                },
+                "changes": [
+                  {
+                    "commandIndex": 0,
+                    "command": "claim.acquire",
+                    "subjectId": "Prep"
+                  }
+                ],
+                "state": {
+                  "id": "Acceptance.Codex.Workflow",
+                  "title": "Installed Codex isolated acceptance",
+                  "destination": "Prove real M1 workflow through Codex, SQLite and HTTP",
+                  "notes": "",
+                  "extensions": {},
+                  "fog": [
+                    {
+                      "id": "Fog",
+                      "text": "Further exploration needs a separate adoption gate",
+                      "references": []
+                    }
+                  ],
+                  "scopeExclusions": [
+                    {
+                      "id": "Scope",
+                      "text": "No authority switch in this acceptance",
+                      "references": []
+                    }
+                  ],
+                  "tickets": [
+                    {
+                      "id": "Prep",
+                      "title": "Prep",
+                      "question": "Verify Prep?",
+                      "type": "task",
+                      "extensions": {},
+                      "prerequisites": [],
+                      "status": "open",
+                      "claim": "codex:A"
+                    },
+                    {
+                      "id": "Next",
+                      "title": "Next",
+                      "question": "Verify Next?",
+                      "type": "research",
+                      "extensions": {},
+                      "prerequisites": [
+                        "Prep"
+                      ],
+                      "status": "open",
+                      "claim": null
+                    },
+                    {
+                      "id": "Handoff",
+                      "title": "Handoff",
+                      "question": "Verify Handoff?",
+                      "type": "task",
+                      "extensions": {},
+                      "prerequisites": [],
+                      "status": "open",
+                      "claim": null
+                    }
+                  ],
+                  "currentRevision": 3
+                }
+              },
+              "frontier": [
+                "Handoff"
+              ]
+            }
+          },
+          "status": "completed"
+        },
+        {
+          "tool": "map_read",
+          "arguments": {
+            "mapId": "Acceptance.Codex.Workflow",
+            "revision": 4
+          },
+          "result": {
+            "content": [],
+            "structured_content": {
+              "kind": "found",
+              "revision": {
+                "mapId": "Acceptance.Codex.Workflow",
+                "revision": 4,
+                "priorRevision": 3,
+                "kind": "apply",
+                "author": {
+                  "actorId": "acceptance-operator",
+                  "clientId": "codex-live-acceptance",
+                  "occurredAt": "2026-09-18T14:36:06.095Z"
+                },
+                "changes": [
+                  {
+                    "commandIndex": 0,
+                    "command": "ticket.settle",
+                    "subjectId": "Prep"
+                  }
+                ],
+                "state": {
+                  "id": "Acceptance.Codex.Workflow",
+                  "title": "Installed Codex isolated acceptance",
+                  "destination": "Prove real M1 workflow through Codex, SQLite and HTTP",
+                  "notes": "",
+                  "extensions": {},
+                  "fog": [
+                    {
+                      "id": "Fog",
+                      "text": "Further exploration needs a separate adoption gate",
+                      "references": []
+                    }
+                  ],
+                  "scopeExclusions": [
+                    {
+                      "id": "Scope",
+                      "text": "No authority switch in this acceptance",
+                      "references": []
+                    }
+                  ],
+                  "tickets": [
+                    {
+                      "id": "Prep",
+                      "title": "Prep",
+                      "question": "Verify Prep?",
+                      "type": "task",
+                      "extensions": {},
+                      "prerequisites": [],
+                      "status": "settled",
+                      "claim": null,
+                      "settlement": {
+                        "outcome": {
+                          "kind": "completion",
+                          "statement": "Prep fixture finished",
+                          "resultingFacts": {
+                            "observed": true
+                          }
+                        },
+                        "evidence": [],
+                        "references": [
+                          {
+                            "locator": "fixture:codex-acceptance",
+                            "label": "Isolated fixture"
+                          }
+                        ],
+                        "provenance": {
+                          "method": "Installed Codex acceptance fixture",
+                          "sources": []
+                        },
+                        "extensions": {},
+                        "introducedAtRevision": 4
+                      }
+                    },
+                    {
+                      "id": "Next",
+                      "title": "Next",
+                      "question": "Verify Next?",
+                      "type": "research",
+                      "extensions": {},
+                      "prerequisites": [
+                        "Prep"
+                      ],
+                      "status": "open",
+                      "claim": null
+                    },
+                    {
+                      "id": "Handoff",
+                      "title": "Handoff",
+                      "question": "Verify Handoff?",
+                      "type": "task",
+                      "extensions": {},
+                      "prerequisites": [],
+                      "status": "open",
+                      "claim": null
+                    }
+                  ],
+                  "currentRevision": 4
+                }
+              },
+              "frontier": [
+                "Handoff",
+                "Next"
+              ]
+            }
+          },
+          "status": "completed"
+        },
+        {
+          "tool": "map_read",
+          "arguments": {
+            "mapId": "Acceptance.Codex.Workflow",
+            "revision": 5
+          },
+          "result": {
+            "content": [],
+            "structured_content": {
+              "kind": "found",
+              "revision": {
+                "mapId": "Acceptance.Codex.Workflow",
+                "revision": 5,
+                "priorRevision": 4,
+                "kind": "apply",
+                "author": {
+                  "actorId": "acceptance-operator",
+                  "clientId": "codex-live-acceptance",
+                  "occurredAt": "2026-09-18T14:36:09.271Z"
+                },
+                "changes": [
+                  {
+                    "commandIndex": 0,
+                    "command": "claim.acquire",
+                    "subjectId": "Next"
+                  }
+                ],
+                "state": {
+                  "id": "Acceptance.Codex.Workflow",
+                  "title": "Installed Codex isolated acceptance",
+                  "destination": "Prove real M1 workflow through Codex, SQLite and HTTP",
+                  "notes": "",
+                  "extensions": {},
+                  "fog": [
+                    {
+                      "id": "Fog",
+                      "text": "Further exploration needs a separate adoption gate",
+                      "references": []
+                    }
+                  ],
+                  "scopeExclusions": [
+                    {
+                      "id": "Scope",
+                      "text": "No authority switch in this acceptance",
+                      "references": []
+                    }
+                  ],
+                  "tickets": [
+                    {
+                      "id": "Prep",
+                      "title": "Prep",
+                      "question": "Verify Prep?",
+                      "type": "task",
+                      "extensions": {},
+                      "prerequisites": [],
+                      "status": "settled",
+                      "claim": null,
+                      "settlement": {
+                        "outcome": {
+                          "kind": "completion",
+                          "statement": "Prep fixture finished",
+                          "resultingFacts": {
+                            "observed": true
+                          }
+                        },
+                        "evidence": [],
+                        "references": [
+                          {
+                            "locator": "fixture:codex-acceptance",
+                            "label": "Isolated fixture"
+                          }
+                        ],
+                        "provenance": {
+                          "method": "Installed Codex acceptance fixture",
+                          "sources": []
+                        },
+                        "extensions": {},
+                        "introducedAtRevision": 4
+                      }
+                    },
+                    {
+                      "id": "Next",
+                      "title": "Next",
+                      "question": "Verify Next?",
+                      "type": "research",
+                      "extensions": {},
+                      "prerequisites": [
+                        "Prep"
+                      ],
+                      "status": "open",
+                      "claim": "codex:A"
+                    },
+                    {
+                      "id": "Handoff",
+                      "title": "Handoff",
+                      "question": "Verify Handoff?",
+                      "type": "task",
+                      "extensions": {},
+                      "prerequisites": [],
+                      "status": "open",
+                      "claim": null
+                    }
+                  ],
+                  "currentRevision": 5
+                }
+              },
+              "frontier": [
+                "Handoff"
+              ]
+            }
+          },
+          "status": "completed"
+        },
+        {
+          "tool": "map_read",
+          "arguments": {
+            "mapId": "Acceptance.Codex.Workflow",
+            "revision": 6
+          },
+          "result": {
+            "content": [],
+            "structured_content": {
+              "kind": "found",
+              "revision": {
+                "mapId": "Acceptance.Codex.Workflow",
+                "revision": 6,
+                "priorRevision": 5,
+                "kind": "apply",
+                "author": {
+                  "actorId": "acceptance-operator",
+                  "clientId": "codex-live-acceptance",
+                  "occurredAt": "2026-09-18T14:36:14.325Z"
+                },
+                "changes": [
+                  {
+                    "commandIndex": 0,
+                    "command": "ticket.settle",
+                    "subjectId": "Next"
+                  }
+                ],
+                "state": {
+                  "id": "Acceptance.Codex.Workflow",
+                  "title": "Installed Codex isolated acceptance",
+                  "destination": "Prove real M1 workflow through Codex, SQLite and HTTP",
+                  "notes": "",
+                  "extensions": {},
+                  "fog": [
+                    {
+                      "id": "Fog",
+                      "text": "Further exploration needs a separate adoption gate",
+                      "references": []
+                    }
+                  ],
+                  "scopeExclusions": [
+                    {
+                      "id": "Scope",
+                      "text": "No authority switch in this acceptance",
+                      "references": []
+                    }
+                  ],
+                  "tickets": [
+                    {
+                      "id": "Prep",
+                      "title": "Prep",
+                      "question": "Verify Prep?",
+                      "type": "task",
+                      "extensions": {},
+                      "prerequisites": [],
+                      "status": "settled",
+                      "claim": null,
+                      "settlement": {
+                        "outcome": {
+                          "kind": "completion",
+                          "statement": "Prep fixture finished",
+                          "resultingFacts": {
+                            "observed": true
+                          }
+                        },
+                        "evidence": [],
+                        "references": [
+                          {
+                            "locator": "fixture:codex-acceptance",
+                            "label": "Isolated fixture"
+                          }
+                        ],
+                        "provenance": {
+                          "method": "Installed Codex acceptance fixture",
+                          "sources": []
+                        },
+                        "extensions": {},
+                        "introducedAtRevision": 4
+                      }
+                    },
+                    {
+                      "id": "Next",
+                      "title": "Next",
+                      "question": "Verify Next?",
+                      "type": "research",
+                      "extensions": {},
+                      "prerequisites": [
+                        "Prep"
+                      ],
+                      "status": "settled",
+                      "claim": null,
+                      "settlement": {
+                        "outcome": {
+                          "kind": "finding",
+                          "statement": "Installed Codex consumed structured results",
+                          "limitations": "Isolated local workflow only"
+                        },
+                        "evidence": [],
+                        "references": [
+                          {
+                            "locator": "fixture:codex-acceptance",
+                            "label": "Isolated fixture"
+                          }
+                        ],
+                        "provenance": {
+                          "method": "Installed Codex acceptance fixture",
+                          "sources": []
+                        },
+                        "extensions": {},
+                        "introducedAtRevision": 6
+                      }
+                    },
+                    {
+                      "id": "Handoff",
+                      "title": "Handoff",
+                      "question": "Verify Handoff?",
+                      "type": "task",
+                      "extensions": {},
+                      "prerequisites": [],
+                      "status": "open",
+                      "claim": null
+                    }
+                  ],
+                  "currentRevision": 6
+                }
+              },
+              "frontier": [
+                "Handoff"
+              ]
+            }
+          },
+          "status": "completed"
+        },
+        {
+          "tool": "map_read",
+          "arguments": {
+            "mapId": "Acceptance.Codex.Workflow",
+            "revision": 8
+          },
+          "result": {
+            "content": [],
+            "structured_content": {
+              "kind": "found",
+              "revision": {
+                "mapId": "Acceptance.Codex.Workflow",
+                "revision": 8,
+                "priorRevision": 7,
+                "kind": "apply",
+                "author": {
+                  "actorId": "acceptance-operator",
+                  "clientId": "codex-live-acceptance",
+                  "occurredAt": "2026-09-18T14:36:23.022Z"
+                },
+                "changes": [
+                  {
+                    "commandIndex": 0,
+                    "command": "claim.acquire",
+                    "subjectId": "Prep"
+                  }
+                ],
+                "state": {
+                  "id": "Acceptance.Codex.Workflow",
+                  "title": "Installed Codex isolated acceptance",
+                  "destination": "Prove real M1 workflow through Codex, SQLite and HTTP",
+                  "notes": "",
+                  "extensions": {},
+                  "fog": [
+                    {
+                      "id": "Fog",
+                      "text": "Further exploration needs a separate adoption gate",
+                      "references": []
+                    }
+                  ],
+                  "scopeExclusions": [
+                    {
+                      "id": "Scope",
+                      "text": "No authority switch in this acceptance",
+                      "references": []
+                    }
+                  ],
+                  "tickets": [
+                    {
+                      "id": "Prep",
+                      "title": "Prep",
+                      "question": "Verify Prep?",
+                      "type": "task",
+                      "extensions": {},
+                      "prerequisites": [],
+                      "status": "open",
+                      "claim": "codex:A"
+                    },
+                    {
+                      "id": "Next",
+                      "title": "Next",
+                      "question": "Verify Next?",
+                      "type": "research",
+                      "extensions": {},
+                      "prerequisites": [
+                        "Prep"
+                      ],
+                      "status": "open",
+                      "claim": null
+                    },
+                    {
+                      "id": "Handoff",
+                      "title": "Handoff",
+                      "question": "Verify Handoff?",
+                      "type": "task",
+                      "extensions": {},
+                      "prerequisites": [],
+                      "status": "open",
+                      "claim": null
+                    }
+                  ],
+                  "currentRevision": 8
+                }
+              },
+              "frontier": [
+                "Handoff"
+              ]
+            }
+          },
+          "status": "completed"
+        },
+        {
+          "tool": "map_read",
+          "arguments": {
+            "mapId": "Acceptance.Codex.Workflow",
+            "revision": 9
+          },
+          "result": {
+            "content": [],
+            "structured_content": {
+              "kind": "found",
+              "revision": {
+                "mapId": "Acceptance.Codex.Workflow",
+                "revision": 9,
+                "priorRevision": 8,
+                "kind": "apply",
+                "author": {
+                  "actorId": "acceptance-operator",
+                  "clientId": "codex-live-acceptance",
+                  "occurredAt": "2026-09-18T14:37:15.120Z"
+                },
+                "changes": [
+                  {
+                    "commandIndex": 0,
+                    "command": "claim.acquire",
+                    "subjectId": "Handoff"
+                  }
+                ],
+                "state": {
+                  "id": "Acceptance.Codex.Workflow",
+                  "title": "Installed Codex isolated acceptance",
+                  "destination": "Prove real M1 workflow through Codex, SQLite and HTTP",
+                  "notes": "",
+                  "extensions": {},
+                  "fog": [
+                    {
+                      "id": "Fog",
+                      "text": "Further exploration needs a separate adoption gate",
+                      "references": []
+                    }
+                  ],
+                  "scopeExclusions": [
+                    {
+                      "id": "Scope",
+                      "text": "No authority switch in this acceptance",
+                      "references": []
+                    }
+                  ],
+                  "tickets": [
+                    {
+                      "id": "Prep",
+                      "title": "Prep",
+                      "question": "Verify Prep?",
+                      "type": "task",
+                      "extensions": {},
+                      "prerequisites": [],
+                      "status": "open",
+                      "claim": "codex:A"
+                    },
+                    {
+                      "id": "Next",
+                      "title": "Next",
+                      "question": "Verify Next?",
+                      "type": "research",
+                      "extensions": {},
+                      "prerequisites": [
+                        "Prep"
+                      ],
+                      "status": "open",
+                      "claim": null
+                    },
+                    {
+                      "id": "Handoff",
+                      "title": "Handoff",
+                      "question": "Verify Handoff?",
+                      "type": "task",
+                      "extensions": {},
+                      "prerequisites": [],
+                      "status": "open",
+                      "claim": "codex:B"
+                    }
+                  ],
+                  "currentRevision": 9
+                }
+              },
+              "frontier": []
+            }
+          },
+          "status": "completed"
+        },
+        {
+          "tool": "map_read",
+          "arguments": {
+            "mapId": "Acceptance.Codex.Workflow",
+            "revision": 10
+          },
+          "result": {
+            "content": [],
+            "structured_content": {
+              "kind": "found",
+              "revision": {
+                "mapId": "Acceptance.Codex.Workflow",
+                "revision": 10,
+                "priorRevision": 9,
+                "kind": "apply",
+                "author": {
+                  "actorId": "acceptance-operator",
+                  "clientId": "codex-live-acceptance",
+                  "occurredAt": "2026-09-18T14:37:18.706Z"
+                },
+                "changes": [
+                  {
+                    "commandIndex": 0,
+                    "command": "ticket.settle",
+                    "subjectId": "Handoff"
+                  }
+                ],
+                "state": {
+                  "id": "Acceptance.Codex.Workflow",
+                  "title": "Installed Codex isolated acceptance",
+                  "destination": "Prove real M1 workflow through Codex, SQLite and HTTP",
+                  "notes": "",
+                  "extensions": {},
+                  "fog": [
+                    {
+                      "id": "Fog",
+                      "text": "Further exploration needs a separate adoption gate",
+                      "references": []
+                    }
+                  ],
+                  "scopeExclusions": [
+                    {
+                      "id": "Scope",
+                      "text": "No authority switch in this acceptance",
+                      "references": []
+                    }
+                  ],
+                  "tickets": [
+                    {
+                      "id": "Prep",
+                      "title": "Prep",
+                      "question": "Verify Prep?",
+                      "type": "task",
+                      "extensions": {},
+                      "prerequisites": [],
+                      "status": "open",
+                      "claim": "codex:A"
+                    },
+                    {
+                      "id": "Next",
+                      "title": "Next",
+                      "question": "Verify Next?",
+                      "type": "research",
+                      "extensions": {},
+                      "prerequisites": [
+                        "Prep"
+                      ],
+                      "status": "open",
+                      "claim": null
+                    },
+                    {
+                      "id": "Handoff",
+                      "title": "Handoff",
+                      "question": "Verify Handoff?",
+                      "type": "task",
+                      "extensions": {},
+                      "prerequisites": [],
+                      "status": "settled",
+                      "claim": null,
+                      "settlement": {
+                        "outcome": {
+                          "kind": "completion",
+                          "statement": "Session B continuation finished"
+                        },
+                        "evidence": [],
+                        "references": [],
+                        "provenance": {
+                          "method": "Installed Codex session B fixture",
+                          "sources": []
+                        },
+                        "extensions": {},
+                        "introducedAtRevision": 10
+                      }
+                    }
+                  ],
+                  "currentRevision": 10
+                }
+              },
+              "frontier": []
+            }
+          },
+          "status": "completed"
+        },
+        {
+          "tool": "map_read",
+          "arguments": {
+            "mapId": "Acceptance.Codex.Workflow",
+            "revision": 11
+          },
+          "result": {
+            "content": [],
+            "structured_content": {
+              "kind": "not_found",
+              "code": "revision_not_found",
+              "mapId": "Acceptance.Codex.Workflow",
+              "revision": 11
+            }
+          },
+          "status": "failed"
+        }
+      ],
+      "finalMessage": "Read-only reconnect checks matched the expected fixture state:\n\n- Current head remains **10**; Prep retains Claim **`codex:A`**.\n- Historical Claims remain unchanged: Prep at revisions **3 and 8**, Next at **5**, Handoff (`codex:B`) at **9**.\n- Historical Settlements remain unchanged: Prep’s **Completion** at **4**, Next’s **Finding** at **6**, Handoff’s **Completion** at **10**.\n- Revision **11** remains absent: **`revision_not_found`**.\n- Current Frontier remains empty.\n\nAll reads ran in the specified order. No unexpected rejection, expiry, takeover, write, or human verdict."
+    }
+  ],
+  "assertions": [
+    "once-only schema-valid compact/snapshot results",
+    "Frontier/Claim/Completion/Finding/explicit reopen/history",
+    "independent B catalog discovery/stable ID/distinct claimant continuation",
+    "A stale Conflict/current reread/full unchanged known history/next absence",
+    "service SIGTERM/restart and actual Codex reconnect retain head/history/Claims"
+  ],
+  "humanVerdict": null
+}
