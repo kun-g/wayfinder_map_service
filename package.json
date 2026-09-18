@@ -1,0 +1,14 @@
+{
+  "name": "wayfinder-map-core",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@types/node": "26.6.1",
+    "typescript": "7.0.2",
+    "vitest": "5.0.1"
+  }
+}
