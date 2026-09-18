@@ -1,0 +1,136 @@
+{
+  "upstreamCommit": "3cca18b368ae95cdbdebbff572ccafa662551015",
+  "fetchedAt": "2026-09-10",
+  "files": [
+    {
+      "source": "https://raw.githubusercontent.com/mattpocock/skills/3cca18b368ae95cdbdebbff572ccafa662551015/skills/productivity/grilling/SKILL.md",
+      "dest": "grilling/SKILL.md",
+      "lineCount": 24,
+      "method": "web raw text, line-complete; formatting normalized"
+    },
+    {
+      "source": "https://raw.githubusercontent.com/mattpocock/skills/3cca18b368ae95cdbdebbff572ccafa662551015/skills/engineering/domain-modeling/SKILL.md",
+      "dest": "domain-modeling/SKILL.md",
+      "lineCount": 67,
+      "method": "web raw text, line-complete; formatting normalized"
+    },
+    {
+      "source": "https://raw.githubusercontent.com/mattpocock/skills/3cca18b368ae95cdbdebbff572ccafa662551015/skills/engineering/wayfinder/SKILL.md",
+      "dest": "wayfinder/SKILL.md",
+      "lineCount": 103,
+      "method": "web raw text, line-complete; formatting normalized"
+    },
+    {
+      "source": "https://raw.githubusercontent.com/mattpocock/skills/3cca18b368ae95cdbdebbff572ccafa662551015/skills/engineering/grill-with-docs/SKILL.md",
+      "dest": "grill-with-docs/SKILL.md",
+      "lineCount": 7,
+      "method": "web raw text, line-complete; formatting normalized"
+    },
+    {
+      "source": "https://raw.githubusercontent.com/mattpocock/skills/3cca18b368ae95cdbdebbff572ccafa662551015/skills/engineering/domain-modeling/CONTEXT-FORMAT.md",
+      "dest": "domain-modeling/CONTEXT-FORMAT.md",
+      "lineCount": 54,
+      "method": "web raw text, line-complete; formatting normalized"
+    },
+    {
+      "source": "https://raw.githubusercontent.com/mattpocock/skills/3cca18b368ae95cdbdebbff572ccafa662551015/skills/engineering/domain-modeling/ADR-FORMAT.md",
+      "dest": "domain-modeling/ADR-FORMAT.md",
+      "lineCount": 42,
+      "method": "web raw text, line-complete; formatting normalized"
+    },
+    {
+      "source": "https://raw.githubusercontent.com/mattpocock/skills/3cca18b368ae95cdbdebbff572ccafa662551015/LICENSE",
+      "dest": "../../../THIRD_PARTY_LICENSES/Matt-Pocock-MIT.txt",
+      "lineCount": 19,
+      "method": "web raw text, line-complete; formatting normalized"
+    },
+    {
+      "source": "https://raw.githubusercontent.com/mattpocock/skills/3cca18b368ae95cdbdebbff572ccafa662551015/skills/engineering/setup-matt-pocock-skills/SKILL.md",
+      "dest": "setup-matt-pocock-skills/SKILL.md",
+      "lineCount": 98,
+      "method": "web raw text, line-complete; formatting normalized"
+    },
+    {
+      "source": "https://raw.githubusercontent.com/mattpocock/skills/3cca18b368ae95cdbdebbff572ccafa662551015/skills/engineering/setup-matt-pocock-skills/issue-tracker-local.md",
+      "dest": "setup-matt-pocock-skills/issue-tracker-local.md",
+      "lineCount": 26,
+      "method": "web raw text, line-complete; formatting normalized"
+    },
+    {
+      "source": "https://raw.githubusercontent.com/mattpocock/skills/3cca18b368ae95cdbdebbff572ccafa662551015/skills/engineering/setup-matt-pocock-skills/domain.md",
+      "dest": "setup-matt-pocock-skills/domain.md",
+      "lineCount": 45,
+      "method": "web raw text, line-complete; formatting normalized"
+    },
+    {
+      "source": "https://raw.githubusercontent.com/mattpocock/skills/3cca18b368ae95cdbdebbff572ccafa662551015/skills/engineering/research/SKILL.md",
+      "dest": "research/SKILL.md",
+      "lineCount": 11,
+      "method": "web raw text, line-complete; formatting normalized"
+    },
+    {
+      "source": "https://raw.githubusercontent.com/mattpocock/skills/3cca18b368ae95cdbdebbff572ccafa662551015/skills/engineering/prototype/SKILL.md",
+      "dest": "prototype/SKILL.md",
+      "lineCount": 21,
+      "method": "web raw text, line-complete; formatting normalized"
+    },
+    {
+      "source": "https://raw.githubusercontent.com/mattpocock/skills/3cca18b368ae95cdbdebbff572ccafa662551015/skills/engineering/setup-matt-pocock-skills/issue-tracker-github.md",
+      "dest": "setup-matt-pocock-skills/issue-tracker-github.md",
+      "lineCount": 37,
+      "method": "web raw text, line-complete; formatting normalized"
+    },
+    {
+      "source": "https://raw.githubusercontent.com/mattpocock/skills/3cca18b368ae95cdbdebbff572ccafa662551015/skills/engineering/setup-matt-pocock-skills/issue-tracker-gitlab.md",
+      "dest": "setup-matt-pocock-skills/issue-tracker-gitlab.md",
+      "lineCount": 38,
+      "method": "web raw text, line-complete; formatting normalized"
+    },
+    {
+      "source": "https://raw.githubusercontent.com/mattpocock/skills/3cca18b368ae95cdbdebbff572ccafa662551015/skills/engineering/setup-matt-pocock-skills/triage-labels.md",
+      "dest": "setup-matt-pocock-skills/triage-labels.md",
+      "lineCount": 13,
+      "method": "web raw text, line-complete; formatting normalized"
+    },
+    {
+      "source": "https://raw.githubusercontent.com/mattpocock/skills/3cca18b368ae95cdbdebbff572ccafa662551015/skills/engineering/prototype/LOGIC.md",
+      "dest": "prototype/LOGIC.md",
+      "lineCount": 54,
+      "method": "web raw text, line-complete; formatting normalized"
+    },
+    {
+      "source": "https://raw.githubusercontent.com/mattpocock/skills/3cca18b368ae95cdbdebbff572ccafa662551015/skills/engineering/prototype/UI.md",
+      "dest": "prototype/UI.md",
+      "lineCount": 93,
+      "method": "web raw text, line-complete; formatting normalized"
+    },
+    {
+      "source": "https://raw.githubusercontent.com/mattpocock/skills/3cca18b368ae95cdbdebbff572ccafa662551015/skills/engineering/triage/AGENT-BRIEF.md",
+      "dest": "triage/AGENT-BRIEF.md",
+      "lineCount": 207,
+      "fetchedAt": "2026-09-15",
+      "method": "skill-installer direct GitHub download; unmodified"
+    },
+    {
+      "source": "https://raw.githubusercontent.com/mattpocock/skills/3cca18b368ae95cdbdebbff572ccafa662551015/skills/engineering/triage/OUT-OF-SCOPE.md",
+      "dest": "triage/OUT-OF-SCOPE.md",
+      "lineCount": 105,
+      "fetchedAt": "2026-09-15",
+      "method": "skill-installer direct GitHub download; unmodified"
+    },
+    {
+      "source": "https://raw.githubusercontent.com/mattpocock/skills/3cca18b368ae95cdbdebbff572ccafa662551015/skills/engineering/triage/SKILL.md",
+      "dest": "triage/SKILL.md",
+      "lineCount": 111,
+      "fetchedAt": "2026-09-15",
+      "method": "skill-installer direct GitHub download; local compatibility overlay removes legacy disable-model-invocation"
+    },
+    {
+      "source": "https://raw.githubusercontent.com/mattpocock/skills/3cca18b368ae95cdbdebbff572ccafa662551015/skills/engineering/triage/agents/openai.yaml",
+      "dest": "triage/agents/openai.yaml",
+      "lineCount": 5,
+      "fetchedAt": "2026-09-15",
+      "method": "skill-installer direct GitHub download; unmodified"
+    }
+  ]
+}
