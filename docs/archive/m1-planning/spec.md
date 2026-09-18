@@ -2,24 +2,24 @@
 
 Status: accepted implementation handoff, explicitly human-confirmed on 2026-09-17.
 
-Publication note (2026-09-18): this is the accepted M1 implementation contract. Original planning sources and prototype captures are preserved in [the frozen M1 planning archive](../archive/m1-planning/README.md); active rollback and deletion planning now uses [GitHub planning Maps](../planning/README.md). Publishing or migrating tracker records does not implement those features or change accepted M1 behavior.
+Record role: historical accepted planning handoff. The [published M1 contract](../../spec/m1.md) is the implementation entry point; this source is retained for provenance rather than maintained in parallel.
 
-This specification delivers the destination of M1 Map Core Implementation Specification: implement a pure Map domain module, an in-memory State Adapter, and executable acceptance tests. It is a planning deliverable, not an implementation or a test-pass report.
+This specification delivers the destination of [M1 Map Core Implementation Specification](map.md): implement a pure Map domain module, an in-memory State Adapter, and executable acceptance tests. It is a planning deliverable, not an implementation or a test-pass report.
 
 ## 1. Authority, scope, and source precedence
 
-Use CONTEXT.md for domain language and the v1 product contract for the wider product. M1 deliberately implements only the delivery slice below. The local `.scratch/` decision tracker is a development planning artifact, not the product Map storage system.
+Use [CONTEXT.md](../../../CONTEXT.md) for domain language and [the v1 product contract](../../spec/v1.md) for the wider product. M1 deliberately implements only the delivery slice below. The local `.scratch/` decision tracker is a development planning artifact, not the product Map storage system.
 
 Normative sources are the confirmed answers:
 
-- [Define the Map aggregate boundary](../archive/m1-planning/issues/01-define-map-aggregate-boundary.md)
-- [Define the Decision Ticket lifecycle and settlement model](../archive/m1-planning/issues/02-define-decision-ticket-lifecycle.md)
-- [Define Dependency and Frontier invariants](../archive/m1-planning/issues/03-define-dependency-and-frontier-invariants.md)
-- [Define Claim semantics](../archive/m1-planning/issues/04-define-claim-semantics.md)
-- [Prototype the atomic command and conflict contract](../archive/m1-planning/issues/05-prototype-command-and-conflict-contract.md)
-- [Define immutable Revision and history semantics](../archive/m1-planning/issues/06-define-revision-and-rollback-semantics.md)
-- [Prototype the state Adapter contract](../archive/m1-planning/issues/08-prototype-state-adapter-contract.md), including its corrected storage scope
-- [Define the executable M1 acceptance contract](../archive/m1-planning/issues/09-define-acceptance-contract.md)
+- [Define the Map aggregate boundary](issues/01-define-map-aggregate-boundary.md)
+- [Define the Decision Ticket lifecycle and settlement model](issues/02-define-decision-ticket-lifecycle.md)
+- [Define Dependency and Frontier invariants](issues/03-define-dependency-and-frontier-invariants.md)
+- [Define Claim semantics](issues/04-define-claim-semantics.md)
+- [Prototype the atomic command and conflict contract](issues/05-prototype-command-and-conflict-contract.md)
+- [Define immutable Revision and history semantics](issues/06-define-revision-and-rollback-semantics.md)
+- [Prototype the state Adapter contract](issues/08-prototype-state-adapter-contract.md), including its corrected storage scope
+- [Define the executable M1 acceptance contract](issues/09-define-acceptance-contract.md)
 
 This document consolidates those decisions; it does not independently change them. Later explicit scope decisions override early statements about deletion/rollback. The corrected working Adapter contract overrides its historical prototype capture. Prototype HTML is simplified illustrative behavior, not a competing product contract.
 
@@ -56,7 +56,7 @@ Creation requires id, title, Destination, author; optional notes/extensions defa
 
 ## 3. Domain and stored types
 
-The command reference fixes the base value objects and command field names. Preserve these shapes:
+The [command reference](prototypes/command-contract.prototype.ts) fixes the base value objects and command field names. Preserve these shapes:
 
 ```ts
 declare const idBrand: unique symbol;
@@ -402,7 +402,7 @@ No automatic merge, rebase, retry, or idempotency-key cache exists. Replay of an
 
 ## 9. Mandatory acceptance cases and traceability
 
-The accepted family matrix is expanded below into concrete case IDs. IDs group parameterized scenarios; each listed branch/error must have an executable assertion. Use public seams and the real memory Adapter, not private storage inspection or a fake storage implementation. Black-box checks may enumerate known revision numbers with readRevision; no list/history API is added for tests.
+The accepted [family matrix](acceptance-matrix.md) is expanded below into concrete case IDs. IDs group parameterized scenarios; each listed branch/error must have an executable assertion. Use public seams and the real memory Adapter, not private storage inspection or a fake storage implementation. Black-box checks may enumerate known revision numbers with readRevision; no list/history API is added for tests.
 
 For any rejection/conflict/pre-publication failure, compare the complete affected current state and every previously known historical record before/after, verify the proposed next revision is absent, and verify unrelated Maps remain unchanged. This rule applies to all negative cases below, not just one atomicity test.
 
@@ -507,4 +507,3 @@ Do not copy prototype logic wholesale: demos omit substantial validation and som
 No known implementation-blocking domain choice remains after synthesis. Error prose, same-stage multi-error precedence, helper names/layout, internal graph traversal, and copying/freezing mechanism may be chosen consistently during implementation. If a genuine conflict with a confirmed contract is discovered, stop that decision branch and bring it to the human; do not silently change scope or weaken acceptance.
 
 This handoff does not authorize production implementation by itself. The current planning session has not installed dependencies, type-checked production code, run the M1 suite, or verified prototype UI clicks. Prototype syntax/pure-model checks are historical evidence of design exploration only.
-
