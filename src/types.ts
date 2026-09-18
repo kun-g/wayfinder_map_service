@@ -101,7 +101,13 @@ export interface TicketInput {
 }
 export type Access = { readonly claimantId?: ClaimantId };
 export type TicketPatch = Readonly<Partial<Pick<TicketInput, 'title' | 'question' | 'type' | 'extensions'>>>;
+export type SettleCommand = {
+  [T in TicketType]: { readonly kind: 'ticket.settle'; readonly ticketId: TicketId; readonly ticketType: T;
+    readonly claimantId: ClaimantId; readonly settlement: Settlement<T> }
+}[TicketType];
 export type Command = { readonly kind: 'map.update'; readonly patch: MapPatch }
+  | SettleCommand
+  | { readonly kind: 'ticket.reopen'; readonly ticketId: TicketId; readonly reason: string }
   | (({ readonly kind: 'claim.acquire' } | { readonly kind: 'claim.release' }) & {
     readonly ticketId: TicketId; readonly claimantId: ClaimantId;
   })
@@ -120,7 +126,7 @@ export interface ApplyRequest {
   readonly commands: NonEmpty<Command>;
 }
 export type CommandErrorCode = 'ticket_already_exists' | 'ticket_not_found' | 'ticket_not_open' | 'claim_required' | 'claim_mismatch'
-  | 'ticket_already_claimed' | 'unsettled_dependency' | 'claim_not_found'
+  | 'ticket_already_claimed' | 'unsettled_dependency' | 'claim_not_found' | 'settlement_type_mismatch' | 'ticket_not_settled'
   | 'self_dependency' | 'dependency_already_exists' | 'dependency_not_found' | 'content_already_exists' | 'content_not_found';
 export type CommandRejection = { readonly stage: 'command'; readonly commandIndex: number;
   readonly code: CommandErrorCode; readonly ticketIds: readonly TicketId[] };

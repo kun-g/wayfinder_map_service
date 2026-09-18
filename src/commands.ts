@@ -24,11 +24,27 @@ export function applyCommand(state: StoredMapState, command: Command, commandInd
       ...command.ticket, extensions: command.ticket.extensions ?? {}, prerequisites: [], status: 'open', claim: null,
     }] } };
   }
-  const identity = command.kind === 'ticket.update' || command.kind === 'claim.acquire' || command.kind === 'claim.release' || command.kind === 'claim.clear'
+  const identity = command.kind === 'ticket.update' || command.kind === 'ticket.settle' || command.kind === 'ticket.reopen' || command.kind === 'claim.acquire' || command.kind === 'claim.release' || command.kind === 'claim.clear'
     ? command.ticketId : command.dependentId;
   const ticket = state.tickets.find(ticket => ticket.id === identity);
   if (!ticket) return reject('ticket_not_found', identity);
+  if (command.kind === 'ticket.reopen') {
+    if (ticket.status !== 'settled') return reject('ticket_not_settled', ticket.id);
+    const { settlement: _old, ...descriptive } = ticket;
+    return { kind: 'ok', value: replaceTicket(state, { ...descriptive, status: 'open', claim: null }) };
+  }
   if (ticket.status !== 'open') return reject('ticket_not_open', ticket.id);
+  if (command.kind === 'ticket.settle') {
+    if (ticket.claim === null) return reject('claim_required', ticket.id);
+    if (command.claimantId !== ticket.claim) return reject('claim_mismatch', ticket.id);
+    if (ticket.prerequisites.some(identity => state.tickets.find(t => t.id === identity)?.status !== 'settled')) return reject('unsettled_dependency', ticket.id);
+    if (ticket.type !== command.ticketType) return reject('settlement_type_mismatch', ticket.id);
+    // Whole-input validation correlates outcome with command type; the gate above
+    // also correlates that type with the actual Ticket before constructing storage.
+    const settled = { ...ticket, status: 'settled', claim: null,
+      settlement: { ...command.settlement, introducedAtRevision: state.currentRevision + 1 } } as StoredTicket;
+    return { kind: 'ok', value: replaceTicket(state, settled) };
+  }
   if (command.kind === 'claim.acquire') {
     if (ticket.claim !== null) return reject('ticket_already_claimed', ticket.id);
     if (!calculateFrontier(state).includes(ticket.id)) return reject('unsettled_dependency', ticket.id);

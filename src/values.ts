@@ -58,6 +58,11 @@ export function validateExtensions(value: unknown, path: readonly (string | numb
   return validateJson(value, path, new Set());
 }
 
+export function validateJsonObject(value: unknown, path: readonly (string | number)[]): InvalidInput | undefined {
+  const shape = validateObject(value, path);
+  return shape ?? validateJson(value, path, new Set());
+}
+
 export function validateAuthor(value: unknown): InvalidInput | undefined {
   const shape = validateObject(value, ['author'], ['actorId', 'clientId', 'occurredAt']);
   if (shape) return shape;

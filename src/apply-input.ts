@@ -2,6 +2,7 @@ import type { ApplyRequest, InvalidInput, Result, TicketType } from './types.js'
 import { invalid, isPlainObject, validateArrayShape, validateAuthor, validateExtensions, validateId, validateObject } from './values.js';
 import { immutableClone } from './immutable.js';
 import { validateMapContent } from './content-input.js';
+import { validateSettlement } from './settlement-input.js';
 
 export function decodeApplyRequest(raw: unknown): Result<ApplyRequest, InvalidInput> {
   const error = validateRequest(raw);
@@ -32,6 +33,26 @@ function validateRequest(raw: unknown): InvalidInput | undefined {
     const shape = validateObject(command, path);
     if (shape) return shape;
     if (!isPlainObject(command)) return invalid(path, 'Plain command required');
+    if (command.kind === 'ticket.reopen') {
+      const shape = validateObject(command, path, ['kind', 'ticketId', 'reason']);
+      if (shape) return shape;
+      const identity = validateId(command.ticketId, [...path, 'ticketId']);
+      if (identity) return identity;
+      if (typeof command.reason !== 'string' || command.reason.trim() === '') return invalid([...path, 'reason'], 'Nonblank reason required');
+      continue;
+    }
+    if (command.kind === 'ticket.settle') {
+      const shape = validateObject(command, path, ['kind', 'ticketId', 'ticketType', 'claimantId', 'settlement']);
+      if (shape) return shape;
+      for (const key of ['ticketId', 'claimantId']) {
+        const identity = validateId(command[key], [...path, key]);
+        if (identity) return identity;
+      }
+      if (!isTicketType(command.ticketType)) return invalid([...path, 'ticketType'], 'Supported Ticket type required');
+      const settlement = validateSettlement(command.settlement, command.ticketType, [...path, 'settlement']);
+      if (settlement) return settlement;
+      continue;
+    }
     if (command.kind === 'claim.acquire' || command.kind === 'claim.release' || command.kind === 'claim.clear') {
       const clearing = command.kind === 'claim.clear';
       const shape = validateObject(command, path, clearing ? ['kind', 'ticketId', 'expectedClaimantId', 'reason'] : ['kind', 'ticketId', 'claimantId']);
