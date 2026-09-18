@@ -8,6 +8,7 @@
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
     "backup": "npm run --silent build && node dist/sqlite-backup.js",
+    "start": "npm run --silent build && node dist/mcp-start.js",
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
   },
