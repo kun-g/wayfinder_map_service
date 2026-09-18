@@ -21,6 +21,8 @@ The first persistence slice implemented a private SQLite Adapter on pinned Node.
 
 The storage failure/backup slice adds explicit busy/non-publication/unknown-outcome diagnostics, controlled Adapter-host restart/termination evidence, and `storage.backup(destination)`. Run `npm run --silent backup -- <absolute-source> <fresh-absolute-destination>` for a manual consistent local backup; `--silent` prevents npm echoing private path arguments. See [failure and backup evidence](docs/implementation/sqlite-failure-backup.md). This is not HTTP shutdown/reconnect, real connected Codex acceptance, a restore feature, or exploration adoption.
 
+The headless tool slice exposes exactly `map_create`, `map_list`, `map_read` and `map_apply` through `createMapMcpServer(storage, { actorId, clientId })` in `src/mcp-tools.ts`. It uses the real M1 core and SQLite Adapter, declares complete JSON schemas and returns results once in `structuredContent`. The function creates an unconnected SDK server; the operator owns storage and transport lifecycle. See [tool/protocol evidence and limits](docs/implementation/mcp-tools.md). There is no runnable HTTP service or installed Codex connection in this slice, and exploration authority has not switched.
+
 Track implementation in [GitHub Issues](https://github.com/kun-g/wayfinder_map_service/issues) and the private [M1 project board](https://github.com/users/kun-g/projects/5). Active rollback/deletion planning uses [GitHub planning Maps](docs/planning/README.md). Completed M1 planning decisions and prototype captures are preserved in [the planning archive](docs/archive/m1-planning/README.md).
 
 ## Project documents
