@@ -25,8 +25,9 @@ try {
     assert.equal(claim.kind, 'prepared'); await storage.adapter.commit(claim.change);
     const before = await storage.adapter.readCurrent('Acceptance');
     const history = await storage.adapter.readRevision('Acceptance', 1);
-    const output = execFileSync('npm', ['run', 'backup', '--', source, target], { encoding: 'utf8', stdio: 'pipe' });
+    const output = execFileSync('npm', ['run', '--silent', 'backup', '--', source, target], { encoding: 'utf8', stdio: 'pipe' });
     assert.match(output, /SQLite backup completed/);
+    assert.equal(output.includes(source) || output.includes(target), false);
     const independent = openSQLite(target);
     try {
       assert.deepEqual(await independent.adapter.readCurrent('Acceptance'), before);
@@ -36,8 +37,13 @@ try {
     assert.deepEqual(await storage.adapter.readCurrent('Acceptance'), before);
     assert.deepEqual(await storage.adapter.readRevision('Acceptance', 1), history);
     let refused = false;
-    try { execFileSync('npm', ['run', 'backup', '--', source, target], { stdio: 'pipe' }); }
-    catch (error) { assert.equal(error.status, 1); assert.match(String(error.stderr), /no confirmed backup/); refused = true; }
+    try { execFileSync('npm', ['run', '--silent', 'backup', '--', source, target], { stdio: 'pipe' }); }
+    catch (error) {
+      assert.equal(error.status, 1); assert.match(String(error.stderr), /no confirmed backup/);
+      const diagnostics = String(error.stdout) + String(error.stderr);
+      assert.equal(diagnostics.includes(source) || diagnostics.includes(target), false);
+      refused = true;
+    }
     assert.equal(refused, true);
     assert.deepEqual(await storage.adapter.readCurrent('Acceptance'), before);
     console.log('Manual backup command: success, independent history/Claim comparison, existing-target refusal passed');

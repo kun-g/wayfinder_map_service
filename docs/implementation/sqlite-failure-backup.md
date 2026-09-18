@@ -7,10 +7,10 @@ Contract: [accepted MCP/SQLite handoff](../spec/mcp-sqlite.md), sections 6, 8–
 The separate storage entry point now returns `{ adapter, listMaps, backup, close }`; the pure entry point and three StateAdapter methods are unchanged. `storage.backup(destination)` is synchronous private maintenance, not a fifth MCP tool. One operator command builds the pinned TypeScript sources and runs it:
 
 ```sh
-npm run backup -- <absolute-source> <fresh-absolute-destination>
+npm run --silent backup -- <absolute-source> <fresh-absolute-destination>
 ```
 
-Source storage must already exist and have the supported application/format identity. The normal private/local path policy applies to both paths, including repository/temp/symlink rejection, operator ownership and 0700/0600 permissions. Target, target sidecars and source DB/managed-sidecar targets are refused. Hardlinks are already-existing targets and cannot be overwritten. New target directories are private; the target file is reserved exclusively at 0600. Same-UID adversarial path replacement remains outside the inherited private-directory threat model.
+Use `--silent`: npm otherwise echoes the script and its private path arguments before application code runs. Nested build output is also silenced. Source storage must already exist and have the supported application/format identity. The normal private/local path policy applies to both paths, including repository/temp/symlink rejection, operator ownership and 0700/0600 permissions. Target, target sidecars and source DB/managed-sidecar targets are refused. Hardlinks are already-existing targets and cannot be overwritten. New target directories are private; the target file is reserved exclusively at 0600. Same-UID adversarial path replacement remains outside the inherited private-directory threat model.
 
 Backup uses SQLite `VACUUM INTO` with a bound URI, not raw main-file copying. SQLite documents this as a consistent live-database backup alternative whose original logical content is unchanged; FULL synchronous mode syncs the output. This choice keeps the operation synchronous on the existing connection without a Worker, driver, retry loop or connection pool. No pruning/replay is introduced; complete logical Revision JSON remains present. See [SQLite VACUUM INTO](https://www.sqlite.org/lang_vacuum.html#vacuum_with_an_into_clause). Node's [backup API](https://nodejs.org/download/release/v26.3.0/docs/api/sqlite.html#sqlitebackupsourceDb-path-options) was also inspected; this implementation does not use its asynchronous threadpool backup job.
 
@@ -29,7 +29,7 @@ Node 26.3.0, actual embedded SQLite **3.53.4**, macOS arm64/local APFS. Earlier 
 - `npm test`: 1,125 passed in nine files. All original 1,061 M1 tests remain; the Frontier algorithm/enumeration is not duplicated per Adapter.
 - `npm run build`: passed (also executed by the child-host tests and maintenance command).
 - `git diff --check`: passed.
-- `WAYFINDER_MAINTENANCE_TEST_ROOT=<private-local-acceptance-root> node tests/helpers/sqlite-backup-smoke.mjs`: passed. Root was an explicitly scoped writable local directory outside repositories/tmp, not a canonical project DB. The script creates only a fresh named disposable fixture, runs the **actual** `npm run backup` success/refusal paths while a source connection remains open, independently compares known head/history/Claim, then removes only its own fixture. Private live paths are omitted from this report. Build first when reproducing it.
+- `WAYFINDER_MAINTENANCE_TEST_ROOT=<private-local-acceptance-root> node tests/helpers/sqlite-backup-smoke.mjs`: passed. Root was an explicitly scoped writable local directory outside repositories/tmp, not a canonical project DB. The script creates only a fresh named disposable fixture, runs the **actual** `npm run --silent backup` success/refusal paths while a source connection remains open, asserts both outputs omit source/target paths, independently compares known head/history/Claim, then removes only its own fixture. Private live paths are omitted from this report. Build first when reproducing it.
 
 | Required evidence | Executable observations |
 | --- | --- |

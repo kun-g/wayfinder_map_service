@@ -4,7 +4,7 @@ import { openSQLite } from './sqlite-storage.js';
 // can contain private paths, so diagnostics deliberately never print them.
 const [source, destination, ...extra] = process.argv.slice(2);
 if (!source || !destination || extra.length) {
-  console.error('Usage: npm run backup -- <absolute-source> <fresh-absolute-destination>');
+  console.error('Usage: npm run --silent backup -- <absolute-source> <fresh-absolute-destination>');
   process.exitCode = 1;
 } else {
   try {

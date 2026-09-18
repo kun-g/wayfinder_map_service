@@ -73,6 +73,12 @@ async function observe(adapter: StateAdapter) {
   return Promise.all([alpha, other].map(async mapId => ({ current: await adapter.readCurrent(mapId),
     history: await Promise.all([1, 2, 3, 4, 5].map(revision => adapter.readRevision(mapId, revision))) })));
 }
+function expectPublishedRecovery(before: Awaited<ReturnType<typeof observe>>, recovered: Awaited<ReturnType<typeof observe>>, state: Partial<StoredMapState>) {
+  expect(recovered[1]).toEqual(before[1]);
+  expect(recovered[0]!.history.slice(0, 3)).toEqual(before[0]!.history.slice(0, 3));
+  expect(recovered[0]!.history[3]).toMatchObject({ kind: 'found', value: { revision: 4, state } });
+  expect(recovered[0]!.history[4]).toEqual(before[0]!.history[4]);
+}
 
 test('D07: real independent write lock gives bounded storage-busy, no retry/publication, then permits explicit new attempt', async () => {
   const path = fixture(); const lifecycle = sqliteLifecycleForTests(); lifecycle.initialize(path); const storage = lifecycle.open(path);
@@ -124,11 +130,7 @@ test.each(['before', 'after', 'cleanup'] as const)('D06/D11/D12: %s fault report
         if (mode === 'cleanup') { expect(await observe(reopened.adapter)).toEqual(before); expect(reopened.listMaps()).toEqual(catalog); }
         else {
           expect(await current(reopened.adapter)).toEqual(change.next);
-          const recovered = await observe(reopened.adapter);
-          expect(recovered[1]).toEqual(before[1]);
-          expect(recovered[0]!.history.slice(0, 3)).toEqual(before[0]!.history.slice(0, 3));
-          expect(recovered[0]!.history[3]).toMatchObject({ kind: 'found', value: { revision: 4, state: change.next } });
-          expect(recovered[0]!.history[4]).toEqual(before[0]!.history[4]);
+          expectPublishedRecovery(before, await observe(reopened.adapter), change.next);
         }
       } finally { reopened.close(); }
     }
@@ -160,11 +162,7 @@ test.each(['graceful', 'idle', 'before', 'after'] as const)('D10/D11: controlled
   try {
     if (mode !== 'after') { expect(await observe(restarted.adapter)).toEqual(before); expect(restarted.listMaps()).toEqual(catalog); }
     else {
-      const recovered = await observe(restarted.adapter);
-      expect(recovered[1]).toEqual(before[1]);
-      expect(recovered[0]!.history.slice(0, 3)).toEqual(before[0]!.history.slice(0, 3));
-      expect(recovered[0]!.history[3]).toMatchObject({ kind: 'found', value: { revision: 4, state: { notes: 'host commit' } } });
-      expect(recovered[0]!.history[4]).toEqual(before[0]!.history[4]);
+      expectPublishedRecovery(before, await observe(restarted.adapter), { notes: 'host commit' });
     }
     const state = await current(restarted.adapter);
     expect(state.tickets[0]).toMatchObject({ claim: 'continued:work', status: 'open' });
