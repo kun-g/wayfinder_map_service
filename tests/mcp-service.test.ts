@@ -17,6 +17,7 @@ import { sqliteLifecycleForTests } from '../src/sqlite-internal.js';
 import type { SQLiteStorage } from '../src/sqlite-storage.js';
 import { mapTools } from '../src/mcp-tools.js';
 import type { Revision } from '../src/index.js';
+import { rejectionSeed, rejectionCases } from './helpers/mcp-rejection-cases.js';
 
 const cleanups: (() => void | Promise<void>)[] = [];
 beforeAll(() => { execFileSync('npm', ['run', 'build'], { stdio: 'pipe' }); });
@@ -167,6 +168,17 @@ test.each(['grilling', 'prototype', 'research', 'task'] as const)('A01/D03–D05
   expect(revision(await reconnected.read(3))).toEqual(revision(claimed));
   expect(revision(await reconnected.read(4))).toEqual(revision(accepted));
   expect(await reconnected.read(6)).toEqual(settled);
+});
+
+test('D05/P05: complete command-error and reachable final-invariant matrix over real HTTP preserves known fixture history', async () => {
+  const f = await fixture(); const c = await connect(f.port);
+  await c.create(); await c.create('Acceptance.Other');
+  expect((await c.apply(rejectionSeed, 1)).structuredContent!.kind).toBe('committed');
+  const before = await observe(c);
+  for (const scenario of rejectionCases) {
+    expect((await c.apply(scenario.commands, 2)).structuredContent, scenario.label).toEqual({ kind: 'rejected', rejection: scenario.rejection });
+    expect(await observe(c), scenario.label).toEqual(before);
+  }
 });
 
 test('P07/P09: token, exact Host and explicit local Origin guard every method; config is captured and author is server-only', async () => {

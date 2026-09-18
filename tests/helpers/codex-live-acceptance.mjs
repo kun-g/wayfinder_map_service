@@ -55,6 +55,8 @@ async function stop() {
 }
 const configuration = ['--ignore-user-config', '--json', '--skip-git-repo-check',
   '-c', `mcp_servers.wayfinder_acceptance.url="http://127.0.0.1:${port}/mcp"`,
+  '-c', 'mcp_servers.wayfinder_acceptance.required=true',
+  '-c', 'mcp_servers.wayfinder_acceptance.startup_timeout_sec=30',
   '-c', 'mcp_servers.wayfinder_acceptance.bearer_token_env_var="WAYFINDER_TOKEN"',
   // The user authorized these four isolated acceptance tools. This applies to
   // this process only; shell remains read-only and user config is untouched.
@@ -122,21 +124,21 @@ try {
       { kind: 'dependency.add', dependentId: 'Next', prerequisiteId: 'Prep' },
       { kind: 'content.add', section: 'fog', item: { id: 'Fog', text: 'Further exploration needs a separate adoption gate', references: [] } },
       { kind: 'content.add', section: 'scopeExclusions', item: { id: 'Scope', text: 'No authority switch in this acceptance', references: [] } }]),
-    apply(2, [acquire('Prep', 'codex:A')]), apply(3, [settle('Prep', 'task', 'codex:A'), acquire('Next', 'codex:A')]),
-    apply(4, [settle('Next', 'research', 'codex:A')]),
-    apply(5, [{ kind: 'ticket.reopen', ticketId: 'Prep', reason: 'Revisit prerequisite fixture' }, { kind: 'ticket.reopen', ticketId: 'Next', reason: 'Revisit dependent fixture' }]),
-    apply(6, [acquire('Prep', 'codex:A')]), read(), ...[1, 2, 3, 4, 5, 6].map(read),
-    'Describe the observed Frontier transitions, typed Completion/Finding and historical Claims/Settlements. Retain expectedRevision 7 for the next turn. Do not advance beyond 7.'
+    apply(2, [acquire('Prep', 'codex:A')]), apply(3, [settle('Prep', 'task', 'codex:A')]),
+    apply(4, [acquire('Next', 'codex:A')]), apply(5, [settle('Next', 'research', 'codex:A')]),
+    apply(6, [{ kind: 'ticket.reopen', ticketId: 'Prep', reason: 'Revisit prerequisite fixture' }, { kind: 'ticket.reopen', ticketId: 'Next', reason: 'Revisit dependent fixture' }]),
+    apply(7, [acquire('Prep', 'codex:A')]), read(), ...[1, 2, 3, 4, 5, 6, 7].map(read),
+    'Describe the observed Frontier transitions, including Next unlocked at Revision 4, typed Completion/Finding and historical Claims/Settlements. Retain expectedRevision 8 for the next turn. Do not advance beyond 8.'
   ].join('\n'));
   const aData = payloads(a); const writes = aData.filter(item => item.kind === 'committed');
-  assert.deepEqual(writes.map(item => typeof item.revision === 'number' ? item.revision : item.revision.revision), [1, 2, 3, 4, 5, 6, 7]);
+  assert.deepEqual(writes.map(item => typeof item.revision === 'number' ? item.revision : item.revision.revision), [1, 2, 3, 4, 5, 6, 7, 8]);
   assert.equal(typeof writes[0].revision, 'number');
-  assert.deepEqual(writes.slice(1).map(item => item.frontier), [['Handoff', 'Prep'], ['Handoff'], ['Handoff'], ['Handoff'], ['Handoff', 'Prep'], ['Handoff']]);
-  let state = await known(); assert.equal(state.current.value.currentRevision, 7);
+  assert.deepEqual(writes.slice(1).map(item => item.frontier), [['Handoff', 'Prep'], ['Handoff'], ['Handoff', 'Next'], ['Handoff'], ['Handoff'], ['Handoff', 'Prep'], ['Handoff']]);
+  const state = await known(); assert.equal(state.current.value.currentRevision, 8);
   assert.equal(state.history[2].value.state.tickets.find(t => t.id === 'Prep').claim, 'codex:A');
   assert.equal(state.history[3].value.state.tickets.find(t => t.id === 'Prep').settlement.introducedAtRevision, 4);
-  assert.equal(state.history[4].value.state.tickets.find(t => t.id === 'Next').settlement.outcome.kind, 'finding');
-  for (const ticket of state.history[5].value.state.tickets) assert(!('settlement' in ticket));
+  assert.equal(state.history[5].value.state.tickets.find(t => t.id === 'Next').settlement.outcome.kind, 'finding');
+  for (const ticket of state.history[6].value.state.tickets) assert(!('settlement' in ticket));
   // Session B gets no Map ID or A transcript: it must discover via catalog.
   const b = await codex('B-independent', 'You are independent session B, claimant codex:B. First map_list, discover the only isolated acceptance Map by catalog and retain its returned stable ID. '
     + 'Read current state. Use the accepted M1 command shapes: acquisition is {kind:"claim.acquire",ticketId:"Handoff",claimantId:"codex:B"}; settlement is {kind:"ticket.settle",ticketId:"Handoff",ticketType:"task",claimantId:"codex:B",settlement:{outcome:{kind:"completion",statement:"Session B continuation finished"},evidence:[],references:[],provenance:{method:"Installed Codex session B fixture",sources:[]},extensions:{}}}. '
@@ -144,8 +146,8 @@ try {
     + 'Read current state and report stable ID/head, your distinct Claimant and the retained codex:A Claim. Never create a replacement Map or touch Prep/Next.');
   assert.notEqual(a.threadId, b.threadId);
   assert.equal(b.calls[0].tool, 'map_list'); assert(!b.calls.some(item => item.tool === 'map_create'));
-  assert.deepEqual(payloads(b).filter(item => item.kind === 'committed').map(item => typeof item.revision === 'number' ? item.revision : item.revision.revision), [8, 9]);
-  const before = await known(); assert.equal(before.current.value.currentRevision, 9);
+  assert.deepEqual(payloads(b).filter(item => item.kind === 'committed').map(item => typeof item.revision === 'number' ? item.revision : item.revision.revision), [9, 10]);
+  const before = await known(); assert.equal(before.current.value.currentRevision, 10);
   const matchReads = session => {
     for (const item of session.calls.filter(item => item.tool === 'map_read' && item.result.structured_content.kind === 'found')) {
       const returned = item.result.structured_content.revision;
@@ -155,21 +157,21 @@ try {
   matchReads(a); matchReads(b);
   assert.deepEqual([...new Set(a.calls.map(item => item.tool))].sort(), ['map_apply', 'map_create', 'map_list', 'map_read']);
   const stale = await codex('A-stale-reread', [
-    'Your cached expectedRevision is 7. Issue exactly one intentional stale write; a Conflict is expected, not an unexpected rejection.',
-    call('map_apply', { mapId, expectedRevision: 7, commands: [{ kind: 'map.update', patch: { notes: 'Stale intention must not publish' } }] }),
-    read(), ...[1, 2, 3, 4, 5, 6, 7, 8, 9].map(read),
-    read(10), 'Revision 10 must be revision_not_found. Report actual Conflict heads and latest observed head; do not retry/replay or mutate.'
+    'Your cached expectedRevision is 8. Issue exactly one intentional stale write; a Conflict is expected, not an unexpected rejection.',
+    call('map_apply', { mapId, expectedRevision: 8, commands: [{ kind: 'map.update', patch: { notes: 'Stale intention must not publish' } }] }),
+    read(), ...[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(read),
+    read(11), 'Revision 11 must be revision_not_found. Report actual Conflict heads and latest observed head; do not retry/replay or mutate.'
   ].join('\n'), a.threadId);
-  assert.deepEqual(payloads(stale).find(item => item.kind === 'conflict'), { kind: 'conflict', conflict: { mapId, expectedRevision: 7, currentRevision: 9 } });
+  assert.deepEqual(payloads(stale).find(item => item.kind === 'conflict'), { kind: 'conflict', conflict: { mapId, expectedRevision: 8, currentRevision: 10 } });
   assert.deepEqual(await known(), before);
   assert(payloads(stale).some(item => item.code === 'revision_not_found'));
   matchReads(stale);
   await stop(); await start();
-  const reconnected = await codex('A-after-service-restart', [read(), ...[3, 4, 5, 7, 8, 9].map(read), read(10),
-    'Read-only reconnect proof: current head must be 9, Prep retains codex:A, historical Claims/Settlements remain unchanged, and 10 remains absent. No expiry, takeover, write or human verdict.'
+  const reconnected = await codex('A-after-service-restart', [read(), ...[3, 4, 5, 6, 8, 9, 10].map(read), read(11),
+    'Read-only reconnect proof: current head must be 10, Prep retains codex:A, historical Claims/Settlements remain unchanged, and 11 remains absent. No expiry, takeover, write or human verdict.'
   ].join('\n'), a.threadId);
   assert(reconnected.calls.every(item => item.tool === 'map_read'));
-  assert.equal(payloads(reconnected)[0].revision.revision, 9);
+  assert.equal(payloads(reconnected)[0].revision.revision, 10);
   assert.equal(payloads(reconnected)[0].revision.state.tickets.find(t => t.id === 'Prep').claim, 'codex:A');
   assert.deepEqual(await known(), before);
   matchReads(reconnected);

@@ -4,7 +4,7 @@ import { dirname, join } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 import { afterEach, expect, test, vi } from 'vitest';
 import { createMemoryAdapter, parseId, prepareApply, prepareCreate } from '../src/index.js';
-import type { Command, MapId, PreparedCommit, StateAdapter, StoredMapState } from '../src/index.js';
+import type { ApplyRequest, Command, MapId, PreparedCommit, StateAdapter, StoredMapState } from '../src/index.js';
 import { sqliteLifecycleForTests } from '../src/sqlite-internal.js';
 import { initializeSQLite, openSQLite } from '../src/sqlite-storage.js';
 
@@ -336,6 +336,58 @@ test.each(['memory', 'sqlite'] as const)('D03/D08/D09 reusable %s conformance: a
     const receipt = await pending;
     expect(receipt).toMatchObject({ kind: 'committed', revision: { state: { notes: 'Captured' } } });
     expect(await adapter.readCurrent(id('Other'))).toEqual({ kind: 'found', value: creation('Other').next });
+  } finally { storage.close(); }
+});
+
+function mutateLeaf(value: unknown, path: readonly (string | number)[]) {
+  let object = value as Record<string | number, unknown>;
+  for (const key of path.slice(0, -1)) object = object[key] as Record<string | number, unknown>;
+  object[path.at(-1)!] = 'Caller mutation';
+}
+test.each(['memory', 'sqlite'] as const)('D08 reusable %s: nested input/current/prepared/read/receipt aliases cannot change accepted history', async kind => {
+  const storage = conformanceAdapter(kind); const adapter = storage.adapter;
+  try {
+    const input = { id: id('Alpha'), title: 'Alpha', destination: 'Alias isolation', author: creation().author,
+      extensions: { 'test.nested': { items: [{ text: 'Original' }] } } };
+    const created = prepareCreate(input); if (created.kind !== 'ok') throw new Error('Invalid fixture');
+    mutateLeaf(input, ['extensions', 'test.nested', 'items', 0, 'text']);
+    await adapter.commit(created.value); await adapter.commit(creation('Other'));
+    expect((await current(adapter)).extensions).toEqual({ 'test.nested': { items: [{ text: 'Original' }] } });
+    await advance(adapter, [{ kind: 'ticket.create', ticket: { id: handle('Ticket', 'Task'), title: 'Task', question: 'Done?', type: 'task', extensions: { 'test.ticket': { value: 'Original' } } } },
+      { kind: 'claim.acquire', ticketId: handle('Ticket', 'Task'), claimantId: handle('Claimant', 'work') },
+      { kind: 'content.add', section: 'fog', item: { id: handle('Content', 'F'), text: 'Fog', references: [{ locator: 'fixture:original' }] } }]);
+    const before = await observe(adapter);
+    const suppliedCurrent = structuredClone(await current(adapter));
+    const request = structuredClone({ mapId: id('Alpha'), expectedRevision: 2, author: creation().author,
+      commands: [{ kind: 'ticket.settle', ticketId: handle('Ticket', 'Task'), claimantId: handle('Claimant', 'work'), ...settlementCases[3] }] }) as ApplyRequest;
+    const prepared = prepareApply(suppliedCurrent, request); if (prepared.kind !== 'prepared') throw new Error('Invalid fixture');
+    const expectedNext = structuredClone(prepared.change.next);
+    const descriptivePaths = [['extensions', 'test.nested', 'items', 0, 'text'], ['fog', 0, 'references', 0, 'locator'], ['tickets', 0, 'extensions', 'test.ticket', 'value']] as const;
+    const settlementPaths = [['outcome', 'resultingFacts', 'nested', 0], ['references', 0, 'locator'], ['references', 0, 'label'],
+      ['evidence', 0, 'references', 0, 'locator'], ['evidence', 0, 'extensions', 'demo.evidence', 0],
+      ['provenance', 'sources', 0, 'locator'], ['extensions', 'demo.result', 'nested', 0]] as const;
+    const statePaths = [...descriptivePaths, ...settlementPaths.map(path => ['tickets', 0, 'settlement', ...path])];
+    for (const path of descriptivePaths) mutateLeaf(suppliedCurrent, path);
+    for (const path of settlementPaths) mutateLeaf(request, ['commands', 0, 'settlement', ...path]);
+    expect(await observe(adapter)).toEqual(before);
+    for (const path of statePaths) expect(() => mutateLeaf(prepared.change.next, path)).toThrow();
+    const mutablePrepared = structuredClone(prepared.change) as PreparedCommit;
+    const pending = adapter.commit(mutablePrepared);
+    for (const path of statePaths) mutateLeaf(mutablePrepared.next, path);
+    mutateLeaf(mutablePrepared, ['author', 'occurredAt']); mutateLeaf(mutablePrepared, ['changes', 0, 'command']);
+    const receipt = await pending; if (receipt.kind !== 'committed') throw new Error('Fixture not committed');
+    expect(receipt.revision.state).toEqual(expectedNext);
+    expect(receipt.revision.author).toEqual(creation().author);
+    const accepted = await observe(adapter);
+    const exposed = await current(adapter);
+    const historical = await adapter.readRevision(id('Alpha'), 3); if (historical.kind !== 'found') throw new Error('Fixture missing');
+    for (const value of [receipt.revision.state, exposed, historical.value.state]) {
+      for (const path of statePaths) expect(() => mutateLeaf(value, path)).toThrow();
+    }
+    expect(await observe(adapter)).toEqual(accepted);
+    expect(accepted[0]!.revisions.slice(0, 2)).toEqual(before[0]!.revisions.slice(0, 2));
+    expect(accepted[1]).toEqual(before[1]);
+    expect(await adapter.readRevision(id('Alpha'), 4)).toMatchObject({ kind: 'not_found', code: 'revision_not_found' });
   } finally { storage.close(); }
 });
 
