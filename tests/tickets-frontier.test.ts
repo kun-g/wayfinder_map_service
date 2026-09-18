@@ -434,3 +434,58 @@ test('Final claimed invariant: matching edit access does not permit blocking an 
   expect(fixture).toEqual(original);
   expect(await observe(adapter)).toEqual(before);
 });
+
+test.each(['grilling', 'prototype', 'research', 'task'] as const)('T02: updating an open Ticket to %s uses the same type vocabulary as creation', async type => {
+  const adapter = await setup();
+  await commitCommands(adapter, [{ kind: 'ticket.create', ticket: ticket('A') }]);
+  const old = await adapter.readRevision(mapId, 2);
+  const initial = await current(adapter);
+  const result = await commitCommands(adapter, [{ kind: 'ticket.update', ticketId: id('Ticket', 'A'), patch: { type, question: 'Next?' } }]);
+  expect(result.revision.state).toEqual({ ...initial, currentRevision: 3,
+    tickets: [{ ...ticket('A'), type, question: 'Next?', extensions: {}, prerequisites: [], status: 'open', claim: null }] });
+  expect(result.frontier).toEqual(['A']);
+  expect(await adapter.readRevision(mapId, 2)).toEqual(old);
+});
+
+test('G06: exact ASCII lexical ordering includes numeric strings, mixed case and valid punctuation', async () => {
+  const adapter = await setup();
+  const values = ['2', '10', 'A:0', 'A_0', 'A-0', 'A.0', 'a', 'A', '0', 'A0'];
+  const fixture = { ...await current(adapter), tickets: values.map(value => storedTicket(value)) };
+  expect(calculateFrontier(fixture)).toEqual(['0', '10', '2', 'A', 'A-0', 'A.0', 'A0', 'A:0', 'A_0', 'a']);
+});
+
+test('A07: removing then readding one of several prerequisites cancels the relationship change, despite array reorder', async () => {
+  const adapter = await setup();
+  await commitCommands(adapter, [{ kind: 'ticket.create', ticket: ticket('A') }, { kind: 'ticket.create', ticket: ticket('B') },
+    { kind: 'ticket.create', ticket: ticket('C') }, dependency('dependency.add', 'A', 'B'), dependency('dependency.add', 'A', 'C')]);
+  const before = await observe(adapter, 2);
+  const state = await current(adapter);
+  const original = structuredClone(state);
+  expect(prepareApply(state, request([dependency('dependency.remove', 'A', 'B'), dependency('dependency.add', 'A', 'B')], 2)))
+    .toEqual({ kind: 'rejected', rejection: { stage: 'final_state', code: 'no_changes' } });
+  expect(state).toEqual(original);
+  expect(await observe(adapter, 2)).toEqual(before);
+});
+
+test.each([
+  { label: 'descriptive change', patch: { title: 'Changed' } },
+  { label: 'ordered JSON array change', patch: { extensions: { 'app.values': [2, 1] } } },
+])('A07: ignoring prerequisite order must not hide a real $label', async ({ patch }) => {
+  const adapter = await setup();
+  await commitCommands(adapter, [{ kind: 'ticket.create', ticket: { ...ticket('A'), extensions: { 'app.values': [1, 2] } } },
+    { kind: 'ticket.create', ticket: ticket('B') }, { kind: 'ticket.create', ticket: ticket('C') },
+    dependency('dependency.add', 'A', 'B'), dependency('dependency.add', 'A', 'C')]);
+  const old = await adapter.readRevision(mapId, 2);
+  const initial = await current(adapter);
+  const result = await commitCommands(adapter, [dependency('dependency.remove', 'A', 'B'), dependency('dependency.add', 'A', 'B'),
+    { kind: 'ticket.update', ticketId: id('Ticket', 'A'), patch }]);
+  expect(result.revision.state).toEqual({ ...initial, currentRevision: 3,
+    tickets: initial.tickets.map(item => item.id === 'A' ? { ...item, ...patch, prerequisites: ['C', 'B'] } : item) });
+  expect(result.revision.changes).toEqual([
+    { commandIndex: 0, command: 'dependency.remove', subjectId: 'A' },
+    { commandIndex: 1, command: 'dependency.add', subjectId: 'A' },
+    { commandIndex: 2, command: 'ticket.update', subjectId: 'A' },
+  ]);
+  expect(await adapter.readRevision(mapId, 2)).toEqual(old);
+  expect(await adapter.readRevision(mapId, 3)).toEqual({ kind: 'found', value: result.revision });
+});

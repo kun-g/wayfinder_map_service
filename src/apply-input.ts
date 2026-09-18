@@ -1,4 +1,4 @@
-import type { ApplyRequest, InvalidInput, Result } from './types.js';
+import type { ApplyRequest, InvalidInput, Result, TicketType } from './types.js';
 import { invalid, isPlainObject, validateAuthor, validateExtensions, validateId, validateObject } from './values.js';
 import { immutableClone } from './immutable.js';
 
@@ -47,7 +47,7 @@ function validateRequest(raw: unknown): InvalidInput | undefined {
       for (const key of ['title', 'question']) {
         if (typeof ticket[key] !== 'string' || ticket[key].trim() === '') return invalid([...ticketPath, key], 'Nonblank text required');
       }
-      if (!['grilling', 'prototype', 'research', 'task'].includes(ticket.type as string)) return invalid([...ticketPath, 'type'], 'Supported Ticket type required');
+      if (!isTicketType(ticket.type)) return invalid([...ticketPath, 'type'], 'Supported Ticket type required');
       if (Object.hasOwn(ticket, 'extensions')) {
         const error = validateExtensions(ticket.extensions, [...ticketPath, 'extensions']);
         if (error) return error;
@@ -86,11 +86,16 @@ function validateRequest(raw: unknown): InvalidInput | undefined {
         return invalid([...patchPath, key], 'Nonblank text required');
       }
     }
-    if (ticketUpdate && Object.hasOwn(patch, 'type') && !['grilling', 'prototype', 'research', 'task'].includes(patch.type as string)) return invalid([...patchPath, 'type'], 'Supported Ticket type required');
+    if (ticketUpdate && Object.hasOwn(patch, 'type') && !isTicketType(patch.type)) return invalid([...patchPath, 'type'], 'Supported Ticket type required');
     if (Object.hasOwn(patch, 'notes') && typeof patch.notes !== 'string') return invalid([...patchPath, 'notes'], 'String required');
     if (Object.hasOwn(patch, 'extensions')) {
       const error = validateExtensions(patch.extensions, [...patchPath, 'extensions']);
       if (error) return error;
     }
   }
+}
+
+const ticketTypes: Readonly<Record<TicketType, true>> = { grilling: true, prototype: true, research: true, task: true };
+function isTicketType(value: unknown): value is TicketType {
+  return typeof value === 'string' && Object.hasOwn(ticketTypes, value);
 }

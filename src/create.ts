@@ -60,7 +60,7 @@ export function prepareApply(current: StoredMapState, request: ApplyRequest): Pr
   }
   const graphError = checkFinalGraph(next);
   if (graphError) return { kind: 'rejected', rejection: graphError };
-  if (isDeepStrictEqual(initial, next)) return { kind: 'rejected', rejection: { stage: 'final_state', code: 'no_changes' } };
+  if (isDeepStrictEqual(comparableState(initial), comparableState(next))) return { kind: 'rejected', rejection: { stage: 'final_state', code: 'no_changes' } };
   if (!Number.isSafeInteger(current.currentRevision + 1)) return { kind: 'rejected', rejection: {
     stage: 'input', error: invalid(['expectedRevision'], 'Cannot advance beyond positive safe revisions'),
   } };
@@ -77,6 +77,14 @@ export function prepareApply(current: StoredMapState, request: ApplyRequest): Pr
   return { kind: 'prepared', change: Object.freeze({
     ...immutableClone(change), [preparedBrand]: true as const,
   }), frontier: calculateFrontier(next) };
+}
+
+function comparableState(state: StoredMapState): StoredMapState {
+  // AND Dependencies are relationships, not a priority/display-order list.
+  // Normalize only for comparison; never reorder caller or stored snapshots.
+  return { ...state, tickets: state.tickets.map(ticket => ({
+    ...ticket, prerequisites: [...ticket.prerequisites].sort(),
+  })) };
 }
 
 function validateCreate(input: unknown): InvalidInput | undefined {
