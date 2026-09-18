@@ -36,14 +36,25 @@ export function validateObject(
   }
 }
 
-export function validateExtensions(value: unknown): InvalidInput | undefined {
-  const error = validateObject(value, ['extensions']);
+export function validateExtensions(value: unknown, path: readonly (string | number)[] = ['extensions']): InvalidInput | undefined {
+  const error = validateObject(value, path);
   if (error) return error;
   for (const key of Object.keys(value as object)) {
     const match = /^[a-z][a-z0-9_-]*\.[a-z][a-z0-9_.-]*$/.exec(key);
-    if (!match || match[0] !== key) return invalid(['extensions', key], 'Namespaced extension key required');
+    if (!match || match[0] !== key) return invalid([...path, key], 'Namespaced extension key required');
   }
-  return validateJson(value, ['extensions'], new Set());
+  return validateJson(value, path, new Set());
+}
+
+export function validateAuthor(value: unknown): InvalidInput | undefined {
+  const shape = validateObject(value, ['author'], ['actorId', 'clientId', 'occurredAt']);
+  if (shape) return shape;
+  if (!isPlainObject(value)) return invalid(['author'], 'Caller author required');
+  for (const key of ['actorId', 'clientId']) {
+    const error = validateId(value[key], ['author', key]);
+    if (error) return error;
+  }
+  if (!isUtcTimestamp(value.occurredAt)) return invalid(['author', 'occurredAt'], 'UTC RFC3339 timestamp required');
 }
 
 function validateJson(

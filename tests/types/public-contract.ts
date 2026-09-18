@@ -1,5 +1,5 @@
 import type {
-  ActorId, ClaimantId, ClientId, ContentId, CreateMapInput, MapId, PreparedCommit,
+  ActorId, ApplyRequest, ClaimantId, ClientId, ContentId, CreateMapInput, MapId, PreparedCommit,
   Settlement, StateAdapter, StoredTicket, TicketId,
 } from '../../src/index.js';
 
@@ -32,6 +32,11 @@ export function publicContract(
   adapter.importState({});
   // @ts-expect-error StateAdapter has no public failure/test port.
   adapter.failNextCommit();
+  // @ts-expect-error Typed requests require a nonempty command tuple.
+  const empty: ApplyRequest = { mapId, expectedRevision: 1, author: create.author, commands: [] };
+  const rawJson: unknown = {};
+  // @ts-expect-error Unknown JSON is not an opaque prepared value.
+  adapter.commit(rawJson);
   const research: Settlement<'research'> = {
     outcome: { kind: 'finding', statement: 'Found' }, evidence: [], references: [],
     provenance: { method: 'inspect', sources: [] }, extensions: {},
@@ -57,5 +62,5 @@ export function publicContract(
     }
     void [noClaim, introduction];
   }
-  void [clientId, wrongMap, wrongActor, wrongClient, wrongTicket, raw, fabricated, research, task];
+  void [clientId, wrongMap, wrongActor, wrongClient, wrongTicket, raw, fabricated, empty, research, task];
 }

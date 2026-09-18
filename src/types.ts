@@ -90,10 +90,24 @@ export interface CreateMapInput {
   readonly extensions?: Extensions;
   readonly author: MutationAuthor;
 }
-// Only creation is mintable in this slice. Atomic apply extends this type in issue 2.
+// Command subset grows with the accepted implementation slices.
+export type MapPatch = Readonly<Partial<Pick<StoredMapState, 'title' | 'destination' | 'notes' | 'extensions'>>>;
+export type Command = { readonly kind: 'map.update'; readonly patch: MapPatch };
+export interface ApplyRequest {
+  readonly mapId: MapId;
+  readonly expectedRevision: RevisionNumber;
+  readonly author: MutationAuthor;
+  readonly commands: NonEmpty<Command>;
+}
+export type Rejection = { readonly stage: 'input'; readonly error: InvalidInput }
+  | { readonly stage: 'final_state'; readonly code: 'no_changes' };
+export type PrepareResult =
+  | { readonly kind: 'prepared'; readonly change: import('./create.js').PreparedCommit; readonly frontier: readonly TicketId[] }
+  | { readonly kind: 'rejected'; readonly rejection: Rejection }
+  | { readonly kind: 'conflict'; readonly conflict: Conflict };
 export interface SemanticChange {
   readonly commandIndex: number;
-  readonly command: 'map.create';
+  readonly command: Command['kind'] | 'map.create';
   readonly subjectId: string;
   readonly reason?: string;
 }

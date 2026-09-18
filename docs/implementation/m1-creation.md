@@ -20,7 +20,7 @@ The test runner and type checker include only production sources and tests, not 
 
 Preparation copies and recursively freezes accepted values without freezing the original input. Commit captures its input before yielding and constructs the complete immutable Revision before its synchronous absence-check/publication operation. The same record supplies both current state and historical Revision 1, so there cannot be an orphan state or history record. Reads may share frozen values, but never writable storage aliases. Instances hold only private in-memory Maps; no global registry, files or restart loading exists.
 
-Only create preparation is mintable in this slice. `PreparedCommit` and `SemanticChange` intentionally describe the implemented creation subset; issue 2 extends them for atomic apply, and later tickets extend command summaries. The correlated stored Ticket/Settlement types follow the complete specification, but Ticket operations, nonempty Frontier calculation, apply conflicts and subsequent revisions are not delivered here.
+This document records the original creation/read slice. [Atomic Map revisions](m1-atomic-revisions.md) now extends `PreparedCommit` and `SemanticChange` for apply and Map update, while later tickets extend command summaries further. The correlated stored Ticket/Settlement types follow the complete specification, but Ticket operations and nonempty Frontier calculation are not delivered yet.
 
 ## Acceptance traceability
 
