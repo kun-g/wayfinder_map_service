@@ -1,4 +1,5 @@
 import type { Command, CommandErrorCode, CommandRejection, Result, StoredMapState, TicketId } from './types.js';
+import { calculateFrontier } from './frontier.js';
 
 export function applyCommand(state: StoredMapState, command: Command, commandIndex: number): Result<StoredMapState, CommandRejection> {
   const reject = (code: CommandErrorCode, ...ticketIds: TicketId[]): Result<StoredMapState, CommandRejection> => ({
@@ -23,10 +24,24 @@ export function applyCommand(state: StoredMapState, command: Command, commandInd
       ...command.ticket, extensions: command.ticket.extensions ?? {}, prerequisites: [], status: 'open', claim: null,
     }] } };
   }
-  const identity = command.kind === 'ticket.update' ? command.ticketId : command.dependentId;
+  const identity = command.kind === 'ticket.update' || command.kind === 'claim.acquire' || command.kind === 'claim.release' || command.kind === 'claim.clear'
+    ? command.ticketId : command.dependentId;
   const ticket = state.tickets.find(ticket => ticket.id === identity);
   if (!ticket) return reject('ticket_not_found', identity);
   if (ticket.status !== 'open') return reject('ticket_not_open', ticket.id);
+  if (command.kind === 'claim.acquire') {
+    if (ticket.claim !== null) return reject('ticket_already_claimed', ticket.id);
+    if (!calculateFrontier(state).includes(ticket.id)) return reject('unsettled_dependency', ticket.id);
+    return { kind: 'ok', value: { ...state, tickets: state.tickets.map(existing => existing.id === ticket.id
+      ? { ...ticket, claim: command.claimantId } : existing) } };
+  }
+  if (command.kind === 'claim.release' || command.kind === 'claim.clear') {
+    if (ticket.claim === null) return reject('claim_not_found', ticket.id);
+    const claimantId = command.kind === 'claim.clear' ? command.expectedClaimantId : command.claimantId;
+    if (claimantId !== ticket.claim) return reject('claim_mismatch', ticket.id);
+    return { kind: 'ok', value: { ...state, tickets: state.tickets.map(existing => existing.id === ticket.id
+      ? { ...ticket, claim: null } : existing) } };
+  }
   if (ticket.claim !== null) {
     if (!command.claimantId) return reject('claim_required', ticket.id);
     if (command.claimantId !== ticket.claim) return reject('claim_mismatch', ticket.id);

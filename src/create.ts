@@ -73,7 +73,9 @@ export function prepareApply(current: StoredMapState, request: ApplyRequest): Pr
         : command.kind === 'content.add' || command.kind === 'content.update' ? command.item.id
         : command.kind === 'content.remove' ? command.itemId
         : command.kind === 'ticket.create' ? command.ticket.id
-        : command.kind === 'ticket.update' ? command.ticketId : command.dependentId,
+        : command.kind === 'ticket.update' || command.kind === 'claim.acquire' || command.kind === 'claim.release' || command.kind === 'claim.clear'
+          ? command.ticketId : command.dependentId,
+      ...(command.kind === 'claim.clear' ? { reason: command.reason } : {}),
     })) as unknown as NonEmpty<SemanticChange>,
   };
   return { kind: 'prepared', change: Object.freeze({

@@ -32,6 +32,17 @@ function validateRequest(raw: unknown): InvalidInput | undefined {
     const shape = validateObject(command, path);
     if (shape) return shape;
     if (!isPlainObject(command)) return invalid(path, 'Plain command required');
+    if (command.kind === 'claim.acquire' || command.kind === 'claim.release' || command.kind === 'claim.clear') {
+      const clearing = command.kind === 'claim.clear';
+      const shape = validateObject(command, path, clearing ? ['kind', 'ticketId', 'expectedClaimantId', 'reason'] : ['kind', 'ticketId', 'claimantId']);
+      if (shape) return shape;
+      for (const key of ['ticketId', clearing ? 'expectedClaimantId' : 'claimantId']) {
+        const identity = validateId(command[key], [...path, key]);
+        if (identity) return identity;
+      }
+      if (clearing && (typeof command.reason !== 'string' || command.reason.trim() === '')) return invalid([...path, 'reason'], 'Nonblank reason required');
+      continue;
+    }
     if (command.kind === 'content.add' || command.kind === 'content.update' || command.kind === 'content.remove') {
       const shape = validateObject(command, path, command.kind === 'content.remove' ? ['kind', 'section', 'itemId'] : ['kind', 'section', 'item']);
       if (shape) return shape;
