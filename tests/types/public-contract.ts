@@ -1,7 +1,9 @@
 import type {
   ActorId, ApplyRequest, ClaimantId, ClientId, ContentId, CreateMapInput, MapId, PreparedCommit,
-  Command, Settlement, StateAdapter, StoredTicket, TicketId, TicketInput, TicketPatch,
+  Command, MapContent, Settlement, StateAdapter, StoredTicket, TicketId, TicketInput, TicketPatch,
 } from '../../src/index.js';
+// @ts-expect-error Array-shape validation is internal, not another public seam.
+import { validateArrayShape } from '../../src/index.js';
 
 // Type-only fixture, checked by tsc; deliberately never executed by Vitest.
 export function publicContract(
@@ -50,6 +52,14 @@ export function publicContract(
   const wrongAccess: Command = { kind: 'ticket.update', ticketId, patch: { title: 'Next' }, claimantId: actorId };
   // @ts-expect-error Dependencies use TicketId endpoints, never cross-Map IDs.
   const wrongEndpoint: Command = { kind: 'dependency.add', dependentId: ticketId, prerequisiteId: mapId };
+  // @ts-expect-error MapContent requires a ContentId, not TicketId.
+  const wrongContent: MapContent = { id: ticketId, text: 'Text', references: [] };
+  // @ts-expect-error Content edits accept exactly the two defined sections.
+  const wrongSection: Command = { kind: 'content.add', section: 'Fog', item: { id: contentId, text: 'Text', references: [] } };
+  // @ts-expect-error Content removal cannot identify a Ticket for deletion.
+  const removeTicket: Command = { kind: 'content.remove', section: 'fog', itemId: ticketId };
+  // @ts-expect-error Reference labels are optional strings, not arbitrary JSON.
+  const wrongReference: MapContent = { id: contentId, text: 'Text', references: [{ locator: 'source', label: 1 }] };
   const research: Settlement<'research'> = {
     outcome: { kind: 'finding', statement: 'Found' }, evidence: [], references: [],
     provenance: { method: 'inspect', sources: [] }, extensions: {},
@@ -76,5 +86,6 @@ export function publicContract(
     void [noClaim, introduction];
   }
   void [clientId, wrongMap, wrongActor, wrongClient, wrongTicket, raw, fabricated, empty, research, task,
-    badTicket, importTicket, changeIdentity, changeStatus, wrongAccess, wrongEndpoint];
+    badTicket, importTicket, changeIdentity, changeStatus, wrongAccess, wrongEndpoint,
+    wrongContent, wrongSection, removeTicket, wrongReference, validateArrayShape];
 }

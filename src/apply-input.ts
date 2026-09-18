@@ -1,6 +1,7 @@
 import type { ApplyRequest, InvalidInput, Result, TicketType } from './types.js';
-import { invalid, isPlainObject, validateAuthor, validateExtensions, validateId, validateObject } from './values.js';
+import { invalid, isPlainObject, validateArrayShape, validateAuthor, validateExtensions, validateId, validateObject } from './values.js';
 import { immutableClone } from './immutable.js';
+import { validateMapContent } from './content-input.js';
 
 export function decodeApplyRequest(raw: unknown): Result<ApplyRequest, InvalidInput> {
   const error = validateRequest(raw);
@@ -19,21 +20,26 @@ function validateRequest(raw: unknown): InvalidInput | undefined {
   const authorError = validateAuthor(raw.author);
   if (authorError) return authorError;
   const commands = raw.commands;
-  if (!Array.isArray(commands) || Object.getPrototypeOf(commands) !== Array.prototype || commands.length === 0) {
+  if (!Array.isArray(commands) || commands.length === 0) {
     return invalid(['commands'], 'Nonempty plain command array required');
   }
-  for (const key of Reflect.ownKeys(commands)) {
-    if (key !== 'length' && (typeof key !== 'string' || !/^(0|[1-9]\d*)$/.test(key)
-      || Number(key) >= commands.length)) return invalid(['commands', String(key)], 'Unsupported array property');
-  }
+  const arrayShape = validateArrayShape(commands, ['commands']);
+  if (arrayShape) return arrayShape;
   for (let i = 0; i < commands.length; i++) {
-    const descriptor = Object.getOwnPropertyDescriptor(commands, String(i));
-    if (!descriptor || !descriptor.enumerable || !('value' in descriptor)) return invalid(['commands', i], 'Plain command element required');
+    const descriptor = Object.getOwnPropertyDescriptor(commands, String(i))!;
     const command: unknown = descriptor.value;
     const path = ['commands', i] as const;
     const shape = validateObject(command, path);
     if (shape) return shape;
     if (!isPlainObject(command)) return invalid(path, 'Plain command required');
+    if (command.kind === 'content.add' || command.kind === 'content.update' || command.kind === 'content.remove') {
+      const shape = validateObject(command, path, command.kind === 'content.remove' ? ['kind', 'section', 'itemId'] : ['kind', 'section', 'item']);
+      if (shape) return shape;
+      if (command.section !== 'fog' && command.section !== 'scopeExclusions') return invalid([...path, 'section'], 'Supported content section required');
+      const itemError = command.kind === 'content.remove' ? validateId(command.itemId, [...path, 'itemId']) : validateMapContent(command.item, [...path, 'item']);
+      if (itemError) return itemError;
+      continue;
+    }
     if (command.kind === 'ticket.create') {
       const shape = validateObject(command, path, ['kind', 'ticket']);
       if (shape) return shape;

@@ -70,6 +70,8 @@ export function prepareApply(current: StoredMapState, request: ApplyRequest): Pr
     mapId: current.id, next, author: request.author,
     changes: request.commands.map((command, commandIndex) => ({
       commandIndex, command: command.kind, subjectId: command.kind === 'map.update' ? current.id
+        : command.kind === 'content.add' || command.kind === 'content.update' ? command.item.id
+        : command.kind === 'content.remove' ? command.itemId
         : command.kind === 'ticket.create' ? command.ticket.id
         : command.kind === 'ticket.update' ? command.ticketId : command.dependentId,
     })) as unknown as NonEmpty<SemanticChange>,
