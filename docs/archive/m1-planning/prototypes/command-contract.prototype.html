@@ -1,0 +1,291 @@
+<!doctype html>
+<html lang="zh-CN">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Wayfinder 原子命令 · 抛弃式原型</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f5f6f8;color:#172b37;font:15px/1.55 system-ui,sans-serif}
+main{max-width:1060px;margin:auto;padding:30px 22px}h1{font-size:26px;margin:0 0 8px}h2{font-size:18px;margin:0 0 14px}
+p{margin:8px 0}.muted{color:#5d707c}.card{background:white;border:1px solid #dbe2e8;border-radius:12px;padding:20px;margin:18px 0}
+.badge{font-size:12px;color:#176e65;font-weight:650}.row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+button,select,input{font:inherit;border:1px solid #bbcbd2;border-radius:6px;padding:8px 12px;background:#fff;color:#172b37}
+button{cursor:pointer}button:hover,button.active{background:#e6f4f1;border-color:#188478}button:disabled{opacity:.45;cursor:default}
+button.primary{background:#167c70;color:#fff;border-color:#167c70}label{display:flex;align-items:center;gap:6px}
+input{width:95px}.tickets{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px}.ticket{border:1px solid #dbe2e8;padding:14px;border-radius:8px}
+dl{display:grid;grid-template-columns:85px 1fr;margin:8px 0;gap:5px}dt{color:#5d707c}dd{margin:0;overflow-wrap:anywhere}
+#notice{border-left:4px solid #188478;padding:12px;background:#eff8f6;margin:14px 0;white-space:pre-wrap}
+#notice.bad{border-color:#ab6044;background:#fff5ef}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#f5f6f8;padding:12px;border-radius:6px;font-size:12px}
+.steps{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}#tabs{display:flex;flex-wrap:wrap;gap:6px}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:15px}
+.graph{margin:18px 0;border:1px solid #dbe2e8;background:#fafcfc;border-radius:8px;overflow:auto}.graph svg{display:block;width:100%;min-width:720px;height:auto}
+.session-id{font-family:ui-monospace,monospace;font-size:13px}.graph-note{font-size:13px}
+@media(max-width:650px){.tickets{grid-template-columns:1fr}main{padding:22px 14px}}
+</style>
+<main>
+<div class="badge">HISTORICAL PROTOTYPE · 不是生产模块 · 已确认契约见 docs/spec/m1.md</div>
+<h1>一个批次，全部成功或全部不发生</h1>
+<p class="muted">历史接口演示；后续 Revision、存储 Settlement 和 Adapter 契约已汇总到 <a href="../../../spec/m1.md">M1 正式规范</a>。此简化原型不作为当前实现或验收依据。</p>
+<p class="muted">本原型检查：有序语义命令、最终图校验与 expected Revision 能否清楚表达 Claim、Settlement 和显式 reopen。仅模拟两张 Grilling Ticket；不实现持久化、删除或 rollback。</p>
+<section class="card">
+<h2>当前 Map 状态</h2>
+<div class="row"><strong id="revision"></strong><span id="frontier"></span></div>
+<p id="mapTitle"></p>
+<div class="graph"><svg id="graph" viewBox="0 0 940 345" role="img" aria-label="Map 的 Destination 与 Decision Ticket 依赖图"></svg></div>
+<p class="muted graph-note">Destination 是 Map 属性，在图上作为终点视觉锚点展示，不是 Ticket，也不参与 Dependency。实线箭头表示 prerequisite → dependent；绿色边框表示当前 Frontier。</p>
+<p class="muted">Notes、Fog、Scope Exclusions、extensions：本演示均为空</p>
+<div id="tickets" class="tickets"></div>
+<div id="notice" role="status"></div>
+<details><summary>查看最近一次提交请求和结果</summary><pre id="request"></pre><pre id="response"></pre></details>
+</section>
+<section class="card">
+<h2>自由探索</h2>
+<div class="row">
+<label>操作 Ticket <select id="target"><option value="A">A · 先决选择</option><option value="B">B · 下游选择</option></select></label>
+<label>工作会话 <select id="claimant"><option value="session-alpha-7f3a">Alpha 会话</option><option value="session-beta-9c21">Beta 会话</option></select></label>
+<label>预期 Revision <input id="expected" type="number" min="1" value="1"></label>
+<button id="sync">使用当前 Revision</button><button id="reset">重置 Map</button>
+</div>
+<p class="muted">所选工作会话的 ClaimantId：<span id="activeSessionId" class="session-id"></span>。会话名称仅用于显示；请求传递的是这个 ID。当前设计没有独立 ClaimId。</p>
+<div class="actions">
+<button data-action="claim">领取 Ticket</button><button data-action="release">正常释放</button>
+<button data-action="clear">人工解除（预期当前会话）</button><button data-action="settle">接受 Decision 并结算</button>
+<button data-action="edit">修改 Ticket 标题</button><button data-action="reopen">重新打开 Ticket</button>
+<button data-action="add">让所选 Ticket 依赖另一张</button><button data-action="remove">移除对另一张的依赖</button>
+<button data-action="handoff">原子转交给另一会话</button>
+</div>
+<p class="muted">成功后更新输入的预期 Revision。想模拟旧写入，可手动改回较小数字。人工解除会在命令中写入“人工确认解除”的原因。</p>
+</section>
+<section class="card">
+<h2>引导情景</h2><div id="tabs"></div><p id="scenarioDescription"></p>
+<button id="start" class="primary">从已知状态开始这个情景</button><div id="steps" class="steps"></div>
+</section>
+</main>
+<script>
+// PORTABLE PURE LOGIC. No DOM, clocks, random IDs, or external state.
+const Logic = (() => {
+  const clone = value => JSON.parse(JSON.stringify(value));
+  const ready = (state, ticket) => ticket.prerequisites.every(id => state.tickets.some(t => t.id === id && t.status === "settled"));
+  const frontier = state => state.tickets.filter(t => t.status === "open" && !t.claim && ready(state,t)).map(t => t.id).sort();
+  function initial(mode = "default") {
+    const a = {id:"A",title:"先决选择",type:"grilling",question:"应采用哪条先决路线？",status:"open",claim:null,prerequisites:[],extensions:{}};
+    const b = {id:"B",title:"下游选择",type:"grilling",question:"基于先决路线如何继续？",status:"open",claim:null,prerequisites:["A"],extensions:{}};
+    const settle = t => {t.status="settled";t.settlement={outcome:{kind:"decision",statement:"接受路线 "+t.id,rationale:"用户确认"},evidence:[],references:[],provenance:{method:"grilling",sources:[]},extensions:{}}};
+    if(mode==="settled"){settle(a);settle(b)}
+    if(mode==="claimedDownstream"){settle(a);b.claim="session-beta-9c21"}
+    if(mode==="independent")b.prerequisites=[];
+    return {id:"map-demo",title:"原子命令验证",destination:"明确并验证地图核心行为",notes:"",fog:[],scopeExclusions:[],extensions:{},currentRevision:1,tickets:[a,b]};
+  }
+  function apply(current,request) {
+    const reject = (stage,code,index,ids=[]) => ({kind:"rejected",rejection:{stage,code,...(index===undefined?{}:{commandIndex:index}),ticketIds:ids}});
+    if(!Array.isArray(request.commands)||!request.commands.length)return reject("input","empty_batch");
+    if(!Number.isSafeInteger(request.expectedRevision)||request.expectedRevision<1)return reject("input","invalid_revision");
+    if(request.mapId!==current.id)return reject("input","map_id_mismatch");
+    if(request.expectedRevision!==current.currentRevision)return {kind:"conflict",conflict:{mapId:current.id,expectedRevision:request.expectedRevision,currentRevision:current.currentRevision}};
+    const next=clone(current), changes=[];
+    for(let i=0;i<request.commands.length;i++){
+      const c=request.commands[i],t=next.tickets.find(t=>t.id===(c.ticketId||c.dependentId));
+      if(!t)return reject("command","ticket_not_found",i);
+      const fail=code=>reject("command",code,i,[t.id]);
+      const editGate=()=>{
+        if(t.status!=="open")return "ticket_not_open";
+        if(t.claim&&t.claim!==c.claimantId)return "claim_mismatch";
+        return null;
+      };
+      let error;
+      switch(c.kind){
+        case "claim.acquire":
+          if(t.status!=="open")return fail("ticket_not_open");
+          if(t.claim)return fail("ticket_already_claimed");
+          if(!ready(next,t))return fail("unsettled_dependency");
+          t.claim=c.claimantId;break;
+        case "claim.release":
+          if(!t.claim)return fail("claim_not_found");
+          if(t.claim!==c.claimantId)return fail("claim_mismatch");
+          t.claim=null;break;
+        case "claim.clear":
+          if(!t.claim)return fail("claim_not_found");
+          if(t.claim!==c.expectedClaimantId)return fail("claim_mismatch");
+          if(!c.reason?.trim())return fail("invalid_reason");
+          t.claim=null;break;
+        case "ticket.settle":
+          if(t.status!=="open")return fail("ticket_not_open");
+          if(!t.claim)return fail("claim_required");
+          if(t.claim!==c.claimantId)return fail("claim_mismatch");
+          if(!ready(next,t))return fail("unsettled_dependency");
+          t.status="settled";t.claim=null;t.settlement=clone(c.settlement);break;
+        case "ticket.reopen":
+          if(t.status!=="settled")return fail("ticket_not_settled");
+          if(!c.reason?.trim())return fail("invalid_reason");
+          t.status="open";t.claim=null;delete t.settlement;break;
+        case "ticket.update":
+          if(error=editGate())return fail(error);
+          t.title=c.patch.title;break;
+        case "dependency.add":
+        case "dependency.remove":{
+          if(error=editGate())return fail(error);
+          const other=next.tickets.find(x=>x.id===c.prerequisiteId);
+          if(!other)return fail("ticket_not_found");
+          if(t.id===other.id)return fail("self_dependency");
+          const exists=t.prerequisites.includes(other.id);
+          if(c.kind==="dependency.add"){
+            if(exists)return fail("dependency_already_exists");
+            t.prerequisites.push(other.id);t.prerequisites.sort();
+          }else{
+            if(!exists)return fail("dependency_not_found");
+            t.prerequisites=t.prerequisites.filter(id=>id!==other.id);
+          }break;
+        }
+        default:return fail("unknown_command");
+      }
+      changes.push({commandIndex:i,command:c.kind,subjectId:t.id});
+    }
+    const visiting=new Set(),done=new Set();
+    function cycle(id){
+      if(visiting.has(id))return true;if(done.has(id))return false;
+      visiting.add(id);const t=next.tickets.find(t=>t.id===id);
+      if(t.prerequisites.some(p=>cycle(p)))return true;
+      visiting.delete(id);done.add(id);return false;
+    }
+    if(next.tickets.some(t=>t.prerequisites.some(id=>!next.tickets.some(p=>p.id===id))))return reject("final_state","dangling_dependency");
+    if(next.tickets.some(t=>cycle(t.id)))return reject("final_state","dependency_cycle");
+    const invalidSettled=next.tickets.filter(t=>t.status==="settled"&&!ready(next,t));
+    if(invalidSettled.length)return reject("final_state","settled_ticket_has_open_prerequisite",undefined,invalidSettled.map(t=>t.id));
+    const invalidClaimed=next.tickets.filter(t=>t.claim&&!ready(next,t));
+    if(invalidClaimed.length)return reject("final_state","claimed_ticket_has_open_prerequisite",undefined,invalidClaimed.map(t=>t.id));
+    if(JSON.stringify(current)===JSON.stringify(next))return reject("final_state","no_changes");
+    next.currentRevision++;
+    return {kind:"prepared",change:{mapId:next.id,priorRevision:current.currentRevision,next,author:request.author,changes},frontier:frontier(next)};
+  }
+  return {initial,apply,frontier};
+})();
+</script>
+<script>
+// THROWAWAY PRESENTATION / IN-MEMORY COMMIT SIMULATOR.
+const $=id=>document.getElementById(id);
+const ALPHA="session-alpha-7f3a",BETA="session-beta-9c21";
+const sessionName=id=>id===ALPHA?"Alpha 会话":id===BETA?"Beta 会话":"未知工作会话";
+let state=Logic.initial(),lastRequest=null,lastResult=null,notice="请选择自由动作，或启动引导情景。",bad=false,scenarioIndex=0,stepIndex=-1;
+const decision=id=>({outcome:{kind:"decision",statement:"接受路线 "+id,rationale:"用户明确接受"},evidence:[],references:[],provenance:{method:"grilling",sources:[]},extensions:{}});
+const acquire=(id,who)=>({kind:"claim.acquire",ticketId:id,claimantId:who});
+const release=(id,who)=>({kind:"claim.release",ticketId:id,claimantId:who});
+const clear=(id,who)=>({kind:"claim.clear",ticketId:id,expectedClaimantId:who,reason:"人工确认解除"});
+const settle=(id,who)=>({kind:"ticket.settle",ticketId:id,ticketType:"grilling",claimantId:who,settlement:decision(id)});
+const reopen=id=>({kind:"ticket.reopen",ticketId:id,reason:"用户要求重新评估"});
+const scenarios=[
+  {name:"正常推进",mode:"default",description:"A 是 B 的 prerequisite。观察 A 结算后，B 才进入 Frontier。",steps:[
+    {label:"Alpha 会话领取 A",commands:[acquire("A",ALPHA)]},
+    {label:"Alpha 会话结算 A",commands:[settle("A",ALPHA)]},
+    {label:"Beta 会话领取 B",commands:[acquire("B",BETA)]}]},
+  {name:"整批失败",mode:"default",description:"先领取成功，随后用错误会话修改。前一条命令也不应留下 Claim，Revision 保持 1。",steps:[
+    {label:"领取 A 后用 Beta 会话修改 A",commands:[acquire("A",ALPHA),{kind:"ticket.update",ticketId:"A",claimantId:BETA,patch:{title:"错误修改"}}]}]},
+  {name:"旧 Revision",mode:"default",description:"两个写入都基于 Revision 1。第一个成功后，第二个必须冲突；不能覆盖当前 Claim。",steps:[
+    {label:"Alpha 会话基于 Revision 1 领取 A",expected:1,commands:[acquire("A",ALPHA)]},
+    {label:"Beta 会话仍基于 Revision 1 领取 A",expected:1,commands:[acquire("A",BETA)]}]},
+  {name:"显式 reopen",mode:"settled",description:"A、B 均已 settled。单独 reopen A 应失败；显式 reopen 两者的批次应成功，即使先写 upstream。",steps:[
+    {label:"只 reopen A（应拒绝）",commands:[reopen("A")]},
+    {label:"原子 reopen A 和 B",commands:[reopen("A"),reopen("B")]}]},
+  {name:"保护下游 Claim",mode:"claimedDownstream",description:"A settled，B 已由 Beta 会话领取。Reopen A 不得静默破坏 B 的 Claim；人工确认解除须显式写入批次。",steps:[
+    {label:"只 reopen A（应拒绝）",commands:[reopen("A")]},
+    {label:"reopen A 并显式解除 B",commands:[reopen("A"),clear("B",BETA)]}]},
+  {name:"无环图",mode:"independent",description:"在一个批次中构造 A depends on B、B depends on A。最终图有环，整个批次应拒绝。",steps:[
+    {label:"尝试创建循环 Dependency",commands:[{kind:"dependency.add",dependentId:"A",prerequisiteId:"B"},{kind:"dependency.add",dependentId:"B",prerequisiteId:"A"}]}]}
+];
+const descriptions={
+  claim_mismatch:"工作会话与当前 Claim 不匹配",unsettled_dependency:"prerequisite 尚未 settled",
+  ticket_already_claimed:"Ticket 已被领取",claim_required:"必须先领取 Ticket",claim_not_found:"没有可释放的 Claim",
+  ticket_not_open:"Ticket 不是 open",ticket_not_settled:"Ticket 不是 settled",
+  settled_ticket_has_open_prerequisite:"最终状态中有 settled Ticket 依赖 open prerequisite",
+  claimed_ticket_has_open_prerequisite:"最终状态中有 Claim 被未 settled 的 prerequisite 阻塞",
+  dependency_cycle:"最终 Dependency 图存在环",dependency_already_exists:"Dependency 已存在",
+  dependency_not_found:"Dependency 不存在",no_changes:"整个批次没有净状态变化"
+};
+function addField(dl,label,value){const dt=document.createElement("dt"),dd=document.createElement("dd");dt.textContent=label;dd.textContent=value;dl.append(dt,dd)}
+function renderGraph(){
+  const svg=$("graph");svg.replaceChildren();
+  const element=(name,attrs,parent=svg)=>{const e=document.createElementNS("http://www.w3.org/2000/svg",name);for(const [k,v] of Object.entries(attrs))e.setAttribute(k,v);parent.append(e);return e};
+  const text=(x,y,value,size=14,color="#172b37")=>{const e=element("text",{x,y,"font-size":size,fill:color});e.textContent=value;return e};
+  const defs=element("defs",{}),marker=element("marker",{id:"dependency-arrow",viewBox:"0 0 10 10",refX:9,refY:5,markerWidth:7,markerHeight:7,orient:"auto"},defs);
+  element("path",{d:"M 0 0 L 10 5 L 0 10 z",fill:"#637c88"},marker);
+  element("rect",{x:255,y:18,width:430,height:94,rx:12,fill:"#e7f5f1",stroke:"#167c70","stroke-width":2});
+  text(277,45,"Destination · 终点",16,"#12685e");
+  text(277,75,state.destination,18);
+  text(277,97,"Map 属性的视觉锚点 · 不参与依赖计算",12,"#52706d");
+  const positions={A:{x:20,y:180},B:{x:560,y:180}};
+  const eligible=new Set(Logic.frontier(state));
+  for(const t of state.tickets){
+    for(const prerequisite of t.prerequisites){
+      const leftToRight=prerequisite==="A",y=leftToRight?220:292;
+      element("path",{d:leftToRight?"M 384 "+y+" L 550 "+y:"M 556 "+y+" L 390 "+y,fill:"none",stroke:"#637c88","stroke-width":2,"marker-end":"url(#dependency-arrow)"});
+      text(392,y-12,t.id+" depends on "+prerequisite,12,"#5d707c");
+    }
+  }
+  for(const t of state.tickets){
+    const p=positions[t.id],color=eligible.has(t.id)?"#167c70":"#bbcbd2";
+    element("rect",{x:p.x,y:p.y,width:360,height:145,rx:10,fill:"white",stroke:color,"stroke-width":eligible.has(t.id)?3:1});
+    text(p.x+16,p.y+28,t.id+" · "+t.title,17);
+    text(p.x+16,p.y+54,"状态："+t.status+(eligible.has(t.id)?" · Frontier":""),14);
+    text(p.x+16,p.y+81,"领取会话："+(t.claim?sessionName(t.claim):"未领取"),14);
+    text(p.x+16,p.y+106,"ClaimantId："+(t.claim||"—"),12,"#5d707c");
+    text(p.x+16,p.y+129,"Settlement："+(t.settlement?t.settlement.outcome.statement:"无"),13,"#5d707c");
+  }
+  if(state.tickets.every(t=>t.prerequisites.length===0))text(392,242,"当前无 Dependency",12,"#5d707c");
+}
+function render(){
+  $("revision").textContent="当前 Revision "+state.currentRevision;
+  $("frontier").textContent="Frontier："+(Logic.frontier(state).join("、")||"空");
+  $("mapTitle").textContent="Map："+state.title+" · "+state.id;
+  $("activeSessionId").textContent=$("claimant").value;
+  renderGraph();
+  $("tickets").replaceChildren();
+  for(const t of state.tickets){
+    const div=document.createElement("div");div.className="ticket";const h=document.createElement("strong");h.textContent=t.id+" · "+t.title;
+    const dl=document.createElement("dl");
+    addField(dl,"问题",t.question);addField(dl,"类型",t.type);addField(dl,"状态",t.status);
+    addField(dl,"领取会话",t.claim?sessionName(t.claim):"未领取");
+    addField(dl,"ClaimantId",t.claim||"无");addField(dl,"Prerequisites",t.prerequisites.join("、")||"无");
+    addField(dl,"Settlement",t.settlement?"Decision："+t.settlement.outcome.statement+"；原因："+t.settlement.outcome.rationale:"无");
+    if(t.settlement)addField(dl,"结果来源",t.settlement.provenance.method+"；Evidence / References：空");
+    addField(dl,"Extensions","空");div.append(h,dl);$("tickets").append(div);
+  }
+  $("notice").textContent=notice;$("notice").className=bad?"bad":"";
+  $("request").textContent=lastRequest?JSON.stringify(lastRequest,null,2):"尚无请求";
+  $("response").textContent=lastResult?JSON.stringify(lastResult,null,2):"尚无结果";
+}
+function submit(commands,expected=Number($("expected").value)){
+  lastRequest={mapId:state.id,expectedRevision:expected,author:{actorId:"demo-user",clientId:"prototype",occurredAt:"2026-09-17T00:00:00Z"},commands};
+  const before=state.currentRevision;lastResult=Logic.apply(state,lastRequest);bad=lastResult.kind!=="prepared";
+  if(lastResult.kind==="prepared"){
+    // One synchronous in-memory writer only. Production needs atomic Adapter CAS.
+    state=lastResult.change.next;$("expected").value=state.currentRevision;
+    notice="演示中的内存提交成功：Revision "+before+" → "+state.currentRevision+"。\n整批 "+commands.length+" 条命令只产生一个新 Revision。生产接口的 prepared 本身不代表已持久化。";
+  }else if(lastResult.kind==="conflict"){
+    notice="Revision 冲突：请求基于 "+expected+"，当前为 "+state.currentRevision+"。\n没有任何变化。应重新读取并判断，不要自动重试。";
+  }else{
+    const r=lastResult.rejection;notice="整批被拒绝："+(descriptions[r.code]||r.code)+"。\n位置："+(r.stage==="command"?"第 "+(r.commandIndex+1)+" 条命令":r.stage)+"。当前状态和 Revision 均未改变。";
+  }render();
+}
+document.querySelectorAll("[data-action]").forEach(button=>button.onclick=()=>{
+  const id=$("target").value,who=$("claimant").value,other=id==="A"?"B":"A",newWho=who===ALPHA?BETA:ALPHA;
+  const actions={
+    claim:[acquire(id,who)],release:[release(id,who)],clear:[clear(id,who)],settle:[settle(id,who)],
+    edit:[{kind:"ticket.update",ticketId:id,claimantId:who,patch:{title:"重新描述 "+id}}],
+    reopen:[reopen(id)],add:[{kind:"dependency.add",dependentId:id,prerequisiteId:other,claimantId:who}],
+    remove:[{kind:"dependency.remove",dependentId:id,prerequisiteId:other,claimantId:who}],
+    handoff:[release(id,who),acquire(id,newWho)]
+  };submit(actions[button.dataset.action]);stepIndex=-1;renderSteps();
+});
+$("sync").onclick=()=>$("expected").value=state.currentRevision;
+$("claimant").onchange=()=>$("activeSessionId").textContent=$("claimant").value;
+$("reset").onclick=()=>{state=Logic.initial();lastRequest=lastResult=null;notice="已重置，不属于 Map 领域命令。";bad=false;$("expected").value=1;stepIndex=-1;render();renderSteps()};
+function renderSteps(){
+  const scenario=scenarios[scenarioIndex];$("scenarioDescription").textContent=scenario.description;$("steps").replaceChildren();
+  scenario.steps.forEach((step,i)=>{const b=document.createElement("button");b.textContent=(i+1)+". "+step.label;b.disabled=i!==stepIndex;
+    b.onclick=()=>{submit(step.commands,step.expected??state.currentRevision);stepIndex++;renderSteps()};$("steps").append(b)});
+}
+function renderTabs(){
+  $("tabs").replaceChildren();scenarios.forEach((s,i)=>{const b=document.createElement("button");b.textContent=s.name;b.className=i===scenarioIndex?"active":"";
+    b.onclick=()=>{scenarioIndex=i;stepIndex=-1;renderTabs();renderSteps()};$("tabs").append(b)});
+}
+$("start").onclick=()=>{state=Logic.initial(scenarios[scenarioIndex].mode);lastRequest=lastResult=null;notice="情景已重置到已知状态；请依次点击步骤。";bad=false;$("expected").value=1;stepIndex=0;render();renderSteps()};
+render();renderTabs();renderSteps();
+</script>
+</html>

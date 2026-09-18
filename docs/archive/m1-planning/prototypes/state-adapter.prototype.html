@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="zh-CN">
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>State Adapter · throwaway prototype</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f4f7f6;color:#213830;font:15px/1.6 system-ui,sans-serif}main{max-width:1100px;margin:28px auto;padding:0 20px}h1{font-size:25px}h2{font-size:18px;margin-top:0}.muted{color:#63766c}.card{background:white;border:1px solid #dce6df;border-radius:9px;padding:20px;margin:16px 0}.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}.actions,.tabs{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}button,input,select{font:inherit;border:1px solid #bbcec2;border-radius:5px;padding:7px 11px;background:white;color:inherit}button{cursor:pointer}button.active{background:#167969;color:white}button:disabled{opacity:.45;cursor:default}label{display:block;margin:8px 0}input{max-width:100%}pre{font-size:12px;white-space:pre-wrap;overflow-wrap:anywhere;background:#f5f8f6;padding:10px}table{width:100%;border-collapse:collapse;font-size:13px}td,th{text-align:left;padding:7px;border-bottom:1px solid #e1e9e4}#notice{white-space:pre-wrap;color:#126657}.bad{color:#9b4028!important}.session{border-left:3px solid #c7dcd0;padding-left:12px}dt{color:#63766c;font-size:12px}dd{margin:0 0 7px;overflow-wrap:anywhere}@media(max-width:750px){.grid{grid-template-columns:1fr}}
+</style>
+<main>
+<h1>准备 ≠ 提交 · State Adapter 演示</h1>
+<p class="muted">Throwaway 澄清后契约演示：同一内存实例按 MapId 分别存储，每次请求只提交一张 Map，不做跨 Map 原子批量提交。本页仅演示创建和标题修改，Revision 为合成值；不是生产 Adapter，也不写入本地 tracker。刷新会丢失状态。</p>
+<section class="card"><h2>当前存储状态</h2><dl id="current"></dl><h3>不可变历史</h3><table><thead><tr><th>Revision / prior</th><th>变更</th><th>客户端</th><th>当时标题</th></tr></thead><tbody id="history"></tbody></table><p id="notice"></p><button id="reset">重置为 Revision 1</button> <button id="empty">重置为空存储</button></section>
+<section class="card"><h2>自由探索</h2><p class="muted">会话显示名不是 ClaimantId。本演示没有 Claim；actor/client/time 记录在 Revision 中。准备只改本会话缓冲区；只有成功 commit 才改变对应 Map 的存储。切换 MapId 后先读取，再准备修改；commit 使用缓冲区中的 MapId。</p><label>操作会话 <select id="who"><option>A</option><option>B</option></select></label><label>操作 / 查看 MapId <input id="mapId" value="adapter-map"></label><label>准备的新标题 <input id="title" value="选择新路线"></label><div class="actions"><button data-action="read">readCurrent</button><button data-action="create">准备创建</button><button data-action="prepare">准备标题修改</button><button data-action="commit">commit 已准备变更</button><button data-action="fail">commit · 模拟发布前失败</button><button data-action="mutate">修改读取副本（不提交）</button><button data-action="missing">读取不存在的 Map</button></div><label>历史 Revision <input id="number" type="number" min="1" value="1"></label><button data-action="historical">readRevision</button><div class="grid"><div class="session"><h3>会话 A</h3><div id="a"></div></div><div class="session"><h3>会话 B</h3><div id="b"></div></div></div></section>
+<section class="card"><h2>引导情景</h2><div id="tabs" class="tabs"></div><p id="description"></p><button id="start">开始当前情景（重置）</button><div id="steps" class="actions"></div></section>
+<section class="card"><h2>完整相关状态</h2><details><summary>存储、会话读取副本和 prepared 缓冲区</summary><pre id="state"></pre></details><details open><summary>最近结果</summary><pre id="result"></pre></details><p class="muted">回滚和删除不属于当前 M1，均不在本页模拟。成功结果携带当次提交的 Revision；读取历史不改变当前 head。</p></section>
+</main>
+<script id="adapter-model">
+// Portable deterministic model. No DOM, clocks, randomness, I/O or persistence.
+const AdapterModel=(()=>{
+ const copy=x=>JSON.parse(JSON.stringify(x));
+ const author=who=>({actorId:"demo-user",clientId:"demo-client-"+who.toLowerCase(),occurredAt:"2026-09-17T00:00:00Z"});
+ function map(title="已确认的初始路线",id="adapter-map"){return {id,title,destination:"确定可执行路线",notes:"",fog:[],scopeExclusions:[],tickets:[],extensions:{},currentRevision:1}}
+ function prepareCreate(who,title,id="adapter-map"){if(typeof title!=="string"||!title.trim()||typeof id!=="string"||!/^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}(?![\s\S])/.test(id))return {kind:"rejected",code:"invalid_input"};return {kind:"prepared",change:{kind:"create",mapId:id,priorRevision:null,next:map(title,id),author:author(who),changes:[{commandIndex:0,command:"map.create",subjectId:id}]}}}
+ function prepareApply(current,who,title){if(!current)return {kind:"rejected",code:"map_not_found"};if(typeof title!=="string"||!title.trim())return {kind:"rejected",code:"invalid_input"};if(title===current.title)return {kind:"rejected",code:"no_changes"};if(!Number.isSafeInteger(current.currentRevision+1))return {kind:"rejected",code:"invalid_input"};return {kind:"prepared",change:{kind:"apply",mapId:current.id,priorRevision:current.currentRevision,next:{...copy(current),title,currentRevision:current.currentRevision+1},author:author(who),changes:[{commandIndex:0,command:"map.update",subjectId:current.id}]}}}
+ const entry=(store,id)=>Object.hasOwn(store.maps,id)?store.maps[id]:null;
+ function readCurrent(store,id="adapter-map"){const m=entry(store,id);return !m?{kind:"not_found",code:"map_not_found",mapId:id}:{kind:"found",value:copy(m.head)}}
+ function readRevision(store,id,revision){if(!Number.isSafeInteger(revision)||revision<1)return {kind:"rejected",code:"invalid_input"};const m=entry(store,id);if(!m)return {kind:"not_found",code:"map_not_found",mapId:id};return Object.hasOwn(m.history,revision)?{kind:"found",value:copy(m.history[revision])}:{kind:"not_found",code:"revision_not_found",mapId:id,revision}}
+ function commit(store,prepared,simulateFailure=false){
+  if(!prepared||prepared.next.id!==prepared.mapId||prepared.kind!==(prepared.priorRevision===null?"create":"apply")||prepared.priorRevision!==null&&(!Number.isSafeInteger(prepared.priorRevision)||prepared.priorRevision<1)||!Number.isSafeInteger(prepared.next.currentRevision)||prepared.next.currentRevision!==(prepared.priorRevision===null?1:prepared.priorRevision+1))throw Error("invalid internal prepared envelope");
+  const current=entry(store,prepared.mapId);
+  if(prepared.priorRevision===null&&current)return {store,result:{kind:"rejected",code:"map_already_exists",mapId:prepared.mapId}};
+  if(prepared.priorRevision!==null&&!current)return {store,result:{kind:"rejected",code:"map_not_found",mapId:prepared.mapId}};
+  if(prepared.priorRevision!==null&&current.head.currentRevision!==prepared.priorRevision)return {store,result:{kind:"conflict",conflict:{mapId:prepared.mapId,expectedRevision:prepared.priorRevision,currentRevision:current.head.currentRevision}}};
+  const staged=copy(store),captured=copy(prepared),updated={head:captured.next,history:current?copy(current.history):{}};
+  if(simulateFailure)throw Error("demo_storage_failure: staged state was not published; history and current head remain unchanged");
+  const revision={mapId:captured.mapId,revision:captured.next.currentRevision,priorRevision:captured.priorRevision,kind:captured.kind,author:captured.author,changes:captured.changes,state:copy(captured.next)};
+  updated.history[revision.revision]=revision;staged.maps={...staged.maps,[captured.mapId]:updated};return {store:staged,result:{kind:"committed",revision:copy(revision),frontier:[]}};
+ }
+ function initial(empty=false){let store={maps:{}};if(!empty)store=commit(store,prepareCreate("A","已确认的初始路线").change).store;return {store,sessions:{A:{read:null,prepared:null},B:{read:null,prepared:null}},result:null}}
+ function step(state,action){
+  const next=copy(state),who=action.who||"A",session=next.sessions[who];let r;
+  switch(action.kind){
+   case "read":r=readCurrent(next.store,action.mapId??"adapter-map");session.read=r.kind==="found"?r.value:null;break;
+   case "create":r=prepareCreate(who,action.title??"新建路线",action.mapId??"adapter-map");session.prepared=r.kind==="prepared"?r.change:null;break;
+   case "prepare":r=action.mapId&&session.read&&session.read.id!==action.mapId?{kind:"rejected",code:"invalid_input",message:"先读取所选 MapId"}:prepareApply(session.read,who,action.title??"新路线 "+who);session.prepared=r.kind==="prepared"?r.change:null;break;
+   case "commit":if(!session.prepared){r={kind:"not_ready",message:"先准备变更"};break}try{const outcome=commit(next.store,session.prepared,Boolean(action.fail));next.store=outcome.store;r=outcome.result}catch(e){r={kind:"promise_rejected_simulation",message:e.message}}break;
+   case "history":r=readRevision(next.store,action.mapId??"adapter-map",action.revision??1);session.read=r.kind==="found"?r.value.state:null;break;
+   case "mutate":if(session.read){session.read.title="仅修改调用方的读取副本";r={kind:"local_edit",message:"没有提交，stored head 和 history 不变"}}else r={kind:"not_ready",message:"先读取"};break;
+   case "missing":r=readCurrent(next.store,"missing-map");break;
+   default:throw Error("unknown demo action");
+  }
+  next.result=r;return next;
+ }
+ return {initial,step,readCurrent,readRevision,prepareCreate,prepareApply,commit,copy};
+})();
+</script>
+<script id="presentation">
+const $=id=>document.getElementById(id);let state=AdapterModel.initial(),tab=0,stepIndex=-1,busy=false;
+const action=(kind,who="A",extra={})=>({kind,who,...extra});
+const scenarios=[
+ {name:"并发创建",empty:true,description:"A/B 都准备创建同一个 MapId。A 提交成功；B 得到 map_already_exists，不能覆盖 A。",steps:[action("create"),action("create","B"),action("commit"),action("commit","B")]},
+ {name:"不同 Map 隔离",description:"同一实例先存 adapter-map，再通过另一请求创建 another-map。只修改 adapter-map 后，它升到 Revision 2；another-map 仍为 1，两个历史互不影响。每一步都只操作一张 Map。",steps:[action("create","B",{mapId:"another-map"}),action("commit","B"),action("read"),action("prepare"),action("commit"),action("read","B",{mapId:"another-map"}),action("history","B",{mapId:"another-map"})]},
+ {name:"准备后的竞争",description:"A/B 都读取 Revision 1 并准备。A 先提交为 2；B 的纯准备仍然有效，但 commit 必须发现 head 已改变。",steps:[action("read"),action("read","B"),action("prepare"),action("prepare","B"),action("commit"),action("commit","B")]},
+ {name:"发布前失败",description:"暂存标题修改后模拟写入失败。当前 head 和 history 都不能变化，也不能返回 committed。",steps:[action("read"),action("prepare"),action("commit","A",{fail:true}),action("read"),action("history")]},
+ {name:"历史与副本",description:"提交到 2 后读取历史 1。修改返回副本不影响历史，也不把当前 Map 回滚到 1。",steps:[action("read"),action("prepare"),action("commit"),action("history"),action("mutate"),action("history","B")]},
+ {name:"重复提交",description:"同一个 prepared 只可在匹配 head 时提交。再次提交不会重复生成 Revision；返回旧版本冲突。",steps:[action("read"),action("prepare"),action("commit"),action("commit")]},
+ {name:"不存在的读取",description:"未知 Map 返回 map_not_found；已知 Map 的未知历史返回 revision_not_found；不存在可读 Revision 0。",steps:[action("missing"),action("history","A",{revision:99}),action("history","A",{revision:0})]}
+];
+function field(dl,key,value){const dt=document.createElement("dt"),dd=document.createElement("dd");dt.textContent=key;dd.textContent=value;dl.append(dt,dd)}
+function render(){
+ $("current").replaceChildren();const id=$("mapId").value,m=Object.hasOwn(state.store.maps,id)?state.store.maps[id]:null,h=m?.head;field($("current"),"实例中的 MapIds",Object.keys(state.store.maps).join("、")||"空");if(h){for(const [k,v] of [["MapId",h.id],["当前 Revision",h.currentRevision],["标题",h.title],["Destination",h.destination]])field($("current"),k,v)}else field($("current"),"所选 Map",id+" 不存在（不是 Revision 0）");
+ $("history").replaceChildren();for(const r of Object.values(m?.history||{})){const tr=document.createElement("tr");for(const v of [r.revision+" / "+r.priorRevision,r.kind,r.author.clientId,r.state.title]){const td=document.createElement("td");td.textContent=v;tr.append(td)}$("history").append(tr)}
+ for(const who of ["A","B"]){const panel=$(who.toLowerCase());panel.replaceChildren();const dl=document.createElement("dl"),s=state.sessions[who];field(dl,"读取副本",s.read?s.read.id+" · Revision "+s.read.currentRevision+" · "+s.read.title:"尚未读取 / 不存在");field(dl,"Prepared（未提交）",s.prepared?s.prepared.mapId+" · "+(s.prepared.priorRevision===null?"创建，预期该 Map 不存在":"预期 head "+s.prepared.priorRevision)+" → "+s.prepared.next.currentRevision+" · "+s.prepared.next.title:"无");panel.append(dl)}
+ $("state").textContent=JSON.stringify(state,null,2);$("result").textContent=state.result?JSON.stringify(state.result,null,2):"尚无操作";$("notice").textContent=state.result?({prepared:"纯准备成功：存储未变化。",committed:"提交成功：当前状态与历史一起发布。",conflict:"提交冲突：重新读取、判断；不自动合并。",rejected:"拒绝：存储没有变化。",promise_rejected_simulation:"模拟 Promise 失败：不是 committed，也不是领域拒绝。",not_found:"明确的不存在结果。",local_edit:"只改了调用方副本，没有改变存储。",found:"读取成功：没有修改当前 head。",not_ready:"先读取或准备。"}[state.result.kind]||state.result.kind):"准备和提交是两个不同阶段。";$("notice").className=state.result&&["conflict","rejected","promise_rejected_simulation"].includes(state.result.kind)?"bad":"";
+ document.querySelectorAll("button").forEach(b=>b.disabled=busy);steps();
+}
+async function dispatch(a){if(busy)return;$("mapId").value=a.kind==="commit"?(state.sessions[a.who||"A"].prepared?.mapId||a.mapId||"adapter-map"):(a.mapId||"adapter-map");busy=true;render();try{state=await Promise.resolve().then(()=>AdapterModel.step(state,a))}finally{busy=false;render()}}
+function tabs(){$("tabs").replaceChildren();scenarios.forEach((s,i)=>{const b=document.createElement("button");b.textContent=s.name;b.className=i===tab?"active":"";b.onclick=()=>{if(busy)return;tab=i;stepIndex=-1;tabs();steps()};$("tabs").append(b)})}
+function steps(){const s=scenarios[tab];$("description").textContent=s.description;$("steps").replaceChildren();s.steps.forEach((a,i)=>{const b=document.createElement("button");b.textContent=(i+1)+". "+a.who+" · "+a.kind+(a.fail?"（失败）":"");b.disabled=busy||i!==stepIndex;b.onclick=async()=>{await dispatch(a);stepIndex++;steps()};$("steps").append(b)})}
+document.querySelectorAll("[data-action]").forEach(b=>b.onclick=async()=>{const k=b.dataset.action;await dispatch(action(k==="fail"?"commit":k,$("who").value,{mapId:$("mapId").value,title:$("title").value,revision:Number($("number").value),fail:k==="fail"}));stepIndex=-1;steps()});
+$("mapId").onchange=()=>{if(!busy)render()};$("reset").onclick=()=>{state=AdapterModel.initial();$("mapId").value="adapter-map";stepIndex=-1;render()};$("empty").onclick=()=>{state=AdapterModel.initial(true);$("mapId").value="adapter-map";stepIndex=-1;render()};$("start").onclick=()=>{state=AdapterModel.initial(Boolean(scenarios[tab].empty));$("mapId").value="adapter-map";stepIndex=0;render()};
+tabs();render();
+</script>
+</html>
