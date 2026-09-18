@@ -3,6 +3,9 @@ import { invalid, isPlainObject, validateAuthor, validateExtensions, validateId,
 import { immutableClone } from './immutable.js';
 import { decodeApplyRequest } from './apply-input.js';
 import { isDeepStrictEqual } from 'node:util';
+import { calculateFrontier } from './frontier.js';
+import { applyCommand } from './commands.js';
+import { checkFinalGraph } from './graph.js';
 
 const preparedBrand: unique symbol = Symbol('PreparedCommit');
 interface PreparedBase {
@@ -50,8 +53,14 @@ export function prepareApply(current: StoredMapState, request: ApplyRequest): Pr
   } };
   const initial = structuredClone(current);
   let next = structuredClone(initial);
-  for (const command of request.commands) next = { ...next, ...command.patch };
-  if (isDeepStrictEqual(initial, next)) return { kind: 'rejected', rejection: { stage: 'final_state', code: 'no_changes' } };
+  for (const [commandIndex, command] of request.commands.entries()) {
+    const result = applyCommand(next, command, commandIndex);
+    if (result.kind === 'error') return { kind: 'rejected', rejection: result.error };
+    next = result.value;
+  }
+  const graphError = checkFinalGraph(next);
+  if (graphError) return { kind: 'rejected', rejection: graphError };
+  if (isDeepStrictEqual(comparableState(initial), comparableState(next))) return { kind: 'rejected', rejection: { stage: 'final_state', code: 'no_changes' } };
   if (!Number.isSafeInteger(current.currentRevision + 1)) return { kind: 'rejected', rejection: {
     stage: 'input', error: invalid(['expectedRevision'], 'Cannot advance beyond positive safe revisions'),
   } };
@@ -60,12 +69,22 @@ export function prepareApply(current: StoredMapState, request: ApplyRequest): Pr
     [preparedBrand]: true, kind: 'apply', priorRevision: current.currentRevision,
     mapId: current.id, next, author: request.author,
     changes: request.commands.map((command, commandIndex) => ({
-      commandIndex, command: command.kind, subjectId: current.id,
+      commandIndex, command: command.kind, subjectId: command.kind === 'map.update' ? current.id
+        : command.kind === 'ticket.create' ? command.ticket.id
+        : command.kind === 'ticket.update' ? command.ticketId : command.dependentId,
     })) as unknown as NonEmpty<SemanticChange>,
   };
   return { kind: 'prepared', change: Object.freeze({
     ...immutableClone(change), [preparedBrand]: true as const,
-  }), frontier: [] };
+  }), frontier: calculateFrontier(next) };
+}
+
+function comparableState(state: StoredMapState): StoredMapState {
+  // AND Dependencies are relationships, not a priority/display-order list.
+  // Normalize only for comparison; never reorder caller or stored snapshots.
+  return { ...state, tickets: state.tickets.map(ticket => ({
+    ...ticket, prerequisites: [...ticket.prerequisites].sort(),
+  })) };
 }
 
 function validateCreate(input: unknown): InvalidInput | undefined {

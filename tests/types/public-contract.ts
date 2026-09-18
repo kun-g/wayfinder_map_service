@@ -1,6 +1,6 @@
 import type {
   ActorId, ApplyRequest, ClaimantId, ClientId, ContentId, CreateMapInput, MapId, PreparedCommit,
-  Settlement, StateAdapter, StoredTicket, TicketId,
+  Command, Settlement, StateAdapter, StoredTicket, TicketId, TicketInput, TicketPatch,
 } from '../../src/index.js';
 
 // Type-only fixture, checked by tsc; deliberately never executed by Vitest.
@@ -37,6 +37,19 @@ export function publicContract(
   const rawJson: unknown = {};
   // @ts-expect-error Unknown JSON is not an opaque prepared value.
   adapter.commit(rawJson);
+  const createTicket: TicketInput = { id: ticketId, title: 'Title', question: 'Question', type: 'task' };
+  // @ts-expect-error A MapId cannot identify a Ticket.
+  const badTicket: TicketInput = { ...createTicket, id: mapId };
+  // @ts-expect-error TicketInput cannot import stored prerequisites.
+  const importTicket: TicketInput = { ...createTicket, prerequisites: [] };
+  // @ts-expect-error Ticket identity cannot be changed in a patch.
+  const changeIdentity: TicketPatch = { id: ticketId };
+  // @ts-expect-error Ticket status is not caller-editable.
+  const changeStatus: TicketPatch = { status: 'settled' };
+  // @ts-expect-error Access uses ClaimantId, not ActorId.
+  const wrongAccess: Command = { kind: 'ticket.update', ticketId, patch: { title: 'Next' }, claimantId: actorId };
+  // @ts-expect-error Dependencies use TicketId endpoints, never cross-Map IDs.
+  const wrongEndpoint: Command = { kind: 'dependency.add', dependentId: ticketId, prerequisiteId: mapId };
   const research: Settlement<'research'> = {
     outcome: { kind: 'finding', statement: 'Found' }, evidence: [], references: [],
     provenance: { method: 'inspect', sources: [] }, extensions: {},
@@ -62,5 +75,6 @@ export function publicContract(
     }
     void [noClaim, introduction];
   }
-  void [clientId, wrongMap, wrongActor, wrongClient, wrongTicket, raw, fabricated, empty, research, task];
+  void [clientId, wrongMap, wrongActor, wrongClient, wrongTicket, raw, fabricated, empty, research, task,
+    badTicket, importTicket, changeIdentity, changeStatus, wrongAccess, wrongEndpoint];
 }
