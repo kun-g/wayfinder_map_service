@@ -1,0 +1,105 @@
+import { Server } from '@modelcontextprotocol/sdk/server/index.js';
+import { CallToolRequestSchema, ErrorCode, ListToolsRequestSchema, McpError } from '@modelcontextprotocol/sdk/types.js';
+import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
+import { calculateFrontier, decodeApplyRequest, prepareApply, prepareCreate } from './index.js';
+import type { CreateMapInput, InvalidInput, MapId, MutationAuthor } from './types.js';
+import type { SQLiteStorage } from './sqlite-storage.js';
+import { SQLiteFailure } from './sqlite-storage.js';
+import { invalid, isPlainObject, validateAuthor, validateId, validateObject } from './values.js';
+import { mapTools } from './mcp-schemas.js';
+
+export { mapTools } from './mcp-schemas.js';
+export interface ToolAuthorConfiguration { readonly actorId: string; readonly clientId: string }
+
+// This advanced SDK seam deliberately retains M1's structured validation paths
+// instead of the high-level SDK's generic text errors/duplicate-text convenience.
+// Transport, admission, authentication and storage lifecycle belong to the host.
+export function createMapMcpServer(storage: SQLiteStorage, configuration: ToolAuthorConfiguration): Server {
+  if (validateObject(configuration, [], ['actorId', 'clientId']) || validateAuthor({ ...configuration, occurredAt: new Date().toISOString() })) {
+    throw new Error('Invalid MCP author configuration');
+  }
+  const identity = { actorId: configuration.actorId, clientId: configuration.clientId };
+  const author = (): MutationAuthor => ({ ...identity, occurredAt: new Date().toISOString() } as MutationAuthor);
+  const server = new Server({ name: 'wayfinder-map', version: '0.1.0' }, { capabilities: { tools: {} } });
+  server.setRequestHandler(ListToolsRequestSchema, () => ({ tools: structuredClone(mapTools) }));
+  server.setRequestHandler(CallToolRequestSchema, async request => {
+    const tool = mapTools.find(tool => tool.name === request.params.name);
+    if (!tool) throw new McpError(ErrorCode.InvalidParams, 'Unknown Map tool');
+    if (request.params.task !== undefined) throw new McpError(ErrorCode.InvalidParams, 'Task execution is not supported');
+    const raw = request.params.arguments ?? {};
+    const properties = tool.inputSchema.properties ?? {};
+    const shape = validateObject(raw, [], Object.keys(properties));
+    if (shape) return inputFailure(shape);
+    if (!isPlainObject(raw)) return inputFailure(invalid([], 'Plain tool arguments required'));
+    if (Object.hasOwn(raw, 'includeSnapshot') && typeof raw.includeSnapshot !== 'boolean') {
+      return inputFailure(invalid(['includeSnapshot'], 'Boolean required'));
+    }
+    // Validate all submitted shape before observing storage/performing semantics.
+    let create: ReturnType<typeof prepareCreate> | undefined;
+    let apply: ReturnType<typeof decodeApplyRequest> | undefined;
+    if (tool.name === 'map_create') {
+      const { mapId, includeSnapshot: _snapshot, ...fields } = raw;
+      create = prepareCreate({ ...fields, id: mapId, author: author() } as CreateMapInput);
+      if (create.kind === 'error') return inputFailure({ ...create.error, path: create.error.path.map((part, i) => i === 0 && part === 'id' ? 'mapId' : part) });
+    } else if (tool.name === 'map_apply') {
+      const { includeSnapshot: _snapshot, ...fields } = raw;
+      apply = decodeApplyRequest({ ...fields, author: author() });
+      if (apply.kind === 'error') return inputFailure(apply.error);
+      if (apply.value.commands.length > 100) return inputFailure(invalid(['commands'], 'At most 100 commands required'));
+    } else if (tool.name === 'map_read') {
+      const error = validateId(raw.mapId, ['mapId']);
+      if (error) return inputFailure(error);
+      if (Object.hasOwn(raw, 'revision') && (!Number.isSafeInteger(raw.revision) || (raw.revision as number) <= 0)) {
+        return inputFailure(invalid(['revision'], 'Positive safe integer required'));
+      }
+    } else {
+      if (Object.hasOwn(raw, 'limit') && (!Number.isInteger(raw.limit) || (raw.limit as number) < 1 || (raw.limit as number) > 100)) {
+        return inputFailure(invalid(['limit'], 'Integer from 1 through 100 required'));
+      }
+      if (Object.hasOwn(raw, 'afterMapId')) {
+        const error = validateId(raw.afterMapId, ['afterMapId']);
+        if (error) return inputFailure(error);
+      }
+    }
+    try {
+      if (tool.name === 'map_list') return envelope(storage.listMaps(raw));
+      if (tool.name === 'map_read') {
+        const mapId = raw.mapId as MapId;
+        let revision = raw.revision as number | undefined;
+        if (revision === undefined) {
+          const current = await storage.adapter.readCurrent(mapId);
+          if (current.kind !== 'found') return envelope(current);
+          revision = current.value.currentRevision;
+        }
+        const read = await storage.adapter.readRevision(mapId, revision);
+        return read.kind === 'found' ? envelope({ kind: 'found', revision: read.value, frontier: calculateFrontier(read.value.state) }) : envelope(read);
+      }
+      let prepared;
+      if (create?.kind === 'ok') prepared = create.value;
+      else if (apply?.kind === 'ok') {
+        const current = await storage.adapter.readCurrent(apply.value.mapId);
+        if (current.kind !== 'found') return envelope(current);
+        const result = prepareApply(current.value, apply.value);
+        if (result.kind !== 'prepared') return envelope(result);
+        prepared = result.change;
+      } else throw new Error('Unreachable tool preparation');
+      const commit = await storage.adapter.commit(prepared);
+      if (commit.kind !== 'committed' || raw.includeSnapshot === true) return envelope(commit);
+      return envelope({ kind: 'committed', mapId: commit.revision.mapId, revision: commit.revision.revision, changes: commit.revision.changes });
+    } catch (error) {
+      // Never expose exception text/cause/stack, SQL, paths or submitted bodies.
+      // An unclassified failure cannot establish publication or connection health.
+      return envelope({ kind: 'infrastructure_error', code: error instanceof SQLiteFailure ? error.code : 'storage_failure',
+        outcome: error instanceof SQLiteFailure ? error.outcome : 'unknown', requiresRestart: error instanceof SQLiteFailure ? error.requiresRestart : true });
+    }
+  });
+  return server;
+}
+
+function inputFailure(error: InvalidInput): CallToolResult {
+  return envelope({ kind: 'rejected', rejection: { stage: 'input', error } });
+}
+function envelope<T extends { readonly kind: string }>(result: T): CallToolResult {
+  return { content: [], structuredContent: structuredClone(result) as Record<string, unknown>,
+    ...(['committed', 'found', 'listed'].includes(result.kind) ? {} : { isError: true }) };
+}

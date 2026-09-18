@@ -2,7 +2,9 @@
   "name": "wayfinder-map-core",
   "private": true,
   "type": "module",
-  "engines": { "node": "26.3.0" },
+  "engines": {
+    "node": "26.3.0"
+  },
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
     "backup": "npm run --silent build && node dist/sqlite-backup.js",
@@ -11,7 +13,11 @@
   },
   "devDependencies": {
     "@types/node": "26.6.1",
+    "ajv": "8.20.0",
     "typescript": "7.0.2",
     "vitest": "5.0.1"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "1.30.0"
   }
 }
