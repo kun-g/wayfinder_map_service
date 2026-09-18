@@ -27,9 +27,19 @@ Disposable clearly named `wayfinder-mcp-tools-acceptance-*` storage and SDK-link
 | P05/D05 | Input paths and commandIndex; lifecycle/Claim/dependency/invariant/no-op failures; duplicate create, stale and losing publication conflicts; complete non-effects; unknown/malformed protocol errors; real busy/pre-publication/closed/unknown failures and safe diagnostics | Pass |
 | A01/regression | Existing M1 pure/memory suite and compile fixtures unchanged; existing SQLite suites retained | Pass |
 
-Actual commands: `npm run typecheck`, `npm run build`, `npm test`, `git diff --check`, `npm ls @modelcontextprotocol/sdk ajv zod --all`. Strict type checking/build/diff checks pass; all 10 test files and 1,142 tests pass, including 17 tool scenario groups. This count is reported as an outcome, not a substitute for the branch assertions above. Installation reported zero vulnerabilities; no pending optional fsevents install script was approved or required for passing verification.
+Actual commands: `npm run typecheck`, `npm run build`, `npm test`, `git diff --check`, `npm ls @modelcontextprotocol/sdk ajv zod --all`, `npm audit --omit=dev`. Strict type checking/build/diff checks pass; all 10 test files and 1,142 tests pass, including 17 tool scenario groups. This count is reported as an outcome, not a substitute for the branch assertions above. Installation and runtime audit reported zero vulnerabilities; no pending optional fsevents install script was approved or required for passing verification.
 
-Standards/Spec review and normal merge evidence are recorded on the Issue/PR after reviewing the committed diff against the baseline. CodeRabbit is not a gate; repository-required checks still apply.
+## Independent two-axis review
+
+Reviewed implementation commit `0c0911091e17ef719e142efef8435f47bd28ab49` with `git diff 298088e02fdc67a7dcd119d3eb2fa97e00777bee...HEAD`, in two separate read-only agents using the code-review method. Subsequent changes only record this evidence. Normal merge/required-check/conflict evidence and final commit are recorded on [PR 42](https://github.com/kun-g/wayfinder_map_service/pull/42) and the Issue. CodeRabbit is not a gate; repository-required checks still apply.
+
+### Standards
+
+0 findings: no documented-standard violations or actionable baseline smells. Pure entry point unchanged; schemas/orchestration separated; existing validation and authoritative publication boundary retained; captured configuration and detached outputs; safe diagnostics; real SQLite test seams and scope/authority boundaries respected. Tooling-enforced checks were excluded from this axis.
+
+### Spec
+
+0 actionable findings against Issue 36 and handoff sections 3–6/9/11/13. Four handlers retain unchanged M1 semantics, whole-shape validation, server authorship, captured writes/current-history/catalog, declared variants and once-only structured results. P01–P05 and applicable D05/D09 are exercised without claiming HTTP/Codex/adoption delivery. Independent reviewer also ran `npm test -- tests/mcp-tools.test.ts`: 17 scenarios passed.
 
 ## Explicitly not delivered
 
