@@ -15,6 +15,8 @@ M1 Map core is complete on `main` as of 2026-09-18: the six implementation Issue
 
 The accepted handoff is [docs/spec/m1.md](docs/spec/m1.md); the wider v1 product contract is [docs/spec/v1.md](docs/spec/v1.md).
 
+The next local slice has an [accepted MCP/SQLite implementation handoff](docs/spec/mcp-sqlite.md), human-confirmed on 2026-09-18; see [Codex MCP and SQLite acceptance planning](https://github.com/kun-g/wayfinder_map_service/issues/27) for its decisions. SQLite is selected for this local slice only; there is no implemented/accepted Wayfinder MCP connection yet, and new exploration Maps do not switch authority until real Codex acceptance.
+
 Track implementation in [GitHub Issues](https://github.com/kun-g/wayfinder_map_service/issues) and the private [M1 project board](https://github.com/users/kun-g/projects/5). Active rollback/deletion planning uses [GitHub planning Maps](docs/planning/README.md). Completed M1 planning decisions and prototype captures are preserved in [the planning archive](docs/archive/m1-planning/README.md).
 
 ## Project documents
@@ -22,6 +24,7 @@ Track implementation in [GitHub Issues](https://github.com/kun-g/wayfinder_map_s
 - [Domain language](CONTEXT.md)
 - [v1 executable specification](docs/spec/v1.md)
 - [Accepted M1 implementation specification](docs/spec/m1.md)
+- [Accepted local MCP/SQLite implementation specification](docs/spec/mcp-sqlite.md)
 - [M1 executable acceptance matrix](docs/implementation/m1-acceptance.md)
 - [Active planning Maps](docs/planning/README.md)
 - [M1 planning archive](docs/archive/m1-planning/README.md)
