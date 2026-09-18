@@ -10,7 +10,7 @@ Use the separate `src/sqlite-storage.ts` entry point, not the pure `src/index.ts
 
 Node.js is pinned to 26.3.0 in `.node-version`, package metadata and SQLite lifecycle checks. The accepted release-candidate risk remains unchanged. One synchronous connection verifies WAL, synchronous FULL and a 100 ms busy timeout. That timeout limits lock waiting, not whole-operation latency. Filesystem/configuration work is outside write transactions; no await or network work occurs inside them.
 
-Production paths must be absolute, normalized, symlink-free, outside repositories/worktrees and temporary roots. The immediate application directory must be owned by the operator and mode 0700; DB and existing managed sidecars must be regular operator-owned files at 0600. New directories/files use those modes; unsafe existing state is rejected, not chmodded. System ancestors are not required to be private. Filesystem checks fail closed: macOS APFS/HFS through the native df type filter; Linux ext2/3/4, XFS or Btrfs through statfs. Other filesystems/platforms are refused. Linux execution and mounted network-volume rejection are not claimed as tested on this macOS host. The operator must still choose a genuinely local, unsynchronized disk location; filesystem type is not proof about an underlying network block device or cloud synchronization. The private directory assumes no adversarial same-UID replacement during filesystem checks/opening.
+Production paths must be absolute, normalized, symlink-free, outside repositories/worktrees and temporary roots. The immediate application directory must be owned by the operator and mode 0700; DB and existing managed sidecars must be regular operator-owned files at 0600. New directories/files use those modes; unsafe existing state is rejected, not chmodded. System ancestors need not be0700, but must be root/operator-owned and not group/world writable without sticky protection. Ancestry is rechecked after directory creation and before DB reservation. Filesystem checks fail closed: macOS APFS/HFS through the native df type filter; Linux ext2/3/4, XFS or Btrfs through statfs. Other filesystems/platforms are refused. Linux execution and mounted network-volume rejection are not claimed as tested on this macOS host. The operator must still choose a genuinely local, unsynchronized disk location; filesystem type is not proof about an underlying network block device or cloud synchronization. The private directory assumes no adversarial same-UID replacement during filesystem checks/opening.
 
 WAL/SHM/journal sidecars are managed storage, never explicitly deleted as caches by the module. SQLite may checkpoint/remove them on normal close. Tests alone use a non-operator-exported disposable-storage/fault seam and remove only their own isolated fixture directories. No canonical project database was created.
 
@@ -18,15 +18,15 @@ Every commit captures and freezes the input before yielding, checks envelope coh
 
 ## Verification, 2026-09-18
 
-Actual host: Node 26.3.0, bundled SQLite 3.53.2, macOS local APFS. Commands: `npm test -- tests/sqlite-storage.test.ts` (39 tests passed), `npm run typecheck` (passed), `npm test` (1,100 tests in eight files passed). The original 1,061 M1 tests and compile-time public contract remain unchanged. New real-storage tests share behavior with the real memory Adapter, not a fake storage implementation.
+Actual host: Node 26.3.0, bundled SQLite 3.53.2, macOS local APFS. Commands: `npm test -- tests/sqlite-storage.test.ts` (41 tests passed), `npm run typecheck` (passed), `npm test` (1,102 tests in eight files passed). The original 1,061 M1 tests and compile-time public contract remain unchanged. New real-storage tests share behavior with the real memory Adapter, not a fake storage implementation. Memory's internal capture/Revision assembly now uses the same helper as SQLite; its behavior is unchanged.
 
 | Contract case | Executable evidence |
 | --- | --- |
 | A01 | Strict typing and all original M1 regressions; new memory/SQLite conformance checks |
 | D01 | Fresh initialization; existing empty/nonempty refusal; missing/empty/foreign/unsupported-version/schema opens refused unchanged |
-| D02 | 0700/0600 creation; temporary/relative production rejection; unsafe modes; path and managed-sidecar symlinks; WAL and live sidecar privacy |
+| D02 | 0700/0600 creation; temporary/relative/repository production rejection; unsafe file/directory/ancestor modes; path and managed-sidecar symlinks; WAL and live sidecar privacy |
 | D03 | Complete create record after reopen; all four typed Settlements, logical Claims, introduction revision, nested JSON and unrelated Maps |
-| D04 | Two real connections with same-head prepared contenders and duplicate creation; one publication, current actual conflict head, independent Map write |
+| D04 | Promise.all contenders on two real connections, no prescribed winner: same-head apply and fresh duplicate creation each publish once; actual conflict head and independent Map writes |
 | D05 | Invalid read numbers/IDs; missing commit Map; representative malformed/lifecycle/Claim/dependency/cycle/final-invariant/no-op rejects with complete current/history/proposed-next/unrelated comparisons |
 | D06 | Injected failure after both transaction writes before COMMIT; full before/after/current/history/catalog comparisons and successful next commit |
 | D08 | Malformed prepared envelopes; capture before caller mutation; frozen detached receipts/history |

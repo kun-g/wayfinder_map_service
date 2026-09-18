@@ -46,6 +46,7 @@ test('D01: explicit fresh initialization opens an empty durable Adapter', async 
   const storage = lifecycle.open(path);
   try {
     expect(await storage.adapter.readCurrent(id('Alpha'))).toEqual({ kind: 'not_found', code: 'map_not_found', mapId: 'Alpha' });
+    expect(await storage.adapter.readRevision(id('Alpha'), 1)).toEqual({ kind: 'not_found', code: 'map_not_found', mapId: 'Alpha' });
   } finally { storage.close(); }
 });
 
@@ -105,6 +106,8 @@ test('D02: new directory/database are private and production paths reject tempor
   expect(lstatSync(dirname(path)).mode & 0o777).toBe(0o700);
   expect(lstatSync(path).mode & 0o777).toBe(0o600);
   expect(() => initializeSQLite('relative.sqlite')).toThrow();
+  expect(() => initializeSQLite(join(process.cwd(), 'must-not-create.sqlite'))).toThrow();
+  expect(existsSync(join(process.cwd(), 'must-not-create.sqlite'))).toBe(false);
   expect(() => openSQLite(path)).toThrow();
   const missing = join(dirname(path), 'must-not-create.sqlite');
   expect(() => initializeSQLite(missing)).toThrow();
@@ -147,16 +150,31 @@ test('D04: two real connections serialize same-head and duplicate-create competi
     const initial = creation();
     await first.adapter.commit(initial);
     await first.adapter.commit(creation('Other'));
-    const winner = application(initial.next, [{ kind: 'map.update', patch: { notes: 'winner' } }]);
-    const loser = application(initial.next, [{ kind: 'map.update', patch: { notes: 'loser' } }]);
-    expect(await first.adapter.commit(winner)).toMatchObject({ kind: 'committed', revision: { revision: 2, state: { notes: 'winner' } } });
+    const candidates = [application(initial.next, [{ kind: 'map.update', patch: { notes: 'first proposal' } }]),
+      application(initial.next, [{ kind: 'map.update', patch: { notes: 'second proposal' } }])];
+    const results = await Promise.all([first.adapter.commit(candidates[0]!), second.adapter.commit(candidates[1]!)]);
+    const successes = results.filter(result => result.kind === 'committed');
+    expect(successes).toHaveLength(1);
+    expect(results.filter(result => result.kind === 'conflict')).toEqual([{ kind: 'conflict', conflict: { mapId: 'Alpha', expectedRevision: 1, currentRevision: 2 } }]);
+    expect(successes[0]!.revision.revision).toBe(2);
+    expect(['first proposal', 'second proposal']).toContain(successes[0]!.revision.state.notes);
+    expect(await first.adapter.readCurrent(id('Alpha'))).toEqual({ kind: 'found', value: successes[0]!.revision.state });
+    expect(await second.adapter.readRevision(id('Alpha'), 2)).toEqual({ kind: 'found', value: successes[0]!.revision });
     const before = await observe(first.adapter);
-    expect(await second.adapter.commit(loser)).toEqual({ kind: 'conflict', conflict: { mapId: 'Alpha', expectedRevision: 1, currentRevision: 2 } });
-    expect(await observe(second.adapter)).toEqual(before);
-    expect(await second.adapter.commit(initial)).toEqual({ kind: 'rejected', code: 'map_already_exists', mapId: 'Alpha' });
+    expect(await first.adapter.readRevision(id('Alpha'), 3)).toEqual({ kind: 'not_found', code: 'revision_not_found', mapId: 'Alpha', revision: 3 });
+    const duplicate = creation('Race');
+    const creates = await Promise.all([first.adapter.commit(duplicate), second.adapter.commit(duplicate)]);
+    expect(creates.filter(result => result.kind === 'committed')).toHaveLength(1);
+    expect(creates.filter(result => result.kind === 'rejected')).toEqual([{ kind: 'rejected', code: 'map_already_exists', mapId: 'Race' }]);
+    expect(await second.adapter.readCurrent(id('Race'))).toEqual({ kind: 'found', value: duplicate.next });
+    expect(await first.adapter.readRevision(id('Race'), 2)).toEqual({ kind: 'not_found', code: 'revision_not_found', mapId: 'Race', revision: 2 });
     expect(await observe(first.adapter)).toEqual(before);
     const other = creation('Other');
-    expect(await second.adapter.commit(application(other.next, [{ kind: 'map.update', patch: { notes: 'independent' } }]))).toMatchObject({ kind: 'committed', revision: { mapId: 'Other', revision: 2 } });
+    const independent = await Promise.all([
+      first.adapter.commit(application(successes[0]!.revision.state, [{ kind: 'map.update', patch: { notes: 'independent Alpha' } }])),
+      second.adapter.commit(application(other.next, [{ kind: 'map.update', patch: { notes: 'independent Other' } }])),
+    ]);
+    expect(independent).toMatchObject([{ kind: 'committed', revision: { mapId: 'Alpha', revision: 3 } }, { kind: 'committed', revision: { mapId: 'Other', revision: 2 } }]);
     expect(await first.adapter.readRevision(id('Alpha'), 1)).toMatchObject({ kind: 'found', value: { state: { notes: '' } } });
   } finally { first.close(); second.close(); }
 });
@@ -365,4 +383,16 @@ test('D03/D09: reopening preserves logical Claims and full Settlement history; m
     expect(await noAudit.adapter.readCurrent(id('Alpha'))).toMatchObject({ kind: 'found', value: { currentRevision: 3 } });
     await expect(noAudit.adapter.readRevision(id('Alpha'), 1)).rejects.toThrow(SyntaxError);
   } finally { noAudit.close(); }
+});
+
+test.each(['initialize', 'open'] as const)('D02: %s rejects unsafe writable ancestors even when the immediate private directory is safe or missing', action => {
+  const original = fixture(); const unsafe = join(dirname(dirname(original)), 'unsafe');
+  mkdirSync(unsafe, { mode: 0o700 }); const path = join(unsafe, 'private', 'maps.sqlite');
+  const lifecycle = sqliteLifecycleForTests();
+  if (action === 'open') lifecycle.initialize(path);
+  chmodSync(unsafe, 0o777);
+  const before = existsSync(path) ? readFileSync(path) : null;
+  expect(() => lifecycle[action](path)).toThrow();
+  expect(existsSync(path) ? readFileSync(path) : null).toEqual(before);
+  expect(lstatSync(unsafe).mode & 0o777).toBe(0o777);
 });

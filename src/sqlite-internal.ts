@@ -8,7 +8,8 @@ import type { StateAdapter } from './memory-adapter.js';
 import type { InvalidInput, MapId, Revision, StoredMapState } from './types.js';
 import { immutableClone } from './immutable.js';
 import { calculateFrontier } from './frontier.js';
-import { invalid, isPlainObject, validateId } from './values.js';
+import { invalid, validateId } from './values.js';
+import { capturePrepared, revisionFromPrepared } from './revision-record.js';
 
 const APPLICATION_ID = 0x57464d31;
 const FORMAT_VERSION = 1;
@@ -46,11 +47,18 @@ function checkPath(path: string, temporary: boolean, initializing: boolean) {
   let component = parse(path).root;
   for (const segment of path.slice(component.length).split(sep)) {
     component = join(component, segment);
-    try { if (lstatSync(component).isSymbolicLink()) throw new Error('SQLite path must not contain symlinks'); }
+    try {
+      const stat = lstatSync(component);
+      if (stat.isSymbolicLink()) throw new Error('SQLite path must not contain symlinks');
+      if (component !== path && (!stat.isDirectory() || (stat.uid !== 0 && stat.uid !== process.getuid?.())
+        || ((stat.mode & 0o022) !== 0 && (stat.mode & 0o1000) === 0))) {
+        throw new Error('Unsafe SQLite ancestor ownership or writable permissions');
+      }
+    }
     catch (error) { if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error; }
   }
   if (!temporary) {
-    const roots = [...new Set([tmpdir(), '/tmp', '/private/tmp'].filter(existsSync).map(root => realpathSync(root)))];
+    const roots = [...new Set([tmpdir(), '/tmp', '/private/tmp', '/var/tmp', '/private/var/tmp', '/private/var/folders'].filter(existsSync).map(root => realpathSync(root)))];
     if (roots.some(root => path === root || path.startsWith(root + sep))) throw new Error('Temporary canonical SQLite storage is forbidden');
     for (let ancestor = dirname(path); ; ancestor = dirname(ancestor)) {
       if (existsSync(join(ancestor, '.git'))) throw new Error('SQLite storage must be outside repositories/worktrees');
@@ -84,6 +92,8 @@ function initialize(path: string, temporary = false) {
   requireRuntime();
   checkPath(path, temporary, true);
   mkdirSync(dirname(path), { recursive: true, mode: 0o700 });
+  // Recheck newly created ancestry before reserving/opening the DB.
+  checkPath(path, temporary, true);
   closeSync(openSync(path, 'wx', 0o600));
   checkPrivate(dirname(path), true);
   checkPrivate(path, false);
@@ -141,17 +151,8 @@ function open(path: string, temporary = false, beforePublication?: () => void): 
     },
     async commit(prepared) {
       requireUsable();
-      const captured = immutableClone(prepared);
-      if (!isPlainObject(captured) || validateId(captured.mapId, ['mapId']) || !isPlainObject(captured.next)
-        || captured.next.id !== captured.mapId
-        || (captured.kind === 'create' ? captured.priorRevision !== null || captured.next.currentRevision !== 1
-          : captured.kind !== 'apply' || !Number.isSafeInteger(captured.priorRevision) || captured.priorRevision <= 0
-            || !Number.isSafeInteger(captured.next.currentRevision) || captured.next.currentRevision !== captured.priorRevision + 1)) {
-        throw new TypeError('Malformed internal PreparedCommit envelope');
-      }
-      const revision: Revision = immutableClone({ mapId: captured.mapId, revision: captured.next.currentRevision,
-        priorRevision: captured.priorRevision, kind: captured.kind, author: captured.author,
-        changes: captured.changes, state: captured.next });
+      const captured = capturePrepared(prepared);
+      const revision = revisionFromPrepared(captured);
       const frontier = calculateFrontier(revision.state);
       db.exec('BEGIN IMMEDIATE');
       let committing = false;
