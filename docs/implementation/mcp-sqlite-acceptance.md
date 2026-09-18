@@ -1,0 +1,90 @@
+# MCP/SQLite integration and installed-Codex acceptance — Issue 38
+
+Scope: [完成自动化集成与真实 Codex 验收](https://github.com/kun-g/wayfinder_map_service/issues/38), [accepted handoff](../spec/mcp-sqlite.md) sections 11–12. Native blocker 37 was closed and this Issue unassigned before the [session claim](https://github.com/kun-g/wayfinder_map_service/issues/38#issuecomment-5731318196). This report is slice 5 evidence; exploration adoption remains the separate gated Issue 39.
+
+Status: automated gates passed; the complete installed-Codex run and independent reviews are in progress. **L05 is pending a live human verdict. Issue 38 must remain open and this change must not be merged as completed acceptance until that verdict and the required gates pass.**
+
+## Exact environment and isolated setup
+
+Service implementation exercised: `1b8d89f277870e24d4b959f1c2cae6c59c218eff` (normal merge of service PR 43). Issue 38 changes test/evidence files only; service/domain/dependency/transport/result contracts are unchanged. Review fixed point is that same commit. The final evidence/review head and normal merge belong to the Issue/PR closeout, avoiding a self-referential commit identifier in this document.
+
+Actual host on 2026-09-18: macOS arm64/local APFS, Node **26.3.0**, npm **11.16.0**, embedded SQLite **3.53.4** queried from node:sqlite. SDK **1.30.0**, Zod **4.6.5**, AJV **8.20.0**; the existing lockfile pins installed transitive versions. Automated protocol clients use SDK Client/StreamableHTTPClientTransport, negotiated **2025-11-25**. Actual installed client is **codex-cli 0.153.0**, invoked through its native MCP client, negotiated **2025-06-18** in the successful initial connection probe. The full-run evidence records actual negotiations independently; no compatibility bridge or duplicate JSON text is added.
+
+All failure/integration/backup fixtures are fresh named disposable acceptance Maps/databases. Unit/integration faults use the existing test-only temporary-storage seam. Production-entry-point smoke and installed-Codex tests use explicit fresh private local directories outside repositories/worktrees/temp, operator path validation, 0700 directories/0600 DBs, a random environment-only token and an explicitly configured fixed loopback port. Only each run's own fixture is removed after graceful stop. Private paths/credentials are omitted from this report and the published evidence.
+
+The opt-in [installed-Codex runner](../../tests/helpers/codex-live-acceptance.mjs) starts the actual independent `dist/mcp-start.js` foreground process. Codex receives process-local `-c` HTTP configuration with `bearer_token_env_var`; `--ignore-user-config` preserves permanent MCP settings and excludes other configured servers. Its read-only sandbox remains enabled. Temporary approval applies only to the four already-authorized isolated acceptance tools, using the [official MCP configuration](https://learn.chatgpt.com/docs/extend/mcp?surface=cli). The runner verifies that no shell/browser/other-tool/delegation operation occurred. Two sessions are separately created, not forked or supplied one another's conversation. The [passive test-only observer](../../tests/helpers/codex-acceptance-observer.mjs) records only initialize response protocol versions; it neither handles/changes requests nor adds a server endpoint or transport.
+
+This is actual installed **CLI** interoperability, not desktop UI or ChatGPT acceptance. Codex JSONL projects result keys as `content`/`structured_content` and expresses tool errors through failed call status; it does not retain the wire `isError` field in that projection. Automated protocol/HTTP tests independently assert the original `isError` envelope and output schemas. Structured business payloads remain unique and consumable without a text fallback.
+
+## Commands and outcomes
+
+Commands actually run (private-root values redacted; they are operator environment values, not public configuration or credentials):
+
+```sh
+npm run typecheck
+npm test
+npm run build
+npm test -- tests/mcp-service.test.ts
+npm test -- tests/sqlite-storage.test.ts
+git diff --check
+npm ls @modelcontextprotocol/sdk ajv zod --all
+node --check tests/helpers/codex-live-acceptance.mjs
+node --input-type=module -e 'import { DatabaseSync } from "node:sqlite"; const db=new DatabaseSync(":memory:"); console.log(db.prepare("select sqlite_version() as version").get()); db.close();'
+WAYFINDER_MAINTENANCE_TEST_ROOT=<private-local-acceptance-root> node tests/helpers/sqlite-backup-smoke.mjs
+WAYFINDER_SERVICE_TEST_ROOT=<private-local-acceptance-root> node tests/helpers/mcp-service-smoke.mjs
+WAYFINDER_CODEX_TEST_ROOT=<private-local-acceptance-root> WAYFINDER_CODEX_TEST_PORT=43138 WAYFINDER_CODEX_REPORT=<fresh-local-report-target> node tests/helpers/codex-live-acceptance.mjs
+```
+
+Strict checking/build/diff and both real operator smoke commands pass. Current full suite: **11 files / 1,163 tests**, including the unchanged original **1,061 M1 tests**, 43 storage cases and 19 HTTP scenario cases. Counts describe results, not the acceptance gate: every matrix row below maps required branch observations to executable assertions. Compile fixtures and all 56 M1 groups remain traced in [the cumulative M1 matrix](m1-acceptance.md); pure Frontier enumeration is not duplicated per Adapter.
+
+The restricted-sandbox first run failed 14 HTTP cases with loopback `listen EPERM` (1,143 passed); it is not passing evidence. Allowed-loopback reruns passed. New test development initially incorrectly expected nullable Settlement/object Claim fields; the assertions were corrected to the accepted M1 absent Settlement/string Claim shapes and rerun. The first Codex probe initialized but tool calls were denied by its default never approval policy; only process-local isolated-tool approval was changed. A later pilot A completed all 15 calls; B invented `op`/`claimant` fields and was correctly rejected at `commands[0].kind`. The full run starts a fresh fixture with the accepted M1 command shapes given to B, without its receiving A's Map ID/conversation. These are recorded pilot failures, not passing L03 or automatic replay of an uncertain write.
+
+## Complete automated traceability
+
+Files: S = [sqlite-storage.test.ts](../../tests/sqlite-storage.test.ts), F = [sqlite-failure-backup.test.ts](../../tests/sqlite-failure-backup.test.ts), T = [mcp-tools.test.ts](../../tests/mcp-tools.test.ts), H = [mcp-service.test.ts](../../tests/mcp-service.test.ts). Test names carry the contract IDs. Detailed assertions and inherited slice evidence remain in [storage](sqlite-storage.md), [failure/backup](sqlite-failure-backup.md), [tools](mcp-tools.md), and [service](local-mcp-service.md); this table records the cumulative currently executed scope.
+
+| Gate | Executable branches/assertions |
+| --- | --- |
+| A01 | Strict TypeScript/public compile fixtures; all 56 M1 groups and original pure/memory scenarios retained. H adds complete real-HTTP workflows for grilling/prototype/research/task without changing M1 or copying command logic. |
+| D01 | S: fresh explicit initialization/empty catalog, existing empty/nonempty refusal unchanged, missing/empty/foreign/unsupported version/schema open refusal without replacement. Operator service smoke adds wrong SQLite bytes and command readiness refusals. |
+| D02 | S: private new modes, relative/temp/repository refusal, unsafe directory/file/ancestor, symlink file/directory/sidecars, live WAL sidecar privacy. New read-only instrumentation checks actual Adapter connection WAL/FULL/100 ms observations on both initialize/open. Mismatched process UID is simulated against real owned fixtures; refusal leaves bytes/head/all known history/unrelated Map unchanged and creates no target. No privileged chown or cross-user filesystem mutation is claimed. |
+| D03 | S/T: full create and all four typed Settlement/Claim/introducedAtRevision/author/change/nested-JSON round trips, independent Map sequences, reopen and immutable prior records. H now exercises all four through HTTP as well. |
+| D04 | S: two real connections, same-head apply and duplicate-create contenders publish exactly once with actual losing heads/duplicate code; independent Maps both succeed, complete earlier history unchanged. T: authoritative second-head publication race through tools. |
+| D05 | S/T/H plus M1 matrix: valid/malformed ID/revision/unknown/system fields, whole-shape-before-semantics, missing Map/history, lifecycle/type/Claim/Dependency/cycle/final-invariant/no-op/stale branches retain applicable paths/stages/index/IDs. Complete current/all known history/unrelated Map/proposed-next non-effects; H includes incomplete reopen and stale independent-client write. |
+| D06 | S/F: failure after both transactional writes before COMMIT rolls back history/catalog/head together; complete known fixture comparison and next explicit commit works. |
+| D07 | F/T/H: independent real SQL writer lock, bounded BUSY diagnosis rather than Conflict; no publication/deferred retry, known state/history/unrelated fixtures unchanged; explicit later request succeeds after release. |
+| D08 | S/memory scenarios: malformed internal identity/kind/prior/next envelopes fail the Promise; inputs captured before yield; deep original/prepared/receipt/read/Settlement data detached from immutable storage. |
+| D09 | S/T: coherent catalog pages and observed current N, pinned historical N/Frontier while later commits advance, exact compact/snapshot committed receipt N; old history stable, missing requested revision never latest fallback. |
+| D10 | F/H: IPC-controlled graceful/idle/pre-COMMIT/post-COMMIT termination boundaries, not sleeps or prescribed winners. Actual HTTP SIGTERM drains accepted work/refuses new admission, SIGKILL preserves atomic outcomes, reconnect/restart retains exact head/all known history/Claims/introduction metadata without extra Revision/expiry/takeover. |
+| D11 | F/T/H: committed-but-lost completion, HTTP response abort with live service, post-COMMIT SIGKILL before receipt; durable outcome asserted independently, receipt remains unknown until reread, no replay/false unchanged claim. Prior/unrelated/next-next comparisons and deliberate stale Conflict. |
+| D12 | F/H: pre-publication fault plus failed cleanup stops read/catalog/create/apply/backup until restart; no continued mutation or memory fallback; fresh storage recovers the exact known outcome and later explicit operation works. |
+| D13 | F/operator backup smoke: consistent live-WAL backup independently opens with all known states/history/Claims/metadata and source unchanged; subsequent source commit cannot alter backup. Active DB/sidecar/existing empty/nonempty/hardlink/symlink/dangling/unsafe/orphan/relative targets refused unchanged. Before/after/completion-format faults never report successful partial artifact; fresh-target overwrite remains refused, safe command diagnostics/nonzero exit. |
+| P01 | T: exactly four matching schemas, complete actual M1 command union/nested validation and unknown/system/author/path/SQL/import rejection. No copied Demo logic or extra public storage/tool port. H runs the complete union's four typed outcomes over real HTTP. |
+| P02 | T/H: once-only structured payload/content [], compact default/false and opt-in full variants validate output schemas; exact committed N/Frontier remains pinned after later advance. No duplicate receipt/text/graph in compact results. |
+| P03 | T/H: current versus explicitly requested full history, service-returned expected heads, distinct invalid/missing/conflict codes, historical Claim/Settlement reads do not restore state; no all-history tool. |
+| P04 | S/T/H: empty/default/1/100 limits, 0/101/fraction/non-number refusal, ASCII case-sensitive keyset order, nonexistent cursor boundary, more/end cursor, coherent fields/duplicate titles; independent HTTP catalog continuation uses stable ID. |
+| P05 | T/H: argument/business tool errors preserve paths/stages/index/IDs/heads and isError; unknown/malformed protocol calls stay JSON-RPC errors. Safe BUSY/proven non-publication/unknown/restart infrastructure distinctions, no private cause/SQL/body text. |
+| P06 | H/T: 1 MiB inclusive declared/chunked/multibyte body and explicit excess POST/DELETE 413; 100-command one-Revision success/101 refusal; four active calls across independent sessions/fifth explicit refusal, disconnected work retains slot, no silent queue/retry/split/coercion. Pure M1 still accepts 101 commands. |
+| P07 | H/T: loopback-only bind, configured exact Host; POST/GET/DELETE missing/wrong token/wrong Host forbidden, absent/exact permitted Origin allowed and arbitrary/null/unlisted/trailing Origin forbidden. Operator config captured/validated and caller author/client/time/system fields refused without publication. |
+| P08 | H/production command smoke: invalid port/token/author/origin/storage readiness, wrong/unsupported format, fixed-port collision visible without substitution; session close/DELETE leaves independent service and Claims alive, DELETE drains multiple requests without reopening admission; graceful stop rejects new calls/completes work/closes storage. |
+| P09 | H/T/operator smoke/runner safe-evidence guard: malformed protocol/UTF-8/JSON/version/unknown tool and sensitive storage faults expose no token/private path/SQL/decision/evidence body/SDK prose; process logs fixed safe text. Service/storage unavailable visibly fails without another authority. |
+
+Production startup/read paths still do no withdrawn physical/semantic/history audit; tests enumerate only their known fixture revisions. Backup opening/comparison is evidence, not restore/import. Controlled process-kill/restart evidence does not prove hardware/power-loss resilience.
+
+## Installed-Codex operations and human gate
+
+The full run is pending. On completion, publish its schema-validated native Codex call arguments/results, session identities, actual protocol versions, independent durable-read comparisons and outcome summary in `mcp-sqlite-codex-evidence.json`. Agent final prose alone is not proof.
+
+| Gate | Status / expected recorded evidence |
+| --- | --- |
+| L01 | Initial actual client probe passed compact create/current read with unique structured payload. Full four-tool workflow evidence pending. |
+| L02 | Pilot A passed create → Destination/Tickets/Dependency/Fog/Scope → Frontier → prerequisite Claim/Completion/dependent unlock/Claim/Finding → explicit reopen both → historical Claims/Settlements. Complete reproducible run pending. |
+| L03 | Pending successful independent B catalog discovery/current read/distinct Claimant continuation of the same returned stable Map ID. Pilot malformed shape is not a pass. |
+| L04 | Pending intentional stale A expectedRevision 7 versus B head 9, exact Conflict/no publication, authoritative reread, complete immutable fixture comparisons and actual Codex reconnect after service restart with retained Claim. |
+| L05 | **Pending. No live human verdict has been supplied; planning confirmation and passing automated/client assertions do not satisfy it.** |
+
+## Standards / Spec review and closeout
+
+Independent read-only reviews will examine the pinned diff against `1b8d89f277870e24d4b959f1c2cae6c59c218eff`. Record both axes separately, resolve actionable findings, then request the live human verdict on the concrete evidence. Normal PR merge/conflict/required-check/post-merge status and explicit Issue closure are recorded only after all gates pass. CodeRabbit is neither monitored nor an agent gate; no required repository check is bypassed.
+
+Implementation/planning authority remains GitHub. No exploration workflow skill, existing rollback/deletion Map, canonical project DB, permanent MCP configuration, plugin, migration, dual write or authority switch is changed. No broader v1 delivery or ongoing service availability is implied by stopped/cleaned acceptance fixtures.

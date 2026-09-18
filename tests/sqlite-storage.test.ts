@@ -2,7 +2,7 @@ import { chmodSync, existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSync,
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
-import { afterEach, expect, test } from 'vitest';
+import { afterEach, expect, test, vi } from 'vitest';
 import { createMemoryAdapter, parseId, prepareApply, prepareCreate } from '../src/index.js';
 import type { Command, MapId, PreparedCommit, StateAdapter, StoredMapState } from '../src/index.js';
 import { sqliteLifecycleForTests } from '../src/sqlite-internal.js';
@@ -141,6 +141,44 @@ test('D02: WAL sidecars are private managed state while the connection is open',
       expect(lstatSync(path + suffix).mode & 0o777).toBe(0o600);
     }
   } finally { observer.close(); storage.close(); }
+});
+
+test('D02: real Adapter connections verify WAL, FULL and 100 ms settings on initialization and open', () => {
+  const path = fixture();
+  const observed: unknown[] = [];
+  const prepare = DatabaseSync.prototype.prepare;
+  const observer = vi.spyOn(DatabaseSync.prototype, 'prepare').mockImplementation(function (this: DatabaseSync, sql: string) {
+    const statement = prepare.call(this, sql);
+    if (['PRAGMA journal_mode=WAL', 'PRAGMA synchronous', 'PRAGMA busy_timeout'].includes(sql)) observed.push([sql, statement.get()]);
+    return statement;
+  });
+  try {
+    const lifecycle = sqliteLifecycleForTests(); lifecycle.initialize(path);
+    const storage = lifecycle.open(path); storage.close();
+    const settings = [['PRAGMA journal_mode=WAL', { journal_mode: 'wal' }], ['PRAGMA synchronous', { synchronous: 2 }], ['PRAGMA busy_timeout', { timeout: 100 }]];
+    expect(observed).toEqual([...settings, ...settings]);
+  } finally { observer.mockRestore(); }
+});
+
+test('D02: mismatched operator identity refuses owned fixtures without changing state or history', async () => {
+  const path = fixture(); const lifecycle = sqliteLifecycleForTests(); lifecycle.initialize(path);
+  const storage = lifecycle.open(path);
+  await storage.adapter.commit(creation()); await storage.adapter.commit(creation('Other'));
+  const before = await observe(storage.adapter); storage.close();
+  const bytes = readFileSync(path);
+  const uid = process.getuid?.(); if (uid === undefined) throw new Error('POSIX fixture required');
+  // Simulate the different process identity, without chowning any fixture or
+  // touching another user's files. Filesystem checks and storage remain real.
+  const identity = vi.spyOn(process, 'getuid').mockReturnValue(uid + 1);
+  try {
+    expect(() => lifecycle.open(path)).toThrow(/ownership/);
+    expect(() => lifecycle.initialize(join(dirname(path), 'refused.sqlite'))).toThrow(/ownership/);
+    expect(existsSync(join(dirname(path), 'refused.sqlite'))).toBe(false);
+    expect(readFileSync(path)).toEqual(bytes);
+  } finally { identity.mockRestore(); }
+  const reopened = lifecycle.open(path);
+  try { expect(await observe(reopened.adapter)).toEqual(before); }
+  finally { reopened.close(); }
 });
 
 test('D04: two real connections serialize same-head and duplicate-create competition without collateral publication', async () => {

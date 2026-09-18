@@ -16,6 +16,7 @@ import { startLocalMcpService } from '../src/mcp-service.js';
 import { sqliteLifecycleForTests } from '../src/sqlite-internal.js';
 import type { SQLiteStorage } from '../src/sqlite-storage.js';
 import { mapTools } from '../src/mcp-tools.js';
+import type { Revision } from '../src/index.js';
 
 const cleanups: (() => void | Promise<void>)[] = [];
 beforeAll(() => { execFileSync('npm', ['run', 'build'], { stdio: 'pipe' }); });
@@ -108,6 +109,65 @@ async function observe(c: Connection) {
     current: await c.read(undefined, mapId), history: await Promise.all([1, 2, 3, 4, 5].map(n => c.read(n, mapId))),
   }))) };
 }
+
+test.each(['grilling', 'prototype', 'research', 'task'] as const)('A01/D03–D05/P01–P05: complete HTTP %s workflow, independent catalog continuation, conflict and history', async type => {
+  const f = await fixture(); const a = await connect(f.port);
+  const revision = (result: CallToolResult) => result.structuredContent!.revision as unknown as Revision;
+  expect((await a.create()).structuredContent).toMatchObject({ kind: 'committed', revision: 1 });
+  await a.create('Acceptance.Other');
+  const planned = await a.apply([
+    { kind: 'ticket.create', ticket: { id: 'A', title: 'Prerequisite', question: 'Ready?', type } },
+    { kind: 'ticket.create', ticket: { id: 'B', title: 'Dependent', question: 'Done?', type: 'task' } },
+    { kind: 'dependency.add', dependentId: 'B', prerequisiteId: 'A' },
+    { kind: 'content.add', section: 'fog', item: { id: 'F', text: 'Uncertainty', references: [] } },
+    { kind: 'content.add', section: 'scopeExclusions', item: { id: 'S', text: 'Excluded', references: [] } },
+  ], 1);
+  expect(planned.structuredContent!.frontier).toEqual(['A']);
+  const claimed = await a.apply([{ kind: 'claim.acquire', ticketId: 'A', claimantId: 'session:A' }], 2);
+  const settlement = (outcome: Record<string, unknown>) => ({ outcome, evidence: [],
+    references: [{ locator: 'fixture:observed', label: 'Isolated acceptance fixture' }],
+    provenance: { method: 'Automated HTTP fixture', sources: [] }, extensions: {} });
+  const outcome = type === 'grilling' || type === 'prototype' ? { kind: 'decision', statement: 'Accepted fixture', rationale: 'Fixture verdict' }
+    : type === 'research' ? { kind: 'finding', statement: 'Observed fixture', limitations: '' }
+      : { kind: 'completion', statement: 'Finished fixture', resultingFacts: { verified: true } };
+  const accepted = await a.apply([{ kind: 'ticket.settle', ticketId: 'A', ticketType: type, claimantId: 'session:A', settlement: settlement(outcome) }], 3);
+  expect(accepted.structuredContent!.frontier).toEqual(['B']);
+  expect(revision(accepted).state.tickets[0]).toMatchObject({ status: 'settled', claim: null, settlement: { outcome, introducedAtRevision: 4 } });
+  await a.apply([{ kind: 'claim.acquire', ticketId: 'B', claimantId: 'session:A' }], 4);
+  await a.apply([{ kind: 'ticket.settle', ticketId: 'B', ticketType: 'task', claimantId: 'session:A',
+    settlement: settlement({ kind: 'completion', statement: 'Dependent finished' }) }], 5);
+  const settled = await a.read();
+  const unchanged = await observe(a);
+  const beforeReopenHistory = await Promise.all(Array.from({ length: 6 }, (_, i) => a.read(i + 1)));
+  expect((await a.apply([{ kind: 'ticket.reopen', ticketId: 'A', reason: 'Incomplete reopen' }], 6)).isError).toBe(true);
+  expect(await observe(a)).toEqual(unchanged);
+  expect(await Promise.all(Array.from({ length: 6 }, (_, i) => a.read(i + 1)))).toEqual(beforeReopenHistory);
+  expect((await a.read(7)).structuredContent).toMatchObject({ code: 'revision_not_found' });
+  const reopened = await a.apply([{ kind: 'ticket.reopen', ticketId: 'A', reason: 'Revisit prerequisite' },
+    { kind: 'ticket.reopen', ticketId: 'B', reason: 'Revisit dependent' }], 6);
+  expect(reopened.structuredContent!.frontier).toEqual(['A']);
+  expect(revision(reopened).state.tickets).toMatchObject([{ status: 'open', claim: null }, { status: 'open', claim: null, prerequisites: ['A'] }]);
+  for (const ticket of revision(reopened).state.tickets) expect(ticket).not.toHaveProperty('settlement');
+  await a.apply([{ kind: 'claim.acquire', ticketId: 'A', claimantId: 'session:A' }], 7);
+  const b = await connect(f.port);
+  expect((await b.call('map_list')).structuredContent).toMatchObject({ maps: [{ mapId: 'Acceptance.Alpha', currentRevision: 8 }, { mapId: 'Acceptance.Other', currentRevision: 1 }] });
+  expect(revision(await b.read()).revision).toBe(8);
+  await b.apply([{ kind: 'ticket.create', ticket: { id: 'C', title: 'Independent continuation', question: 'Done?', type: 'task' } },
+    { kind: 'claim.acquire', ticketId: 'C', claimantId: 'session:B' }], 8);
+  const beforeConflict = await observe(b);
+  const knownHistory = await Promise.all(Array.from({ length: 9 }, (_, i) => b.read(i + 1)));
+  expect((await a.apply(update, 8)).structuredContent).toEqual({ kind: 'conflict', conflict: { mapId: 'Acceptance.Alpha', expectedRevision: 8, currentRevision: 9 } });
+  expect(await observe(b)).toEqual(beforeConflict);
+  expect(await Promise.all(Array.from({ length: 9 }, (_, i) => b.read(i + 1)))).toEqual(knownHistory);
+  expect((await b.read(10)).structuredContent).toMatchObject({ code: 'revision_not_found' });
+  expect(revision(await a.read()).revision).toBe(9);
+  await a.client.close(); await b.client.close();
+  const reconnected = await connect(f.port);
+  expect(revision(await reconnected.read()).state.tickets).toMatchObject([{ claim: 'session:A' }, { claim: null }, { claim: 'session:B' }]);
+  expect(revision(await reconnected.read(3))).toEqual(revision(claimed));
+  expect(revision(await reconnected.read(4))).toEqual(revision(accepted));
+  expect(await reconnected.read(6)).toEqual(settled);
+});
 
 test('P07/P09: token, exact Host and explicit local Origin guard every method; config is captured and author is server-only', async () => {
   const f = await fixture(); const c = await connect(f.port); await seed(c); const before = await observe(c);
