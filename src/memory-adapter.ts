@@ -10,13 +10,22 @@ export interface StateAdapter {
 }
 
 export function createMemoryAdapter(): StateAdapter {
-  const records = new Map<MapId, Revision>();
+  return memoryAdapter();
+}
+
+// Internal synchronous fault seam: not re-exported from the public index.
+export function createMemoryAdapterWithFault(beforePublication: () => void): StateAdapter {
+  return memoryAdapter(beforePublication);
+}
+
+function memoryAdapter(beforePublication?: () => void): StateAdapter {
+  const records = new Map<MapId, { readonly head: Revision; readonly history: ReadonlyMap<number, Revision> }>();
   return {
     async readCurrent(mapId) {
       const error = validateId(mapId, ['mapId']);
       if (error) return { kind: 'rejected', error };
       const record = records.get(mapId);
-      return record ? { kind: 'found', value: record.state }
+      return record ? { kind: 'found', value: record.head.state }
         : { kind: 'not_found', code: 'map_not_found', mapId };
     },
     async readRevision(mapId, revision) {
@@ -27,25 +36,40 @@ export function createMemoryAdapter(): StateAdapter {
       }
       const record = records.get(mapId);
       if (!record) return { kind: 'not_found', code: 'map_not_found', mapId };
-      return revision === 1 ? { kind: 'found', value: record }
+      const historical = record.history.get(revision);
+      return historical ? { kind: 'found', value: historical }
         : { kind: 'not_found', code: 'revision_not_found', mapId, revision };
     },
     async commit(prepared) {
       // Capture before any possible async yield; check and publication have no gap.
       const captured = immutableClone(prepared);
-      if (!isPlainObject(captured) || captured.kind !== 'create' || captured.priorRevision !== null
+      if (!isPlainObject(captured)
         || validateId(captured.mapId, ['mapId']) || !isPlainObject(captured.next)
-        || captured.next.id !== captured.mapId || captured.next.currentRevision !== 1) {
+        || captured.next.id !== captured.mapId
+        || (captured.kind === 'create' ? captured.priorRevision !== null || captured.next.currentRevision !== 1
+          : captured.kind !== 'apply' || !Number.isSafeInteger(captured.priorRevision) || captured.priorRevision <= 0
+            || !Number.isSafeInteger(captured.next.currentRevision) || captured.next.currentRevision !== captured.priorRevision + 1)) {
         throw new TypeError('Malformed internal PreparedCommit envelope');
       }
-      if (records.has(captured.mapId)) {
+      const previous = records.get(captured.mapId);
+      if (captured.kind === 'create' && previous) {
         return { kind: 'rejected', code: 'map_already_exists', mapId: captured.mapId };
       }
+      if (captured.kind === 'apply') {
+        if (!previous) return { kind: 'rejected', code: 'map_not_found', mapId: captured.mapId };
+        if (previous.head.revision !== captured.priorRevision) return { kind: 'conflict', conflict: {
+          mapId: captured.mapId, expectedRevision: captured.priorRevision, currentRevision: previous.head.revision,
+        } };
+      }
       const revision: Revision = immutableClone({
-        mapId: captured.mapId, revision: 1, priorRevision: null, kind: 'create',
+        mapId: captured.mapId, revision: captured.next.currentRevision,
+        priorRevision: captured.priorRevision, kind: captured.kind,
         author: captured.author, changes: captured.changes, state: captured.next,
       });
-      records.set(captured.mapId, revision);
+      const history = new Map(previous?.history);
+      history.set(revision.revision, revision);
+      beforePublication?.();
+      records.set(captured.mapId, { head: revision, history });
       return { kind: 'committed', revision, frontier: [] };
     },
   };

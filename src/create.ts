@@ -1,17 +1,21 @@
-import type { CreateMapInput, InvalidInput, MapId, MutationAuthor, NonEmpty, Result, SemanticChange, StoredMapState } from './types.js';
+import type { ApplyRequest, CreateMapInput, InvalidInput, MapId, MutationAuthor, NonEmpty, PrepareResult, Result, SemanticChange, StoredMapState } from './types.js';
 import { invalid, isPlainObject, isUtcTimestamp, validateExtensions, validateId, validateObject } from './values.js';
 import { immutableClone } from './immutable.js';
+import { decodeApplyRequest } from './apply-input.js';
+import { isDeepStrictEqual } from 'node:util';
 
 const preparedBrand: unique symbol = Symbol('PreparedCommit');
-export interface PreparedCommit {
+interface PreparedBase {
   readonly [preparedBrand]: true;
-  readonly kind: 'create';
-  readonly priorRevision: null;
   readonly mapId: MapId;
   readonly next: StoredMapState;
   readonly author: MutationAuthor;
   readonly changes: NonEmpty<SemanticChange>;
 }
+export type PreparedCommit = PreparedBase & (
+  | { readonly kind: 'create'; readonly priorRevision: null }
+  | { readonly kind: 'apply'; readonly priorRevision: number }
+);
 
 export function prepareCreate(input: CreateMapInput): Result<PreparedCommit, InvalidInput> {
   const error = validateCreate(input);
@@ -29,6 +33,39 @@ export function prepareCreate(input: CreateMapInput): Result<PreparedCommit, Inv
   return { kind: 'ok', value: Object.freeze({
     ...immutableClone(prepared), [preparedBrand]: true as const,
   }) };
+}
+
+export function prepareApply(current: StoredMapState, request: ApplyRequest): PrepareResult {
+  const decoded = decodeApplyRequest(request);
+  if (decoded.kind === 'error') return { kind: 'rejected', rejection: { stage: 'input', error: decoded.error } };
+  request = decoded.value;
+  if (!Number.isSafeInteger(current.currentRevision) || current.currentRevision <= 0) return { kind: 'rejected', rejection: {
+    stage: 'input', error: invalid(['current', 'currentRevision'], 'Positive safe current head required'),
+  } };
+  if (request.mapId !== current.id) return { kind: 'rejected', rejection: {
+    stage: 'input', error: invalid(['mapId'], 'Must match current Map identity'),
+  } };
+  if (request.expectedRevision !== current.currentRevision) return { kind: 'conflict', conflict: {
+    mapId: request.mapId, expectedRevision: request.expectedRevision, currentRevision: current.currentRevision,
+  } };
+  const initial = structuredClone(current);
+  let next = structuredClone(initial);
+  for (const command of request.commands) next = { ...next, ...command.patch };
+  if (isDeepStrictEqual(initial, next)) return { kind: 'rejected', rejection: { stage: 'final_state', code: 'no_changes' } };
+  if (!Number.isSafeInteger(current.currentRevision + 1)) return { kind: 'rejected', rejection: {
+    stage: 'input', error: invalid(['expectedRevision'], 'Cannot advance beyond positive safe revisions'),
+  } };
+  next = { ...next, currentRevision: current.currentRevision + 1 };
+  const change: PreparedCommit = {
+    [preparedBrand]: true, kind: 'apply', priorRevision: current.currentRevision,
+    mapId: current.id, next, author: request.author,
+    changes: request.commands.map((command, commandIndex) => ({
+      commandIndex, command: command.kind, subjectId: current.id,
+    })) as unknown as NonEmpty<SemanticChange>,
+  };
+  return { kind: 'prepared', change: Object.freeze({
+    ...immutableClone(change), [preparedBrand]: true as const,
+  }), frontier: [] };
 }
 
 function validateCreate(input: unknown): InvalidInput | undefined {

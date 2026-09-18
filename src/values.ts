@@ -36,14 +36,14 @@ export function validateObject(
   }
 }
 
-export function validateExtensions(value: unknown): InvalidInput | undefined {
-  const error = validateObject(value, ['extensions']);
+export function validateExtensions(value: unknown, path: readonly (string | number)[] = ['extensions']): InvalidInput | undefined {
+  const error = validateObject(value, path);
   if (error) return error;
   for (const key of Object.keys(value as object)) {
     const match = /^[a-z][a-z0-9_-]*\.[a-z][a-z0-9_.-]*$/.exec(key);
-    if (!match || match[0] !== key) return invalid(['extensions', key], 'Namespaced extension key required');
+    if (!match || match[0] !== key) return invalid([...path, key], 'Namespaced extension key required');
   }
-  return validateJson(value, ['extensions'], new Set());
+  return validateJson(value, path, new Set());
 }
 
 function validateJson(
