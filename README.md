@@ -11,7 +11,9 @@ The remote service owns canonical state. Clients interact through a small MCP in
 
 ## Current status
 
-M1 Map core implementation is in progress. The accepted handoff is [docs/spec/m1.md](docs/spec/m1.md); the wider v1 product contract is [docs/spec/v1.md](docs/spec/v1.md).
+M1 Map core is complete on `main` as of 2026-09-18: the six implementation Issues are closed, all 56 acceptance scenario groups have executable assertions, strict TypeScript checking passes, and 1,061 tests pass. See the [cumulative acceptance matrix](docs/implementation/m1-acceptance.md). M1 delivers the pure domain module and in-memory Adapter only; rollback/deletion, persistence, remote transport, authentication and rendering remain outside this slice.
+
+The accepted handoff is [docs/spec/m1.md](docs/spec/m1.md); the wider v1 product contract is [docs/spec/v1.md](docs/spec/v1.md).
 
 Track implementation in [GitHub Issues](https://github.com/kun-g/wayfinder_map_service/issues) and the private [M1 project board](https://github.com/users/kun-g/projects/5). Active rollback/deletion planning uses [GitHub planning Maps](docs/planning/README.md). Completed M1 planning decisions and prototype captures are preserved in [the planning archive](docs/archive/m1-planning/README.md).
 
@@ -20,6 +22,7 @@ Track implementation in [GitHub Issues](https://github.com/kun-g/wayfinder_map_s
 - [Domain language](CONTEXT.md)
 - [v1 executable specification](docs/spec/v1.md)
 - [Accepted M1 implementation specification](docs/spec/m1.md)
+- [M1 executable acceptance matrix](docs/implementation/m1-acceptance.md)
 - [Active planning Maps](docs/planning/README.md)
 - [M1 planning archive](docs/archive/m1-planning/README.md)
 - [ADR 0001: remote map as authoritative state](docs/adr/0001-remote-map-is-authoritative.md)
