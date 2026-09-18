@@ -23,6 +23,8 @@ The storage failure/backup slice adds explicit busy/non-publication/unknown-outc
 
 The headless tool slice exposes exactly `map_create`, `map_list`, `map_read` and `map_apply` through `createMapMcpServer(storage, { actorId, clientId })` in `src/mcp-tools.ts`. It uses the real M1 core and SQLite Adapter, declares complete JSON schemas and returns results once in `structuredContent`. The function creates an unconnected SDK server; the operator owns storage and transport lifecycle. See [tool/protocol evidence and limits](docs/implementation/mcp-tools.md). There is no runnable HTTP service or installed Codex connection in this slice, and exploration authority has not switched.
 
+The local service slice adds the independently/manual-started `npm run --silent start` command and `startLocalMcpService(configuration)` in `src/mcp-service.ts`. It opens supported existing private SQLite storage only, serves authenticated Streamable HTTP at a fixed `127.0.0.1:<port>/mcp`, enforces request/tool admission limits and drains active work on SIGINT/SIGTERM. See [operator configuration and real HTTP lifecycle evidence](docs/implementation/local-mcp-service.md). Automated SDK-client HTTP tests are not installed Codex acceptance; no connection settings or exploration authority have changed.
+
 Track implementation in [GitHub Issues](https://github.com/kun-g/wayfinder_map_service/issues) and the private [M1 project board](https://github.com/users/kun-g/projects/5). Active rollback/deletion planning uses [GitHub planning Maps](docs/planning/README.md). Completed M1 planning decisions and prototype captures are preserved in [the planning archive](docs/archive/m1-planning/README.md).
 
 ## Project documents

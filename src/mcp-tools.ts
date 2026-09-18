@@ -1,6 +1,6 @@
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { CallToolRequestSchema, ErrorCode, ListToolsRequestSchema, McpError } from '@modelcontextprotocol/sdk/types.js';
-import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
+import type { CallToolRequest, CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 import { calculateFrontier, decodeApplyRequest, prepareApply, prepareCreate } from './index.js';
 import type { CreateMapInput, InvalidInput, MapId, MutationAuthor } from './types.js';
 import type { SQLiteStorage } from './sqlite-storage.js';
@@ -10,11 +10,13 @@ import { mapTools } from './mcp-schemas.js';
 
 export { mapTools } from './mcp-schemas.js';
 export interface ToolAuthorConfiguration { readonly actorId: string; readonly clientId: string }
+// The HTTP host owns admission/draining, including work whose response is lost.
+export type ToolCallControl = (call: () => Promise<CallToolResult>) => Promise<CallToolResult>;
 
 // This advanced SDK seam deliberately retains M1's structured validation paths
 // instead of the high-level SDK's generic text errors/duplicate-text convenience.
 // Transport, admission, authentication and storage lifecycle belong to the host.
-export function createMapMcpServer(storage: SQLiteStorage, configuration: ToolAuthorConfiguration): Server {
+export function createMapMcpServer(storage: SQLiteStorage, configuration: ToolAuthorConfiguration, control?: ToolCallControl): Server {
   if (validateObject(configuration, [], ['actorId', 'clientId']) || validateAuthor({ ...configuration, occurredAt: new Date().toISOString() })) {
     throw new Error('Invalid MCP author configuration');
   }
@@ -22,7 +24,7 @@ export function createMapMcpServer(storage: SQLiteStorage, configuration: ToolAu
   const author = (): MutationAuthor => ({ ...identity, occurredAt: new Date().toISOString() } as MutationAuthor);
   const server = new Server({ name: 'wayfinder-map', version: '0.1.0' }, { capabilities: { tools: {} } });
   server.setRequestHandler(ListToolsRequestSchema, () => ({ tools: structuredClone(mapTools) }));
-  server.setRequestHandler(CallToolRequestSchema, async request => {
+  const callTool = async (request: CallToolRequest): Promise<CallToolResult> => {
     const tool = mapTools.find(tool => tool.name === request.params.name);
     if (!tool) throw new McpError(ErrorCode.InvalidParams, 'Unknown Map tool');
     if (request.params.task !== undefined) throw new McpError(ErrorCode.InvalidParams, 'Task execution is not supported');
@@ -92,7 +94,8 @@ export function createMapMcpServer(storage: SQLiteStorage, configuration: ToolAu
       return envelope({ kind: 'infrastructure_error', code: error instanceof SQLiteFailure ? error.code : 'storage_failure',
         outcome: error instanceof SQLiteFailure ? error.outcome : 'unknown', requiresRestart: error instanceof SQLiteFailure ? error.requiresRestart : true });
     }
-  });
+  };
+  server.setRequestHandler(CallToolRequestSchema, request => control ? control(() => callTool(request)) : callTool(request));
   return server;
 }
 

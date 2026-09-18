@@ -75,7 +75,7 @@ const errors: Schema[] = [
   object({ kind: literal('not_found'), code: literal('map_not_found'), mapId: id }),
   object({ kind: literal('not_found'), code: literal('revision_not_found'), mapId: id, revision }),
   object({ kind: literal('conflict'), conflict: object({ mapId: id, expectedRevision: revision, currentRevision: revision }) }),
-  object({ kind: literal('infrastructure_error'), code: { enum: ['storage_busy', 'storage_failure'] }, outcome: { enum: ['not_published', 'unknown'] }, requiresRestart: { type: 'boolean' } }),
+  object({ kind: literal('infrastructure_error'), code: { enum: ['storage_busy', 'storage_failure', 'service_busy', 'service_stopping'] }, outcome: { enum: ['not_published', 'unknown'] }, requiresRestart: { type: 'boolean' } }),
 ];
 const defs = { json: { anyOf: [{ type: ['null', 'boolean', 'number', 'string'] }, array(json), jsonObject] } };
 const root = (schema: Schema): Tool['inputSchema'] => ({ type: 'object', ...schema, $defs: defs });
