@@ -36,6 +36,18 @@ export function validateObject(
   }
 }
 
+export function validateArrayShape(value: readonly unknown[], path: readonly (string | number)[]): InvalidInput | undefined {
+  if (Object.getPrototypeOf(value) !== Array.prototype) return invalid(path, 'Plain array required');
+  for (const key of Reflect.ownKeys(value)) {
+    if (key !== 'length' && (typeof key !== 'string' || !/^(0|[1-9]\d*)$/.test(key)
+      || Number(key) >= value.length)) return invalid([...path, String(key)], 'Unsupported array property');
+  }
+  for (let i = 0; i < value.length; i++) {
+    const descriptor = Object.getOwnPropertyDescriptor(value, String(i));
+    if (!descriptor || !descriptor.enumerable || !('value' in descriptor)) return invalid([...path, i], 'Plain array element required');
+  }
+}
+
 export function validateExtensions(value: unknown, path: readonly (string | number)[] = ['extensions']): InvalidInput | undefined {
   const error = validateObject(value, path);
   if (error) return error;
@@ -67,18 +79,12 @@ function validateJson(
   ancestors.add(value);
   try {
     if (Array.isArray(value)) {
-      if (Object.getPrototypeOf(value) !== Array.prototype) return invalid(path, 'Plain JSON array required');
+      const shapeError = validateArrayShape(value, path);
+      if (shapeError) return shapeError;
       for (let i = 0; i < value.length; i++) {
-        const descriptor = Object.getOwnPropertyDescriptor(value, String(i));
-        if (!descriptor || !descriptor.enumerable || !('value' in descriptor)) {
-          return invalid([...path, i], 'JSON array element required');
-        }
+        const descriptor = Object.getOwnPropertyDescriptor(value, String(i))!;
         const error = validateJson(descriptor.value, [...path, i], ancestors);
         if (error) return error;
-      }
-      for (const key of Reflect.ownKeys(value)) {
-        if (key !== 'length' && (typeof key !== 'string' || !/^(0|[1-9]\d*)$/.test(key)
-          || Number(key) >= value.length)) return invalid([...path, String(key)], 'Unsupported array property');
       }
       return;
     }

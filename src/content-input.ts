@@ -1,5 +1,5 @@
 import type { InvalidInput } from './types.js';
-import { invalid, isPlainObject, validateId, validateObject } from './values.js';
+import { invalid, isPlainObject, validateArrayShape, validateId, validateObject } from './values.js';
 
 export function validateMapContent(value: unknown, path: readonly (string | number)[]): InvalidInput | undefined {
   const shape = validateObject(value, path, ['id', 'text', 'references']);
@@ -10,15 +10,12 @@ export function validateMapContent(value: unknown, path: readonly (string | numb
   if (typeof value.text !== 'string' || value.text.trim() === '') return invalid([...path, 'text'], 'Nonblank text required');
   const references = value.references;
   const refsPath = [...path, 'references'];
-  if (!Array.isArray(references) || Object.getPrototypeOf(references) !== Array.prototype) return invalid(refsPath, 'Plain Reference array required');
-  for (const key of Reflect.ownKeys(references)) {
-    if (key !== 'length' && (typeof key !== 'string' || !/^(0|[1-9]\d*)$/.test(key)
-      || Number(key) >= references.length)) return invalid([...refsPath, String(key)], 'Unsupported array property');
-  }
+  if (!Array.isArray(references)) return invalid(refsPath, 'Plain Reference array required');
+  const arrayShape = validateArrayShape(references, refsPath);
+  if (arrayShape) return arrayShape;
   for (let i = 0; i < references.length; i++) {
-    const descriptor = Object.getOwnPropertyDescriptor(references, String(i));
+    const descriptor = Object.getOwnPropertyDescriptor(references, String(i))!;
     const refPath = [...refsPath, i];
-    if (!descriptor || !descriptor.enumerable || !('value' in descriptor)) return invalid(refPath, 'Plain Reference element required');
     const reference: unknown = descriptor.value;
     const shape = validateObject(reference, refPath, ['locator', 'label']);
     if (shape) return shape;

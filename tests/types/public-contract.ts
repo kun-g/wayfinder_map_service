@@ -2,6 +2,8 @@ import type {
   ActorId, ApplyRequest, ClaimantId, ClientId, ContentId, CreateMapInput, MapId, PreparedCommit,
   Command, MapContent, Settlement, StateAdapter, StoredTicket, TicketId, TicketInput, TicketPatch,
 } from '../../src/index.js';
+// @ts-expect-error Array-shape validation is internal, not another public seam.
+import { validateArrayShape } from '../../src/index.js';
 
 // Type-only fixture, checked by tsc; deliberately never executed by Vitest.
 export function publicContract(
@@ -85,5 +87,5 @@ export function publicContract(
   }
   void [clientId, wrongMap, wrongActor, wrongClient, wrongTicket, raw, fabricated, empty, research, task,
     badTicket, importTicket, changeIdentity, changeStatus, wrongAccess, wrongEndpoint,
-    wrongContent, wrongSection, removeTicket, wrongReference];
+    wrongContent, wrongSection, removeTicket, wrongReference, validateArrayShape];
 }

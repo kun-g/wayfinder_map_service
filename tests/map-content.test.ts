@@ -140,12 +140,13 @@ test.each(sections)('A07: unchanged, cancelling update and add/remove net-zero e
   const adapter = await setup();
   await commitCommands(adapter, [{ kind: 'content.add', section, item: item('target') }]);
   const state = await current(adapter);
-  for (const commands of [
+  const batches: NonEmpty<Command>[] = [
     [{ kind: 'content.update', section, item: item('target') }],
     [{ kind: 'content.update', section, item: { ...item('target'), text: 'Temporary' } }, { kind: 'content.update', section, item: item('target') }],
     [{ kind: 'content.add', section, item: item('Temporary') }, { kind: 'content.remove', section, itemId: id('Content', 'Temporary') }],
     [{ kind: 'content.remove', section, itemId: id('Content', 'target') }, { kind: 'content.add', section, item: item('target') }],
-  ] as NonEmpty<Command>[]) {
+  ];
+  for (const commands of batches) {
     const before = await observe(adapter, 2);
     expect(prepareApply(state, request(commands, 2))).toEqual({ kind: 'rejected', rejection: { stage: 'final_state', code: 'no_changes' } });
     expect(await observe(adapter, 2)).toEqual(before);
@@ -376,6 +377,40 @@ test.each(sections)('T09: %s items never enter Frontier or qualify as Dependency
   expect(await observe(adapter, 2)).toEqual(before);
 });
 
+const invalidArrayShapes: { label: string; build: (element: unknown) => unknown[]; path: (string | number)[] }[] = [
+  { label: 'sparse', build: () => new Array(1), path: [0] },
+  { label: 'accessor element', build: () => Object.defineProperty([{}], '0', { enumerable: true, get() { throw new Error('Must not execute array getter'); } }), path: [0] },
+  { label: 'hidden element', build: element => Object.defineProperty([element], '0', { enumerable: false, value: element }), path: [0] },
+  { label: 'extra field', build: element => Object.assign([element], { meta: 'unsupported' }), path: ['meta'] },
+  { label: 'symbol field', build: element => Object.assign([element], { [Symbol('extra')]: 'unsupported' }), path: ['Symbol(extra)'] },
+  { label: 'noncanonical index', build: element => Object.assign([element], { '00': 'unsupported' }), path: ['00'] },
+  { label: 'newline-suffixed index', build: element => Object.assign([element], { '0\n': 'unsupported' }), path: ['0\n'] },
+  { label: 'subclass', build: element => { const array = new (class extends Array<unknown> {})(); array.push(element); return array; }, path: [] },
+];
+test.each((['commands', 'References', 'JSON extensions'] as const).flatMap(boundary => invalidArrayShapes.map(entry => ({ boundary, ...entry }))))
+  ('V04/V05/V07/A02: $boundary rejects $label with consistent array-shape checks and no partial effects', async ({ boundary, build, path }) => {
+    const adapter = await setupFog();
+    const before = await observe(adapter, 2);
+    let raw: unknown;
+    let expectedPath: (string | number)[];
+    if (boundary === 'commands') {
+      raw = { mapId, expectedRevision: 99, author, commands: build({ kind: 'content.remove', section: 'fog', itemId: 'target' }) };
+      expectedPath = ['commands', ...path];
+    } else {
+      const command = boundary === 'References'
+        ? { kind: 'content.update', section: 'fog', item: { id: 'target', text: 'Changed', references: build({ locator: 'source' }) } }
+        : { kind: 'map.update', patch: { extensions: { 'app.list': build(1) } } };
+      raw = { mapId, expectedRevision: 99, author, commands: [{ kind: 'content.remove', section: 'fog', itemId: 'target' }, command] };
+      expectedPath = boundary === 'References' ? ['commands', 1, 'item', 'references', ...path]
+        : ['commands', 1, 'patch', 'extensions', 'app.list', ...path];
+    }
+    expect(decodeApplyRequest(raw)).toMatchObject({ kind: 'error', error: { code: 'invalid_input', path: expectedPath } });
+    expect(prepareApply(await current(adapter), raw as ApplyRequest)).toMatchObject({ kind: 'rejected', rejection: {
+      stage: 'input', error: { code: 'invalid_input', path: expectedPath },
+    } });
+    expect(await observe(adapter, 2)).toEqual(before);
+  });
+
 test.each(sections)('T08/H01/H04: update and remove %s replace the whole item, retain identity/section and preserve every full prior snapshot', async section => {
   const adapter = await setup();
   const initial = await current(adapter);
@@ -388,11 +423,11 @@ test.each(sections)('T08/H01/H04: update and remove %s replace the whole item, r
   const expectedAdded = { ...initial, [section]: [item('target'), item('keep')], [opposite]: [item('other-section')], currentRevision: 2 };
   expect(added.revision.state).toEqual(expectedAdded);
   const replacement = { id: id('Content', 'target'), text: ' Updated\n', references: [{ locator: 'URN:anything', label: ' changed ' }] };
-  const updated = await commitCommands(adapter, [{ kind: 'content.update', section, item: replacement } as unknown as Command]);
+  const updated = await commitCommands(adapter, [{ kind: 'content.update', section, item: replacement }]);
   const expectedUpdated = { ...expectedAdded, [section]: [replacement, item('keep')], currentRevision: 3 };
   expect(updated.revision.state).toEqual(expectedUpdated);
   expect(updated.revision.changes).toEqual([{ commandIndex: 0, command: 'content.update', subjectId: 'target' }]);
-  const removed = await commitCommands(adapter, [{ kind: 'content.remove', section, itemId: id('Content', 'target') } as unknown as Command]);
+  const removed = await commitCommands(adapter, [{ kind: 'content.remove', section, itemId: id('Content', 'target') }]);
   const expectedRemoved = { ...expectedUpdated, [section]: [item('keep')], currentRevision: 4 };
   expect(removed.revision.state).toEqual(expectedRemoved);
   expect(removed.revision.changes).toEqual([{ commandIndex: 0, command: 'content.remove', subjectId: 'target' }]);
@@ -428,7 +463,7 @@ test.each(sections.flatMap(section => (['content.update', 'content.remove'] as c
   await commitCommands(adapter, [{ kind: 'content.add', section: opposite, item: item('WrongSection') }]);
   const before = await observe(adapter, 2);
   const command = kind === 'content.update' ? { kind, section, item: item(target) } : { kind, section, itemId: id('Content', target) };
-  expect(prepareApply(await current(adapter), request([{ kind: 'content.add', section, item: item('WouldAdd') }, command as unknown as Command], 2)))
+  expect(prepareApply(await current(adapter), request([{ kind: 'content.add', section, item: item('WouldAdd') }, command], 2)))
     .toEqual({ kind: 'rejected', rejection: { stage: 'command', commandIndex: 1, code: 'content_not_found', ticketIds: [] } });
   expect(await observe(adapter, 2)).toEqual(before);
 });

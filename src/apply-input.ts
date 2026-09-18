@@ -1,5 +1,5 @@
 import type { ApplyRequest, InvalidInput, Result, TicketType } from './types.js';
-import { invalid, isPlainObject, validateAuthor, validateExtensions, validateId, validateObject } from './values.js';
+import { invalid, isPlainObject, validateArrayShape, validateAuthor, validateExtensions, validateId, validateObject } from './values.js';
 import { immutableClone } from './immutable.js';
 import { validateMapContent } from './content-input.js';
 
@@ -20,16 +20,13 @@ function validateRequest(raw: unknown): InvalidInput | undefined {
   const authorError = validateAuthor(raw.author);
   if (authorError) return authorError;
   const commands = raw.commands;
-  if (!Array.isArray(commands) || Object.getPrototypeOf(commands) !== Array.prototype || commands.length === 0) {
+  if (!Array.isArray(commands) || commands.length === 0) {
     return invalid(['commands'], 'Nonempty plain command array required');
   }
-  for (const key of Reflect.ownKeys(commands)) {
-    if (key !== 'length' && (typeof key !== 'string' || !/^(0|[1-9]\d*)$/.test(key)
-      || Number(key) >= commands.length)) return invalid(['commands', String(key)], 'Unsupported array property');
-  }
+  const arrayShape = validateArrayShape(commands, ['commands']);
+  if (arrayShape) return arrayShape;
   for (let i = 0; i < commands.length; i++) {
-    const descriptor = Object.getOwnPropertyDescriptor(commands, String(i));
-    if (!descriptor || !descriptor.enumerable || !('value' in descriptor)) return invalid(['commands', i], 'Plain command element required');
+    const descriptor = Object.getOwnPropertyDescriptor(commands, String(i))!;
     const command: unknown = descriptor.value;
     const path = ['commands', i] as const;
     const shape = validateObject(command, path);
