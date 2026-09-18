@@ -1,0 +1,272 @@
+# Local MCP and SQLite implementation specification
+
+Status: proposed consolidated implementation handoff, awaiting explicit human confirmation. Child decisions are confirmed; this document does not yet authorize implementation Issues, close the planning Map or claim actual MCP availability.
+
+Date: 2026-09-18. Planning Destination: a minimal client-neutral SQLite-backed MCP service whose real Codex acceptance proves the M1 workflow, immutable history, restart persistence and conflicts before new project exploration Maps rely on it.
+
+## 1. Authority and provenance
+
+Use [CONTEXT.md](../../CONTEXT.md) for domain language, [M1](m1.md) for unchanged domain behavior and the [v1 contract](v1.md) for the wider product. This document consolidates the human-confirmed local slice, not completion of v1 or M2–M6.
+
+| Source | Role |
+| --- | --- |
+| [Codex MCP and SQLite acceptance planning Map](https://github.com/kun-g/wayfinder_map_service/issues/27) | Destination and human-approved slice boundaries |
+| [Research Codex connection and SQLite runtime constraints](https://github.com/kun-g/wayfinder_map_service/issues/28#issuecomment-5725823549) | Sourced facts; [immutable research artifact](https://github.com/kun-g/wayfinder_map_service/blob/ae7d1451494d36e0938b5ce103eecc44ddccaafa/docs/research/mcp-sqlite-runtime.md) |
+| [Define the headless MCP and service contract](https://github.com/kun-g/wayfinder_map_service/issues/29#issuecomment-5727101846) | Tools, results, access, authorship, lifecycle and failure boundaries |
+| [Define the durable SQLite Adapter contract](https://github.com/kun-g/wayfinder_map_service/issues/30#issuecomment-5727392356) | Runtime, storage ownership, initialization, publication, durability and backup; Q10 withdrawn |
+| [Define real-MCP acceptance and exploration adoption](https://github.com/kun-g/wayfinder_map_service/issues/31#issuecomment-5728664978) | Automated/live evidence, isolated tests and explicit adoption gate |
+| [Synthesize the MCP and SQLite implementation specification](https://github.com/kun-g/wayfinder_map_service/issues/32) | This handoff and its pending human confirmation |
+
+Later accepted decisions supersede earlier proposals in research/discussion. In particular, do not restore full write snapshots by default, duplicate JSON text for compatibility, or proactive/per-read integrity audits. Research recommendations are not independently normative choices.
+
+GitHub planning/implementation records are development coordination, not product Map state. After actual acceptance, product MCP owns new exploration Maps; GitHub retains implementation Issues/PRs. Existing rollback/deletion planning Maps remain in GitHub until separately authorized migration. No dual-write or automatic migration.
+
+## 2. Slice boundaries and baseline
+
+Include one manually started local Streamable HTTP service, exactly four headless tools over the real M1 core, durable private SQLite state, explicit initialization, manual consistent local backup, automated integration/protocol checks and a live Codex acceptance gate. All work sessions use the same service-managed canonical database.
+
+Preserve all M1 commands and invariants: one Destination property, ordered atomic batches, Frontier, logical Claims, typed Settlements, explicit reopen, immutable full Revisions and expectedRevision conflicts. Destination is not a Ticket; reopen is not rollback. Content removal is not Ticket/Map deletion.
+
+Exclude public/production deployment, tunnels, OAuth, ChatGPT integration, PostgreSQL implementation, rendering/MCP Apps UI, sharing, export, Recovery Bundle import, rollback, Ticket/Map deletion, owner/workspace state, collaboration/invitations, Claim quotas/leases, automatic retries/merges/takeovers, client caches/refresh/subscriptions, plugin packaging and a general graph API. No periodic/cloud backup or automatic restore.
+
+SQLite supersedes PostgreSQL for this local slice only. [ADR 0001](../adr/0001-remote-map-is-authoritative.md) remains the wider remote-authority direction; loopback acceptance does not deliver its always-on HTTPS deployment. [ADR 0002](../adr/0002-mcp-tools-are-the-primary-interface.md) applies: no UI is necessary to operate the tools. During this slice, an unavailable service pauses authoritative advancement rather than creating an offline replacement; v1's later Recovery Bundle path is not implemented here.
+
+Recorded baseline on main at `522d9b96b6c8a8224a7071576ff8e3c2f953874b`: M1 is delivered, strict TypeScript checking and 1,061 tests passed, with all 56 mandatory acceptance groups traced in [the cumulative matrix](../implementation/m1-acceptance.md). There are no runtime MCP dependencies, SQLite Adapter, start command or connected Wayfinder tools at that baseline. These historical results are not new verification of this slice.
+
+## 3. Identity, validation and authorship
+
+Callers supply stable Map/Ticket/Content/Claimant IDs. Retain M1's complete, case-sensitive `[A-Za-z0-9][A-Za-z0-9._:-]{0,127}` grammar; no trimming/normalization, mandatory UUID scheme or global cross-kind uniqueness. Ticket IDs are Map-local; Content IDs are unique across both content sections in their Map. Titles may repeat and are never authoritative handles.
+
+Revision values are positive JavaScript safe integers; no zero, fractional, overflow or reset. Required text is nonblank but retains whitespace; notes may be empty. Retain M1 plain-JSON, namespaced Extensions, typed Settlement and Reference/Provenance constraints. Reject unknown fields and caller-supplied stored/system fields, including author, currentRevision and introducedAtRevision. Public schemas and runtime validation must agree; TypeScript brands alone are insufficient.
+
+The service supplies actorId/clientId from operator-controlled credential configuration and occurredAt from server time. The pure domain still takes explicit MutationAuthor and has no clock/authentication/I/O. Validate that server configuration before serving calls; never accept client-forged authorship.
+
+claimantId is an explicit logical work-session ID on existing M1 commands, not an access token, account or MCP connection. Independent concurrent work sessions use distinct IDs; continued logical work may retain its ID. No independent ClaimId, registry, expiry, quota or implicit disconnect release. Authentication does not turn claimantId into proof of account ownership; preserve M1 matching and deliberate clear-with-reason semantics.
+
+## 4. Public tool inputs
+
+Exactly these tools, without SQL, DB-path selection, PreparedCommit import or an alternate business-command implementation:
+
+```ts
+// M1 types and nested command fields are defined in m1.md sections 2–4.
+interface MapCreateArgs {
+  readonly mapId: MapId;
+  readonly title: string;
+  readonly destination: string;
+  readonly notes?: string;
+  readonly extensions?: Extensions;
+  readonly includeSnapshot?: boolean;
+}
+interface MapListArgs {
+  readonly limit?: number;
+  readonly afterMapId?: MapId;
+}
+interface MapReadArgs {
+  readonly mapId: MapId;
+  readonly revision?: RevisionNumber;
+}
+interface MapApplyArgs {
+  readonly mapId: MapId;
+  readonly expectedRevision: RevisionNumber;
+  readonly commands: NonEmpty<Command>;
+  readonly includeSnapshot?: boolean;
+}
+```
+
+`map_create` maps public mapId to M1 CreateMapInput.id and enriches author. It creates Revision 1, not an empty shell or Revision 0. `map_apply` enriches ApplyRequest.author, validates the entire ordered batch, prepares through M1 and commits through the real Adapter. Preparation alone is never durable success. Preserve whole-shape-before-semantics validation and the second authoritative head comparison at publication.
+
+`includeSnapshot` defaults to false, is boolean, and affects only successful write response size, never mutation semantics. `map_read` defaults to the committed authoritative head observed for the request; historical state requires an explicit revision. A valid nonexistent historical number is revision_not_found, never a fallback to latest. expectedRevision is only a write CAS precondition, not a request to mutate an old historical state.
+
+`map_list` uses ASCII Map ID ascending order. limit defaults to 20 and must be an integer from 1 through 100. afterMapId is a validated lexical boundary; return IDs strictly greater, even if the boundary ID no longer exists or never existed. Each page observes coherent index fields; multiple pages/calls are not a frozen snapshot. Empty lists are normal. No title-based automatic selection or creation.
+
+Outer-service limits: request maximum 1 MiB (1,048,576 bytes), at most 100 commands per apply, at most four concurrent tool calls. Excess is explicitly rejected, not queued for silent retry, split into several commits or coerced. Do not impose these new limits on pure M1 callers.
+
+## 5. Once-only structured results
+
+Declare output schemas and return business results once in structuredContent. Do not serialize the same JSON into a text block. A protocol/SDK-required empty content array is allowed. Actual installed Codex consumption is an acceptance requirement, not an assumption; incompatibility is a blocker, not authority to add a duplicate-text fallback.
+
+Successful structured payloads:
+
+```ts
+interface CompactCommit {
+  readonly kind: 'committed';
+  readonly mapId: MapId;
+  readonly revision: RevisionNumber;
+  readonly changes: NonEmpty<SemanticChange>;
+}
+interface SnapshotCommit {
+  readonly kind: 'committed';
+  readonly revision: Revision; // full M1 record, including state/author/changes
+  readonly frontier: readonly TicketId[];
+}
+interface FoundMap {
+  readonly kind: 'found';
+  readonly revision: Revision;
+  readonly frontier: readonly TicketId[];
+}
+interface MapIndex {
+  readonly mapId: MapId;
+  readonly title: string;
+  readonly destination: string;
+  readonly currentRevision: RevisionNumber;
+}
+interface ListedMaps {
+  readonly kind: 'listed';
+  readonly maps: readonly MapIndex[];
+  readonly nextAfterMapId: MapId | null;
+}
+```
+
+| Tool/switch | Success payload |
+| --- | --- |
+| map_create/map_apply, flag omitted or false | CompactCommit: no full graph or Frontier |
+| map_create/map_apply, flag true | SnapshotCommit: no separate duplicate compact receipt |
+| map_read | FoundMap for the selected full Revision |
+| map_list | ListedMaps; nextAfterMapId is the last returned ID if more entries exist, otherwise null |
+
+The write output schema must distinguish revision-number and revision-object variants without adding another payload. SemanticChange preserves M1's commandIndex, command, subjectId and required reason; summaries are not transcript/replay instructions. A write returns its exact committed Revision, even if a later operation advances head before the response arrives. Every returned Frontier derives from that same Revision's state.
+
+All Revisions retain mapId/revision/priorRevision/kind/author/changes/full state. Historical Claims and Settlement introducedAtRevision survive; historical reads do not restore them. No all-history dump, automatic refresh or independently persisted Frontier.
+
+## 6. Error and uncertain-outcome boundaries
+
+Preserve the structured M1 ReadResult, PrepareResult, CommitResult and Rejection/Conflict information from [M1 sections 5–7](m1.md): input code/path/constraint, rejection stage, commandIndex, operation code, relevant IDs and expected/current conflict heads. Paths identify the submitted public object (including the public mapId name), not hidden server author fields. Deterministic prose/helper names are reversible choices; do not reduce structured errors to generic text or invent business errors for infrastructure failures.
+
+| Class | Required treatment |
+| --- | --- |
+| Argument validation, business rejection, missing object, stale Revision | Structured tool error with isError true; preserve applicable M1 fields/codes |
+| Unknown tool or malformed protocol request | Protocol error, not a fabricated domain rejection |
+| Storage/transport/service failure | Distinct infrastructure diagnosis; safe fields only, not SQL, private paths or credentials |
+| Proven non-publication | State/history unchanged; do not label uncertain outcomes as this class |
+| Commit/response interruption with unproven outcome | Unknown outcome; authoritative reread before any decision, no automatic replay |
+
+Known rejects, conflicts and net-no-ops publish no Revision. Storage-busy is not proof of stale head and must not become Conflict. Unexpected infrastructure/programming failures remain Promise failures at the StateAdapter seam, safely mapped by MCP without changing the pure library's result unions.
+
+Attempt transaction cleanup. If the connection cannot return to usable state, stop DB operations and require restart. A missing/failed response never alone proves no publication. Reread current/history, decide whether the intention is already satisfied, and seek human judgment if evidence cannot resolve uncertainty. No automatic retry, rebase, merge, idempotency cache, Claim takeover or memory fallback. A lost connection cannot necessarily deliver an error envelope; client/workflow handling must still retain this rule.
+
+## 7. Local service access and lifecycle
+
+One independent manually started Streamable HTTP process owns the configured DB and serves sessions at a configured fixed port and `/mcp`. Bind only `127.0.0.1`; no public listener, daemon/auto-start, client-launched process, STDIO bridge or automatic port substitution. Closing a conversation does not stop the service.
+
+Require a local access token, restrict Host to the configured local address and validate Origin. Missing Origin is allowed for an authenticated client; a present Origin must match an explicitly permitted local source, not an arbitrary website. Loopback alone is not authorization. Keep secrets out of repository, Map content, logs, reports and public errors.
+
+Validate port, credential/author configuration, supported application format and DB readiness before admitting calls. Port occupancy is visible startup failure. Graceful stop rejects new calls, completes active work and closes storage. Forced termination retains unknown-receipt semantics. No connection identity controls Claim lifetime.
+
+Pin a supported MCP SDK and its installed dependency versions, record the protocol/client versions actually exercised, and verify real Codex interoperability. Research describes available SDKs, not a guaranteed installed-client match. SDK wiring and supported-version declarations are implementation choices within this contract; an incompatible client requiring a changed result/transport contract must return to the human, not trigger an unapproved compatibility bridge.
+
+Logs may record safe request identifiers, operation names, timing and actor; omit decision/evidence bodies, credential material, SQL and private filesystem paths. No new audit infrastructure is required.
+
+## 8. SQLite ownership and explicit initialization
+
+Pin Node 26.3.0 and use built-in node:sqlite, with its researched release-candidate interface status explicitly human-accepted. Record the actual embedded SQLite version in verification; this host's researched version was 3.53.2. No fallback driver, Worker or connection pool. Promise-shaped Adapter methods do not make synchronous SQLite nonblocking.
+
+Use one operator-configured absolute private canonical path on local disk, outside repositories, disposable worktrees and temporary directories. Example, not a file already created: `/Users/kun/Library/Application Support/Wayfinder/maps.sqlite`. All sessions reach this DB through the service, never caller-selected paths/SQL. No network/shared filesystem; reject symlinks in the DB path. Newly created private directories use 0700 and DB/backup files 0600. Reject unsafe existing ownership/permissions rather than silently chmodding user data. Treat WAL/sidecars as managed persistent state, not expendable cache.
+
+Provide explicit first-use initialization to a nonexistent fresh target only. Refuse any existing target, including an empty file; never overwrite. Initialize application identity and initial format version with the schema. Exact identity constant/table names are implementation choices fixed and tested for this first format.
+
+Normal startup opens existing storage only and recognizes its application/format identity, not just its filename. Wrong/missing paths, unsupported format and ordinary open/read/write/JSON-decoding failures are explicit errors. No automatic initialization, empty replacement, reset, repair, overwrite or migration. Support this initial format only.
+
+**Withdrawn Q10 remains excluded:** no startup physical/data integrity audit, full-history scan, proactive semantic graph inspection, replacement per-read audit or mandatory integrity maintenance command. Ordinary application-format recognition and I/O/SQL/JSON failures are not permission to reintroduce those features. Existing M1 validation of a submitted mutation and its final graph remains unchanged; detecting damage is not claimed to restore it.
+
+## 9. Persisted representation and publication
+
+Principally two tables: Map catalog/head (ID, title, Destination, current Revision), and immutable full Revision JSON unique by Map ID/revision. Preserve every accepted full Revision, including authorship, prior links, changes, Claims and Settlement introduction context. No pruning, command replay or separate graph entity tables.
+
+Keep StateAdapter's three operations unchanged: readCurrent, readRevision, commit. Add only a narrow listMaps read on the SQLite module for MCP listing; do not expand the public StateAdapter, memory Adapter sharing or tool count. Narrow local initialization/backup/open/close management is not a public MCP mutation path.
+
+Use one synchronous connection and short operations. Explicitly configure and verify WAL, synchronous=FULL and 100 ms SQLite lock waiting. The wait budget is not an end-to-end latency guarantee; synchronous work can block the execution thread.
+
+For commit:
+
+1. Defensively capture prepared input before any asynchronous yield; retain internal identity/kind/prior/next-number coherence checks and detached values. Only pure preparation mints PreparedCommit; it is not JSON import or an authentication mechanism.
+2. Start a short BEGIN IMMEDIATE transaction. No await/network operation inside it.
+3. Under the write transaction, check absence for create, or existence and authoritative prior head for apply. Duplicate create returns map_already_exists; missing apply returns map_not_found; known mismatch returns Conflict with actual head, without publication.
+4. Insert full new Revision and publish catalog/head together; commit once. No observable partial commands, orphan history, overwritten prior Revision or losing proposal.
+5. Return the captured exact committed record and its Frontier, not a later head reread. Capture work needed for the return before reporting success; clean up failures without asserting rollback of an already durable commit.
+
+Same-head writers publish at most one success. Independent Maps retain isolated contents and revision sequences starting at 1. No writable aliases from requests/prepared data/stored history/outputs. Busy timeout is separate infrastructure failure, never an automatic resubmission. Stop DB operations if cleanup cannot restore a usable connection.
+
+For current full reads, observe head N, then fetch immutable Revision N and derive Frontier from its state. A later commit does not change N; explicit history stays pinned. Catalog page fields are coherent for that page; separate calls/pages are not a snapshot. No Agent-specific cache or promise that an earlier response remains latest after later writes.
+
+Restart preserves head, all history and Claims. It creates no Revision, reacquires no Claim and grants no expiry/takeover. Graceful restart/process-kill evidence is not proof of hardware/power-loss resilience.
+
+## 10. Manual consistent backup
+
+Provide one explicit local maintenance backup command, not a fifth MCP tool. Use SQLite's consistent backup mechanism to a fresh independent destination, never the active DB or an existing target. Raw copying a live main DB file is not a valid backup method. Apply private path/permission handling and keep secrets/private paths out of public diagnostics.
+
+Report success only after completion checks; partial artifacts are not successful backups. Backup changes no Map Revision or Claim and automatically removes no older backups. Completion checks do not scan/audit source history. Opening a backup independently and comparing known acceptance fixtures is test evidence, not a restore/import feature. No periodic/cloud backup, automatic restore or Recovery Bundle import.
+
+## 11. Required automated evidence
+
+Run strict checking and all existing M1 scenarios; keep the pure/memory suite intact. Reuse real-Adapter behavioral scenarios where applicable for SQLite, with explicit durable-instance cases instead of M1 S03's memory-only volatility. Do not rerun the pure Frontier enumeration separately per storage implementation solely to duplicate an unchanged algorithm. No arbitrary coverage percentage/test count substitutes for branch assertions.
+
+Use real M1, SQLite and HTTP tool paths. Fresh clearly named acceptance Maps and disposable test DBs/ports/credentials isolate faults from actual project state. Temporary test DBs are not canonical deployment storage. Test-only faults/secondary contention connections are not public tools or a production connection pool.
+
+For known rejects/conflicts/proven pre-publication failures, compare complete current state and every known earlier Revision before/after, verify proposed-next absence, and verify unrelated Maps unchanged. For post-commit response loss, assert actual stored outcome separately and do not apply a false no-publication expectation. Reads over known fixture history are not a production integrity-audit feature.
+
+| ID | Executable scenario and required observations |
+| --- | --- |
+| A01 | Strict TypeScript and all 56 M1 groups retain branch assertions, compile fixtures and the existing real memory Adapter behavior. |
+| D01 | Explicit fresh initialization; existing empty/nonempty targets refused without overwrite; normal open refuses missing/wrong/unsupported format without replacement. |
+| D02 | Private path/ownership/mode and symlink rejection; no caller SQL/path access; configured WAL/FULL/100 ms verified and sidecars retained through managed lifecycle. |
+| D03 | Real create/apply/read full Revision round-trip: contiguous prior links, exact author/changes/state/Claim/Settlement introduction metadata, independent Map sequences. |
+| D04 | Same-head prepared writers and duplicate creates: exactly one publication and appropriate losing Conflict/duplicate, immutable prior history. Independent heads may both succeed. |
+| D05 | Stale, missing, malformed, lifecycle, dependency, Claim, invariant and no-op branches retain applicable M1 error locations and non-effects through real storage/tools. |
+| D06 | Failure after transactional work but before publication rolls back head/history/catalog together; next valid operation remains possible when cleanup succeeds. |
+| D07 | A second test connection holds the write lock: bounded busy failure, not fabricated Conflict; no publication/automatic retry; normal use resumes after release. |
+| D08 | Inputs/results/prepared values have no writable storage aliases; capture-before-yield and malformed internal-envelope programming failure retain M1 guarantees. |
+| D09 | Pinned current N/full Revision/Frontier coherence during subsequent writes; old history stable and missing historical version errors without latest fallback. |
+| D10 | Graceful service stop/restart, forced termination and new connection retain accepted head/history/Claims without added Revision or implicit Claim release. Interrupted transactions never expose partial state. |
+| D11 | Commit succeeds but response is lost: durable new Revision exists, receipt remains unknown until reread; no automatic replay or assertion that missing response means no change. |
+| D12 | Cleanup that cannot restore a usable connection stops DB operations until restart; no silent memory fallback or continued mutation. |
+| D13 | Real consistent backup opens independently with matching known snapshots/Claims; source unchanged; existing/active targets refused, partial result not success. |
+| P01 | Exactly four tools with matching declared schemas; unknown/system fields rejected; actual M1 command union rather than copied Demo logic. |
+| P02 | Compact defaults and opt-in snapshot variants match output schemas, exact committed version/Frontier, once-only structuredContent and no duplicate text. |
+| P03 | Current versus explicit history, service-returned revision values, distinct validation/not-found/conflict results and no all-history dump. |
+| P04 | ASCII keyset listing, default/boundary limits, nonexistent cursor boundary, more/end cursor, coherent pages, empty catalog and duplicate titles. |
+| P05 | Argument/business errors use tool errors; malformed protocol/unknown tools use protocol errors; safe infrastructure distinction, input paths and commandIndex retained. |
+| P06 | Request 1 MiB, batch 100 and concurrency four limits: boundary/excess checks, explicit refusal, no silent splitting/coercion/retry or added M1 limits. |
+| P07 | Loopback binding, required token, configured Host and absent/allowed/forbidden Origin branches; callers cannot forge actor/client/time or author configuration. |
+| P08 | Fixed-port/config/storage readiness startup failures are visible; conversation close leaves service alive; graceful shutdown stops admission and completes active work. |
+| P09 | Errors/logs/report fixtures expose no credentials, SQL, private paths or decision/evidence bodies; unavailable service/storage never silently substitutes another authority. |
+
+Each listed branch needs an assertion. Tests that intentionally interrupt a process must control the relevant publication boundary; sleeps or prescribed race winners are not evidence. Safety checks exercise ordinary failures/format recognition, not withdrawn full-history/proactive corruption auditing. Exact shell scripts, helper names and dependency installation checks belong to implementation and must be recorded with actual outcomes.
+
+## 12. Live Codex evidence and adoption gate
+
+Automated passing results do not prove installed-client interoperability. Complete these steps in actual Codex with the implemented service and isolated acceptance storage, not browser automation or a page Demo:
+
+| ID | Live evidence |
+| --- | --- |
+| L01 | Connect/discover the four tools and consume declared structured results correctly; record installed client, server commit/runtime/SDK/protocol environment. |
+| L02 | Create Map/Destination; add prerequisite/dependent Tickets and Dependency, Fog and Scope Exclusion; observe Frontier; Claim and settle prerequisite, observe dependent unlock; Claim/settle dependent; explicitly reopen both and inspect earlier Claims/Settlements/history. |
+| L03 | Session B independently discovers A's Map via catalog and stable ID, reads current state and continues with its distinct logical Claimant. No ambiguous-title selection or replacement Map. |
+| L04 | A's stale expectedRevision after B advances produces Conflict/no publication; A rereads the latest observed head. Reconnect/new session retains history/Claims with no expiry/takeover. |
+| L05 | Human explicitly accepts the real workflow after required automated evidence and any blockers are resolved; no unit-count, screenshot or planning confirmation substitute. |
+
+Keep a reproducible report (suggested path `docs/implementation/mcp-sqlite-acceptance.md`) with exact commit/environment, commands and results, isolated setup, live operations/outcomes and human verdict. Distinguish pass/fail/not-run and historical M1 results from current evidence. Keep secrets and private paths out of published reports; public configuration examples are not live credentials.
+
+Only after L05 and all required gates may new exploration Maps adopt MCP as sole authority. Narrowly adapt create/find/resume/advance: retain a stable Map handle, discover via catalog when needed, default-read on resumption, successfully Claim before work, settle with a live human verdict when the method requires one, and use returned expected revisions. Reread conflicts/uncertain writes before deciding; minimize routine reads by retaining known context without treating it as authoritative after resumption/uncertainty.
+
+No tracker switch during bootstrap planning or merely because tools start responding. Implementation Issues/PRs stay in GitHub; existing rollback/deletion Maps remain untouched. Service outage pauses authoritative advancement, with no silent memory/local/GitHub replacement. Incompatibility or unexpected persistence findings block the affected gate; any changed contract returns to the human.
+
+## 13. Proposed implementation slices and completion
+
+After explicit human handoff confirmation, create specified GitHub implementation Issues with native dependencies and scoped acceptance references. Do not create them from an unconfirmed draft. A reversible six-slice sequence is:
+
+| Order | Proposed implementation Ticket | Prerequisite | Required evidence |
+| --- | --- | --- | --- |
+| 1 | Private SQLite initialization and durable Revision Adapter | Confirmed handoff | Runtime pin, initialization/open, representation, CAS/history/isolation, conformance; A01, D01–D06, D08–D09 |
+| 2 | SQLite restart, failure and manual backup guarantees | Slice 1 | Busy/cleanup, controlled termination, unknown receipt groundwork, consistent backup; D07, D10–D13 |
+| 3 | Four headless MCP tools over the real M1 core | Slice 1 | Input/output schemas, current/history/catalog, server author enrichment, compact results and errors; P01–P05 |
+| 4 | Independent loopback service lifecycle and access boundaries | Slices 2 and 3 | Startup/config/auth/Host/Origin, limits/shutdown, HTTP integration and response-loss evidence; P06–P09 and end-to-end D10–D12 |
+| 5 | Automated integration closeout and real Codex acceptance | Slice 4 | All A/D/P branches, L01–L05, reproducible report and explicit human verdict |
+| 6 | Narrow exploration workflow adoption | Slice 5 plus its live verdict | Minimal workflow changes, new Map create/find/resume/advance proof, no old-Map migration/dual authority or plugin expansion |
+
+Slices 2 and 3 may proceed independently after slice 1. Adapter-process termination tests in slice 2 are completed through the actual HTTP service in slices 4–5, not falsely reported as service/client acceptance. Workflow adoption is gated, not bundled into the first implementation slice.
+
+Preserve strict TypeScript/ESM/Vitest, pure module boundaries, all M1 regression assertions, Standards/Spec review and conflict checks. Do not monitor, wait for or use CodeRabbit as an agent gate; this does not authorize bypassing repository-required checks. Runtime pins, lockfile, exact supported SDK installation/wiring, schema constants, reversible module layout and test helpers can be settled during implementation within the confirmed contract. Do not choose a second driver, add a compatibility bridge or weaken a gate to work around a failure silently.
+
+Specification handoff completion requires explicit human confirmation, publication of this accepted document and recorded resolution/index links before the synthesis Ticket and parent close. Feature completion requires actual implementation and the automated/live gates; adoption completion additionally requires slice 6 evidence. None of these states implies full v1 delivery.
+
+This draft session changed documentation only. No dependencies, runtime pins, source code, MCP settings, database, server, backup, workflow skills or existing product/planning Maps were changed; no M1/integration/live acceptance tests were run as part of synthesis.
