@@ -46,6 +46,17 @@ export function validateExtensions(value: unknown, path: readonly (string | numb
   return validateJson(value, path, new Set());
 }
 
+export function validateAuthor(value: unknown): InvalidInput | undefined {
+  const shape = validateObject(value, ['author'], ['actorId', 'clientId', 'occurredAt']);
+  if (shape) return shape;
+  if (!isPlainObject(value)) return invalid(['author'], 'Caller author required');
+  for (const key of ['actorId', 'clientId']) {
+    const error = validateId(value[key], ['author', key]);
+    if (error) return error;
+  }
+  if (!isUtcTimestamp(value.occurredAt)) return invalid(['author', 'occurredAt'], 'UTC RFC3339 timestamp required');
+}
+
 function validateJson(
   value: unknown, path: readonly (string | number)[], ancestors: Set<object>,
 ): InvalidInput | undefined {

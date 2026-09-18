@@ -1,5 +1,5 @@
 import type { ApplyRequest, CreateMapInput, InvalidInput, MapId, MutationAuthor, NonEmpty, PrepareResult, Result, SemanticChange, StoredMapState } from './types.js';
-import { invalid, isPlainObject, isUtcTimestamp, validateExtensions, validateId, validateObject } from './values.js';
+import { invalid, isPlainObject, validateAuthor, validateExtensions, validateId, validateObject } from './values.js';
 import { immutableClone } from './immutable.js';
 import { decodeApplyRequest } from './apply-input.js';
 import { isDeepStrictEqual } from 'node:util';
@@ -86,14 +86,5 @@ function validateCreate(input: unknown): InvalidInput | undefined {
     const error = validateExtensions(input.extensions);
     if (error) return error;
   }
-  const authorError = validateObject(input.author, ['author'], ['actorId', 'clientId', 'occurredAt']);
-  if (authorError) return authorError;
-  if (!isPlainObject(input.author)) return invalid(['author'], 'Caller author required');
-  for (const key of ['actorId', 'clientId']) {
-    const error = validateId(input.author[key], ['author', key]);
-    if (error) return error;
-  }
-  if (!isUtcTimestamp(input.author.occurredAt)) {
-    return invalid(['author', 'occurredAt'], 'UTC RFC3339 timestamp required');
-  }
+  return validateAuthor(input.author);
 }

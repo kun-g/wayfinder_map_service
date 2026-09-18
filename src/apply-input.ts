@@ -1,5 +1,5 @@
 import type { ApplyRequest, InvalidInput, Result } from './types.js';
-import { invalid, isPlainObject, isUtcTimestamp, validateExtensions, validateId, validateObject } from './values.js';
+import { invalid, isPlainObject, validateAuthor, validateExtensions, validateId, validateObject } from './values.js';
 import { immutableClone } from './immutable.js';
 
 export function decodeApplyRequest(raw: unknown): Result<ApplyRequest, InvalidInput> {
@@ -16,14 +16,8 @@ function validateRequest(raw: unknown): InvalidInput | undefined {
   if (typeof raw.expectedRevision !== 'number' || !Number.isSafeInteger(raw.expectedRevision) || raw.expectedRevision <= 0) {
     return invalid(['expectedRevision'], 'Positive safe integer required');
   }
-  const authorShape = validateObject(raw.author, ['author'], ['actorId', 'clientId', 'occurredAt']);
-  if (authorShape) return authorShape;
-  if (!isPlainObject(raw.author)) return invalid(['author'], 'Caller author required');
-  for (const key of ['actorId', 'clientId']) {
-    const error = validateId(raw.author[key], ['author', key]);
-    if (error) return error;
-  }
-  if (!isUtcTimestamp(raw.author.occurredAt)) return invalid(['author', 'occurredAt'], 'UTC RFC3339 timestamp required');
+  const authorError = validateAuthor(raw.author);
+  if (authorError) return authorError;
   const commands = raw.commands;
   if (!Array.isArray(commands) || Object.getPrototypeOf(commands) !== Array.prototype || commands.length === 0) {
     return invalid(['commands'], 'Nonempty plain command array required');
