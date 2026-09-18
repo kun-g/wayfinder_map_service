@@ -17,6 +17,8 @@ The accepted handoff is [docs/spec/m1.md](docs/spec/m1.md); the wider v1 product
 
 The next local slice has an [accepted MCP/SQLite implementation handoff](docs/spec/mcp-sqlite.md), human-confirmed on 2026-09-18; see [Codex MCP and SQLite acceptance planning](https://github.com/kun-g/wayfinder_map_service/issues/27) for its decisions. SQLite is selected for this local slice only; there is no implemented/accepted Wayfinder MCP connection yet, and new exploration Maps do not switch authority until real Codex acceptance.
 
+The first persistence slice implements a private SQLite Adapter on pinned Node.js 26.3.0. Its separate operator entry point is `src/sqlite-storage.ts`: `initializeSQLite(path)` explicitly creates a fresh database, and `openSQLite(path)` opens only a supported existing database, returning `{ adapter, listMaps, close }`. The domain entry point remains pure. See [storage verification and operator constraints](docs/implementation/sqlite-storage.md); this does not deliver MCP, backup, service startup or exploration adoption.
+
 Track implementation in [GitHub Issues](https://github.com/kun-g/wayfinder_map_service/issues) and the private [M1 project board](https://github.com/users/kun-g/projects/5). Active rollback/deletion planning uses [GitHub planning Maps](docs/planning/README.md). Completed M1 planning decisions and prototype captures are preserved in [the planning archive](docs/archive/m1-planning/README.md).
 
 ## Project documents
