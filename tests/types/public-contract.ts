@@ -8,6 +8,8 @@ import { validateArrayShape } from '../../src/index.js';
 import { validateSettlement } from '../../src/index.js';
 // @ts-expect-error Plain JSON validation is internal, not an import/validation port.
 import { validateJsonObject } from '../../src/index.js';
+// @ts-expect-error Shared Reference validation remains internal.
+import { validateReferences } from '../../src/index.js';
 
 // Type-only fixture, checked by tsc; deliberately never executed by Vitest.
 export function publicContract(
@@ -142,5 +144,5 @@ export function publicContract(
     wrongContent, wrongSection, removeTicket, wrongReference, validateArrayShape,
     acquire, release, clear, actorClaim, clientRelease, wrongClear, unexplainedClear,
     independentClaim, expiringClaim, wrongClaimTarget, accepted, settle, reopen, wrongOutcome, wrongSettler,
-    importIntroduction, unexplainedReopen, importReopen, arrayFacts, narrowing, validateSettlement, validateJsonObject];
+    importIntroduction, unexplainedReopen, importReopen, arrayFacts, narrowing, validateSettlement, validateJsonObject, validateReferences];
 }

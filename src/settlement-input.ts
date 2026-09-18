@@ -1,5 +1,6 @@
 import type { InvalidInput, TicketType } from './types.js';
 import { invalid, isPlainObject, validateArrayShape, validateExtensions, validateJsonObject, validateObject } from './values.js';
+import { validateReferences } from './reference-input.js';
 
 type Path = readonly (string | number)[];
 export function validateSettlement(value: unknown, ticketType: TicketType, path: Path): InvalidInput | undefined {
@@ -56,19 +57,4 @@ function validateProvenance(value: unknown, path: Path): InvalidInput | undefine
   if (!isPlainObject(value)) return invalid(path, 'Plain Provenance required');
   if (typeof value.method !== 'string' || value.method.trim() === '') return invalid([...path, 'method'], 'Nonblank method required');
   return validateReferences(value.sources, [...path, 'sources']);
-}
-
-function validateReferences(value: unknown, path: Path): InvalidInput | undefined {
-  if (!Array.isArray(value)) return invalid(path, 'Plain Reference array required');
-  const shape = validateArrayShape(value, path);
-  if (shape) return shape;
-  for (let i = 0; i < value.length; i++) {
-    const item: unknown = Object.getOwnPropertyDescriptor(value, String(i))!.value;
-    const itemPath = [...path, i];
-    const shape = validateObject(item, itemPath, ['locator', 'label']);
-    if (shape) return shape;
-    if (!isPlainObject(item)) return invalid(itemPath, 'Plain Reference required');
-    if (typeof item.locator !== 'string' || item.locator.trim() === '') return invalid([...itemPath, 'locator'], 'Nonblank locator required');
-    if (Object.hasOwn(item, 'label') && typeof item.label !== 'string') return invalid([...itemPath, 'label'], 'String label required');
-  }
 }
