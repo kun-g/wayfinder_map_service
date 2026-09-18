@@ -44,10 +44,13 @@ function localOrigin(value: unknown): boolean {
     return ['http:', 'https:'].includes(url.protocol) && ['127.0.0.1', 'localhost'].includes(url.hostname) && url.origin === value;
   } catch { return false; }
 }
-function httpFailure(response: ServerResponse, status: number, message: string, code = -32000, close = true) {
+function errorBody(message: string, code = -32000) {
+  return JSON.stringify({ jsonrpc: '2.0', error: { code, message }, id: null });
+}
+function httpFailure(response: ServerResponse, status: number, message: string, code = -32000) {
   if (response.destroyed || response.writableEnded) return;
-  response.writeHead(status, { 'Content-Type': 'application/json', ...(close ? { Connection: 'close' } : {}) });
-  response.end(JSON.stringify({ jsonrpc: '2.0', error: { code, message }, id: null }));
+  response.writeHead(status, { 'Content-Type': 'application/json', Connection: 'close' });
+  response.end(errorBody(message, code));
 }
 function refusal(code: 'service_busy' | 'service_stopping'): CallToolResult {
   return { content: [], isError: true, structuredContent: {
@@ -55,11 +58,15 @@ function refusal(code: 'service_busy' | 'service_stopping'): CallToolResult {
   } };
 }
 const digest = (value: string) => createHash('sha256').update(value).digest();
-function requestTooLarge(request: IncomingMessage, response: ServerResponse) {
+async function requestTooLarge(request: IncomingMessage, response: ServerResponse) {
   // Discard, never accumulate/parse, the excess body. Do not reset an uploading
   // socket before its explicit 413 can be consumed by the client.
-  request.resume();
-  httpFailure(response, 413, 'Request too large', -32000, false);
+  response.writeHead(413, { 'Content-Type': 'application/json', Connection: 'close' });
+  response.flushHeaders();
+  try {
+    for await (const _chunk of request.iterator({ destroyOnReturn: false })) { /* Discard without buffering. */ }
+  } catch { /* A disconnected uploader may no longer receive the refusal. */ }
+  if (!response.destroyed) response.end(errorBody('Request too large'));
 }
 interface Session {
   readonly server: Server;
@@ -99,7 +106,7 @@ export async function serveLocalMcp(storage: SQLiteStorage, input: LocalServiceC
     if (origin !== undefined && !origins.has(origin)) { httpFailure(response, 403, 'Origin forbidden'); return; }
     if (request.url !== '/mcp') { httpFailure(response, 404, 'Endpoint not found'); return; }
     const length = request.headers['content-length'];
-    if (length !== undefined && Number(length) > MAX_REQUEST_BYTES) { requestTooLarge(request, response); return; }
+    if (length !== undefined && Number(length) > MAX_REQUEST_BYTES) { await requestTooLarge(request, response); return; }
     // This headless service has no server-initiated subscriptions/SSE stream.
     if (request.method === 'GET') { response.setHeader('Allow', 'POST, DELETE'); httpFailure(response, 405, 'Standalone stream not offered'); return; }
     if (request.method !== 'POST' && request.method !== 'DELETE') { httpFailure(response, 405, 'Method not allowed'); return; }
@@ -109,7 +116,7 @@ export async function serveLocalMcp(storage: SQLiteStorage, input: LocalServiceC
       let size = 0;
       for await (const chunk of request.iterator({ destroyOnReturn: false })) {
         size += chunk.length;
-        if (size > MAX_REQUEST_BYTES) { requestTooLarge(request, response); return; }
+        if (size > MAX_REQUEST_BYTES) { await requestTooLarge(request, response); return; }
         chunks.push(chunk);
       }
       if (request.method === 'POST') {
@@ -178,7 +185,7 @@ export async function serveLocalMcp(storage: SQLiteStorage, input: LocalServiceC
       response.removeListener('close', disconnected);
       finish?.();
       if (pending) session.pending.delete(pending);
-      session.closing = false;
+      if (request.method === 'DELETE') session.closing = false;
       if (initializing && !session.transport.sessionId) await session.server.close();
     }
   }

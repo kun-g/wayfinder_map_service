@@ -147,7 +147,7 @@ test('P06: whole UTF-8 request 1 MiB inclusive, Content-Length and chunked exces
   const source = message('map_apply', { mapId: 'Acceptance.Alpha', expectedRevision: 3, commands: update });
   for (const chunked of [false, true]) {
     const excess = source + ' '.repeat(MAX_REQUEST_BYTES + 1 - Buffer.byteLength(source));
-    const reply = await raw(f.port, excess, { ...headers, ...(chunked ? { 'Transfer-Encoding': 'chunked' } : { 'Content-Length': String(Buffer.byteLength(excess)) }) });
+    const reply = await raw(f.port, excess, { ...headers, ...(chunked ? { 'Transfer-Encoding': 'chunked' } : { 'Content-Length': String(Buffer.byteLength(excess)) }) }).catch(error => { throw new Error(`Excess request chunked=${chunked}`, { cause: error }); });
     expect(reply.status).toBe(413); expect(reply.body).toContain('Request too large'); expect(await observe(c)).toEqual(before);
   }
   const utf8 = message('map_apply', { mapId: 'Acceptance.Alpha', expectedRevision: 3, commands: [{ kind: 'map.update', patch: { notes: '边界' } }] });
@@ -310,22 +310,44 @@ test('D11: HTTP receipt lost after durable COMMIT with service still alive; expl
   expect(await observe(c)).toEqual(recovered);
 });
 
-test('P08: session DELETE completes admitted HTTP work before transport teardown and does not stop service', async () => {
-  const f = storageFixture(); const entered = deferred(); const release = deferred(); let armed = false;
+test('P08: session DELETE drains multiple admitted requests without reopening admission after first completion', async () => {
+  const f = storageFixture(); const entered = deferred(); const releases = [deferred(), deferred()]; let armed = false; let held = 0;
   const wrapped: SQLiteStorage = { ...f.storage, adapter: { ...f.storage.adapter,
-    async commit(change) { if (armed) { entered.resolve(); await release.promise; } return f.storage.adapter.commit(change); },
+    async commit(change) {
+      if (armed) {
+        const release = releases[change.next.id === 'Delete.First' ? 0 : 1]!;
+        if (++held === 2) entered.resolve();
+        await release.promise;
+      }
+      return f.storage.adapter.commit(change);
+    },
   } };
   const host = await fixture(wrapped); const c = await connect(host.port); await seed(c);
   armed = true;
-  const active = c.apply(update, 3); await entered.promise;
+  const first = c.create('Delete.First'); const second = c.create('Delete.Second'); await entered.promise;
   let deleted = false;
   const deleting = raw(host.port, '', sessionHeaders(c.transport.sessionId!), 'DELETE').then(result => { deleted = true; return result; });
+  // Observe the actual server barrier, not a sleep or assumed socket ordering.
+  let closing: Awaited<ReturnType<typeof raw>> | undefined;
+  for (let i = 0; i < 100; i++) {
+    const probe = await raw(host.port, message(), sessionHeaders(c.transport.sessionId!));
+    if (probe.status === 404) { closing = probe; break; }
+    expect(probe.status).toBe(200);
+  }
+  expect(closing?.body).toContain('Session closing');
   // A separate session remains usable while DELETE drains the original session.
   const other = await connect(host.port); expect((await other.call('map_list')).structuredContent!.kind).toBe('listed');
-  expect(deleted).toBe(false); release.resolve();
-  expect((await active).structuredContent).toMatchObject({ kind: 'committed', revision: { revision: 4 } });
+  expect(deleted).toBe(false); releases[0]!.resolve();
+  expect((await first).structuredContent).toMatchObject({ kind: 'committed', mapId: 'Delete.First', revision: 1 });
+  expect((await raw(host.port, message(), sessionHeaders(c.transport.sessionId!))).status).toBe(404);
+  expect(deleted).toBe(false); expect(held).toBe(2); releases[1]!.resolve();
+  expect((await second).structuredContent).toMatchObject({ kind: 'committed', mapId: 'Delete.Second', revision: 1 });
   expect((await deleting).status).toBe(200);
-  expect((await other.read()).structuredContent).toMatchObject({ revision: { revision: 4, state: { tickets: expect.arrayContaining([expect.objectContaining({ id: 'Retained', claim: 'work:continued' })]) } } });
+  expect((await other.read()).structuredContent).toMatchObject({ revision: { revision: 3, state: { tickets: expect.arrayContaining([expect.objectContaining({ id: 'Retained', claim: 'work:continued' })]) } } });
+  expect((await other.call('map_list')).structuredContent).toMatchObject({ maps: [
+    expect.objectContaining({ mapId: 'Acceptance.Alpha', currentRevision: 3 }), expect.objectContaining({ mapId: 'Acceptance.Other', currentRevision: 1 }),
+    expect.objectContaining({ mapId: 'Delete.First', currentRevision: 1 }), expect.objectContaining({ mapId: 'Delete.Second', currentRevision: 1 }),
+  ] });
 });
 
 function childHost(path: string, port: number, mode: string) {
