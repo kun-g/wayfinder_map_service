@@ -50,6 +50,23 @@ export function publicContract(
   const changeStatus: TicketPatch = { status: 'settled' };
   // @ts-expect-error Access uses ClaimantId, not ActorId.
   const wrongAccess: Command = { kind: 'ticket.update', ticketId, patch: { title: 'Next' }, claimantId: actorId };
+  const acquire: Command = { kind: 'claim.acquire', ticketId, claimantId };
+  const release: Command = { kind: 'claim.release', ticketId, claimantId };
+  const clear: Command = { kind: 'claim.clear', ticketId, expectedClaimantId: claimantId, reason: 'Manual override' };
+  // @ts-expect-error ClaimantId identifies a session, not an actor.
+  const actorClaim: Command = { kind: 'claim.acquire', ticketId, claimantId: actorId };
+  // @ts-expect-error Client identity cannot release a session Claim.
+  const clientRelease: Command = { kind: 'claim.release', ticketId, claimantId: clientId };
+  // @ts-expect-error Clear requires the expected ClaimantId, not Access claimantId.
+  const wrongClear: Command = { kind: 'claim.clear', ticketId, claimantId, reason: 'Manual override' };
+  // @ts-expect-error Clear requires a reason.
+  const unexplainedClear: Command = { kind: 'claim.clear', ticketId, expectedClaimantId: claimantId };
+  // @ts-expect-error Claims have no independent M1 entity ID.
+  const independentClaim: Command = { kind: 'claim.acquire', ticketId, claimantId, claimId: 'claim:1' };
+  // @ts-expect-error Claims have no lease/expiry mechanism.
+  const expiringClaim: Command = { kind: 'claim.acquire', ticketId, claimantId, expiresAt: '2026-09-19T00:00:00Z' };
+  // @ts-expect-error Ticket/Map brands are not interchangeable for Claim targets.
+  const wrongClaimTarget: Command = { kind: 'claim.release', ticketId: mapId, claimantId };
   // @ts-expect-error Dependencies use TicketId endpoints, never cross-Map IDs.
   const wrongEndpoint: Command = { kind: 'dependency.add', dependentId: ticketId, prerequisiteId: mapId };
   // @ts-expect-error MapContent requires a ContentId, not TicketId.
@@ -87,5 +104,7 @@ export function publicContract(
   }
   void [clientId, wrongMap, wrongActor, wrongClient, wrongTicket, raw, fabricated, empty, research, task,
     badTicket, importTicket, changeIdentity, changeStatus, wrongAccess, wrongEndpoint,
-    wrongContent, wrongSection, removeTicket, wrongReference, validateArrayShape];
+    wrongContent, wrongSection, removeTicket, wrongReference, validateArrayShape,
+    acquire, release, clear, actorClaim, clientRelease, wrongClear, unexplainedClear,
+    independentClaim, expiringClaim, wrongClaimTarget];
 }
