@@ -2,6 +2,8 @@
 
 Contract: [accepted MCP/SQLite handoff](../spec/mcp-sqlite.md), published at `5e48bb5174efd45cf3566505872efefa6e21aa11`. Implementation: [Issue 34](https://github.com/kun-g/wayfinder_map_service/issues/34). This is the first of six slices, not real MCP/Codex acceptance.
 
+This document records slice 1's delivery. Slice 2 adds the storage-module backup operation, fault classifications and controlled process evidence; see [Issue 35 evidence and current operator behavior](sqlite-failure-backup.md). The historical results and remaining-work statements below describe the Issue 34 baseline, not a claim that slice 2 is still unimplemented.
+
 ## Operator interface and constraints
 
 Use the separate `src/sqlite-storage.ts` entry point, not the pure `src/index.ts`. `initializeSQLite(path)` reserves a nonexistent target exclusively and initializes application ID `0x57464d31`, format version 1. Existing files, including empty files, are refused. `openSQLite(path)` uses SQLite URI `mode=rw`, recognizes that identity/version and compiles the format's ordinary queries without enumerating history. Missing or unsupported databases are not initialized, reset or migrated. An initialization failure may leave its fresh incomplete target; it is not silently removed or reused.

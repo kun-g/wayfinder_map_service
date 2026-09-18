@@ -229,7 +229,7 @@ test('D06: failure after transaction writes but before publication rolls back bo
     const before = await observe(storage.adapter); const catalog = storage.listMaps();
     const changed = application(creation().next, [{ kind: 'map.update', patch: { title: 'Rolled back' } }]);
     fail = true;
-    await expect(storage.adapter.commit(changed)).rejects.toThrow('Injected');
+    await expect(storage.adapter.commit(changed)).rejects.toMatchObject({ outcome: 'not_published', requiresRestart: false });
     expect(await observe(storage.adapter)).toEqual(before); expect(storage.listMaps()).toEqual(catalog);
     fail = false;
     expect(await storage.adapter.commit(changed)).toMatchObject({ kind: 'committed', revision: { revision: 2 } });
