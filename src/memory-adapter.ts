@@ -1,8 +1,8 @@
 import type { PreparedCommit } from './create.js';
 import type { CommitResult, MapId, ReadResult, Revision, RevisionNumber, StoredMapState } from './types.js';
-import { invalid, isPlainObject, validateId } from './values.js';
-import { immutableClone } from './immutable.js';
+import { invalid, validateId } from './values.js';
 import { calculateFrontier } from './frontier.js';
+import { capturePrepared, revisionFromPrepared } from './revision-record.js';
 
 export interface StateAdapter {
   readCurrent(mapId: MapId): Promise<ReadResult<StoredMapState>>;
@@ -43,15 +43,7 @@ function memoryAdapter(beforePublication?: () => void): StateAdapter {
     },
     async commit(prepared) {
       // Capture before any possible async yield; check and publication have no gap.
-      const captured = immutableClone(prepared);
-      if (!isPlainObject(captured)
-        || validateId(captured.mapId, ['mapId']) || !isPlainObject(captured.next)
-        || captured.next.id !== captured.mapId
-        || (captured.kind === 'create' ? captured.priorRevision !== null || captured.next.currentRevision !== 1
-          : captured.kind !== 'apply' || !Number.isSafeInteger(captured.priorRevision) || captured.priorRevision <= 0
-            || !Number.isSafeInteger(captured.next.currentRevision) || captured.next.currentRevision !== captured.priorRevision + 1)) {
-        throw new TypeError('Malformed internal PreparedCommit envelope');
-      }
+      const captured = capturePrepared(prepared);
       const previous = records.get(captured.mapId);
       if (captured.kind === 'create' && previous) {
         return { kind: 'rejected', code: 'map_already_exists', mapId: captured.mapId };
@@ -62,11 +54,7 @@ function memoryAdapter(beforePublication?: () => void): StateAdapter {
           mapId: captured.mapId, expectedRevision: captured.priorRevision, currentRevision: previous.head.revision,
         } };
       }
-      const revision: Revision = immutableClone({
-        mapId: captured.mapId, revision: captured.next.currentRevision,
-        priorRevision: captured.priorRevision, kind: captured.kind,
-        author: captured.author, changes: captured.changes, state: captured.next,
-      });
+      const revision = revisionFromPrepared(captured);
       const history = new Map(previous?.history);
       history.set(revision.revision, revision);
       const frontier = calculateFrontier(revision.state);
