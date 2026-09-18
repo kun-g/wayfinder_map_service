@@ -1,9 +1,13 @@
 import type {
   ActorId, ApplyRequest, ClaimantId, ClientId, ContentId, CreateMapInput, MapId, PreparedCommit,
-  Command, MapContent, Settlement, StateAdapter, StoredTicket, TicketId, TicketInput, TicketPatch,
+  Command, MapContent, Settlement, SettleCommand, StateAdapter, StoredTicket, TicketId, TicketInput, TicketPatch,
 } from '../../src/index.js';
 // @ts-expect-error Array-shape validation is internal, not another public seam.
 import { validateArrayShape } from '../../src/index.js';
+// @ts-expect-error Settlement validation is internal, not another public operation.
+import { validateSettlement } from '../../src/index.js';
+// @ts-expect-error Plain JSON validation is internal, not an import/validation port.
+import { validateJsonObject } from '../../src/index.js';
 
 // Type-only fixture, checked by tsc; deliberately never executed by Vitest.
 export function publicContract(
@@ -88,6 +92,37 @@ export function publicContract(
     outcome: { kind: 'decision', statement: 'Choose', rationale: 'Because' },
     evidence: [], references: [], provenance: { method: 'do', sources: [] }, extensions: {},
   };
+  const accepted: Settlement<'task'> = { outcome: { kind: 'completion', statement: 'Done' }, evidence: [], references: [],
+    provenance: { method: 'inspect', sources: [] }, extensions: {} };
+  const settle: SettleCommand = { kind: 'ticket.settle', ticketId, ticketType: 'task', claimantId, settlement: accepted };
+  const reopen: Command = { kind: 'ticket.reopen', ticketId, reason: 'Reconsider' };
+  // @ts-expect-error Command Ticket type and outcome remain correlated.
+  const wrongOutcome: SettleCommand = { kind: 'ticket.settle', ticketId, ticketType: 'research', claimantId, settlement: accepted };
+  // @ts-expect-error ActorId is not a ClaimantId for settlement access.
+  const wrongSettler: SettleCommand = { kind: 'ticket.settle', ticketId, ticketType: 'task', claimantId: actorId, settlement: accepted };
+  // @ts-expect-error Settlement introduction metadata is derived by preparation.
+  const importIntroduction: SettleCommand = { kind: 'ticket.settle', ticketId, ticketType: 'task', claimantId, settlement: { ...accepted, introducedAtRevision: 1 } };
+  // @ts-expect-error Reopen requires a reason.
+  const unexplainedReopen: Command = { kind: 'ticket.reopen', ticketId };
+  // @ts-expect-error Reopen cannot install an arbitrary Settlement.
+  const importReopen: Command = { kind: 'ticket.reopen', ticketId, reason: 'Reconsider', settlement: accepted };
+  // @ts-expect-error Completion resultingFacts is a plain record, not an array.
+  const arrayFacts: Settlement<'task'> = { ...accepted, outcome: { kind: 'completion', statement: 'Done', resultingFacts: [] } };
+  const narrowing = (command: SettleCommand) => {
+    if (command.ticketType === 'research') {
+      const finding: 'finding' = command.settlement.outcome.kind;
+      // @ts-expect-error Finding is not a Decision and has no rationale.
+      command.settlement.outcome.rationale;
+      void finding;
+    } else if (command.ticketType === 'task') {
+      const completion: 'completion' = command.settlement.outcome.kind;
+      void completion;
+    } else {
+      const decision: 'decision' = command.settlement.outcome.kind;
+      const rationale: string = command.settlement.outcome.rationale;
+      void [decision, rationale];
+    }
+  };
   if (ticket.status === 'open') {
     const session: ClaimantId | null = ticket.claim;
     // @ts-expect-error Open Tickets contain no accepted Settlement.
@@ -106,5 +141,6 @@ export function publicContract(
     badTicket, importTicket, changeIdentity, changeStatus, wrongAccess, wrongEndpoint,
     wrongContent, wrongSection, removeTicket, wrongReference, validateArrayShape,
     acquire, release, clear, actorClaim, clientRelease, wrongClear, unexplainedClear,
-    independentClaim, expiringClaim, wrongClaimTarget];
+    independentClaim, expiringClaim, wrongClaimTarget, accepted, settle, reopen, wrongOutcome, wrongSettler,
+    importIntroduction, unexplainedReopen, importReopen, arrayFacts, narrowing, validateSettlement, validateJsonObject];
 }
