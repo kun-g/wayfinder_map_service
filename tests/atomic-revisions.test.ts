@@ -189,8 +189,12 @@ test('A01: preparation is synchronous and deterministic, mutates neither caller 
 test('S04: competing prepared writers are compared again at commit, with exactly one winner and no losing history', async () => {
   const adapter = await setup();
   const state = await current(adapter);
-  const old = await adapter.readRevision(mapId, 1);
-  const unrelated = await adapter.readCurrent(otherId);
+  const old = structuredClone(await adapter.readRevision(mapId, 1));
+  const unrelated = structuredClone({
+    current: await adapter.readCurrent(otherId),
+    history: await adapter.readRevision(otherId, 1),
+    proposed: await adapter.readRevision(otherId, 2),
+  });
   const proposals = ['First proposal', 'Second proposal'].map((title) => prepareApply(state, request({ title })));
   const results = await Promise.all(proposals.map((proposal) => {
     if (proposal.kind !== 'prepared') throw new Error('Expected preparation');
@@ -206,7 +210,11 @@ test('S04: competing prepared writers are compared again at commit, with exactly
   expect(await adapter.readRevision(mapId, 2)).toEqual({ kind: 'found', value: winner.revision });
   expect(await adapter.readRevision(mapId, 3)).toMatchObject({ kind: 'not_found', code: 'revision_not_found' });
   expect(await adapter.readRevision(mapId, 1)).toEqual(old);
-  expect(await adapter.readCurrent(otherId)).toEqual(unrelated);
+  expect({
+    current: await adapter.readCurrent(otherId),
+    history: await adapter.readRevision(otherId, 1),
+    proposed: await adapter.readRevision(otherId, 2),
+  }).toEqual(unrelated);
 });
 
 test('S06: missing target and replay reject without changing any current/history', async () => {
