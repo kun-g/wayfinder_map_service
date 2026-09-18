@@ -104,7 +104,11 @@ export type TicketPatch = Readonly<Partial<Pick<TicketInput, 'title' | 'question
 export type Command = { readonly kind: 'map.update'; readonly patch: MapPatch }
   | { readonly kind: 'ticket.create'; readonly ticket: TicketInput }
   | ({ readonly kind: 'ticket.update'; readonly ticketId: TicketId; readonly patch: TicketPatch } & Access)
-  | ({ readonly kind: 'dependency.add' | 'dependency.remove'; readonly dependentId: TicketId; readonly prerequisiteId: TicketId } & Access);
+  | ({ readonly kind: 'dependency.add' | 'dependency.remove'; readonly dependentId: TicketId; readonly prerequisiteId: TicketId } & Access)
+  | (({ readonly kind: 'content.add' } | { readonly kind: 'content.update' }) & {
+    readonly section: 'fog' | 'scopeExclusions'; readonly item: MapContent;
+  })
+  | { readonly kind: 'content.remove'; readonly section: 'fog' | 'scopeExclusions'; readonly itemId: ContentId };
 export interface ApplyRequest {
   readonly mapId: MapId;
   readonly expectedRevision: RevisionNumber;
@@ -112,7 +116,7 @@ export interface ApplyRequest {
   readonly commands: NonEmpty<Command>;
 }
 export type CommandErrorCode = 'ticket_already_exists' | 'ticket_not_found' | 'ticket_not_open' | 'claim_required' | 'claim_mismatch'
-  | 'self_dependency' | 'dependency_already_exists' | 'dependency_not_found';
+  | 'self_dependency' | 'dependency_already_exists' | 'dependency_not_found' | 'content_already_exists' | 'content_not_found';
 export type CommandRejection = { readonly stage: 'command'; readonly commandIndex: number;
   readonly code: CommandErrorCode; readonly ticketIds: readonly TicketId[] };
 export type InvariantErrorCode = 'dependency_cycle' | 'dangling_dependency'

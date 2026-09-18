@@ -5,6 +5,18 @@ export function applyCommand(state: StoredMapState, command: Command, commandInd
     kind: 'error', error: { stage: 'command', commandIndex, code, ticketIds },
   });
   if (command.kind === 'map.update') return { kind: 'ok', value: { ...state, ...command.patch } };
+  if (command.kind === 'content.add' || command.kind === 'content.update' || command.kind === 'content.remove') {
+    const items = state[command.section];
+    if (command.kind === 'content.add') {
+      if ([...state.fog, ...state.scopeExclusions].some(item => item.id === command.item.id)) return reject('content_already_exists');
+      return { kind: 'ok', value: { ...state, [command.section]: [...items, command.item] } };
+    }
+    const identity = command.kind === 'content.remove' ? command.itemId : command.item.id;
+    if (!items.some(item => item.id === identity)) return reject('content_not_found');
+    const updated = command.kind === 'content.remove' ? items.filter(item => item.id !== identity)
+      : items.map(item => item.id === identity ? command.item : item);
+    return { kind: 'ok', value: { ...state, [command.section]: updated } };
+  }
   if (command.kind === 'ticket.create') {
     if (state.tickets.some(ticket => ticket.id === command.ticket.id)) return reject('ticket_already_exists', command.ticket.id);
     return { kind: 'ok', value: { ...state, tickets: [...state.tickets, {
