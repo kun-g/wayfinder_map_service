@@ -2,6 +2,7 @@ import type { PreparedCommit } from './create.js';
 import type { CommitResult, MapId, ReadResult, Revision, RevisionNumber, StoredMapState } from './types.js';
 import { invalid, isPlainObject, validateId } from './values.js';
 import { immutableClone } from './immutable.js';
+import { calculateFrontier } from './frontier.js';
 
 export interface StateAdapter {
   readCurrent(mapId: MapId): Promise<ReadResult<StoredMapState>>;
@@ -68,9 +69,10 @@ function memoryAdapter(beforePublication?: () => void): StateAdapter {
       });
       const history = new Map(previous?.history);
       history.set(revision.revision, revision);
+      const frontier = calculateFrontier(revision.state);
       beforePublication?.();
       records.set(captured.mapId, { head: revision, history });
-      return { kind: 'committed', revision, frontier: [] };
+      return { kind: 'committed', revision, frontier };
     },
   };
 }

@@ -31,21 +31,62 @@ function validateRequest(raw: unknown): InvalidInput | undefined {
     if (!descriptor || !descriptor.enumerable || !('value' in descriptor)) return invalid(['commands', i], 'Plain command element required');
     const command: unknown = descriptor.value;
     const path = ['commands', i] as const;
-    const shape = validateObject(command, path, ['kind', 'patch']);
+    const shape = validateObject(command, path);
     if (shape) return shape;
     if (!isPlainObject(command)) return invalid(path, 'Plain command required');
-    if (command.kind !== 'map.update') return invalid([...path, 'kind'], 'Unsupported command kind');
+    if (command.kind === 'ticket.create') {
+      const shape = validateObject(command, path, ['kind', 'ticket']);
+      if (shape) return shape;
+      const ticketPath = [...path, 'ticket'];
+      const ticketShape = validateObject(command.ticket, ticketPath, ['id', 'title', 'question', 'type', 'extensions']);
+      if (ticketShape) return ticketShape;
+      if (!isPlainObject(command.ticket)) return invalid(ticketPath, 'Plain Ticket required');
+      const ticket = command.ticket;
+      const identity = validateId(ticket.id, [...ticketPath, 'id']);
+      if (identity) return identity;
+      for (const key of ['title', 'question']) {
+        if (typeof ticket[key] !== 'string' || ticket[key].trim() === '') return invalid([...ticketPath, key], 'Nonblank text required');
+      }
+      if (!['grilling', 'prototype', 'research', 'task'].includes(ticket.type as string)) return invalid([...ticketPath, 'type'], 'Supported Ticket type required');
+      if (Object.hasOwn(ticket, 'extensions')) {
+        const error = validateExtensions(ticket.extensions, [...ticketPath, 'extensions']);
+        if (error) return error;
+      }
+      continue;
+    }
+    if (command.kind === 'dependency.add' || command.kind === 'dependency.remove') {
+      const shape = validateObject(command, path, ['kind', 'dependentId', 'prerequisiteId', 'claimantId']);
+      if (shape) return shape;
+      for (const key of ['dependentId', 'prerequisiteId', ...(Object.hasOwn(command, 'claimantId') ? ['claimantId'] : [])]) {
+        const identity = validateId(command[key], [...path, key]);
+        if (identity) return identity;
+      }
+      continue;
+    }
+    if (command.kind !== 'map.update' && command.kind !== 'ticket.update') return invalid([...path, 'kind'], 'Unsupported command kind');
+    const ticketUpdate = command.kind === 'ticket.update';
+    const commandShape = validateObject(command, path, ticketUpdate ? ['kind', 'ticketId', 'patch', 'claimantId'] : ['kind', 'patch']);
+    if (commandShape) return commandShape;
+    if (ticketUpdate) {
+      const identity = validateId(command.ticketId, [...path, 'ticketId']);
+      if (identity) return identity;
+      if (Object.hasOwn(command, 'claimantId')) {
+        const access = validateId(command.claimantId, [...path, 'claimantId']);
+        if (access) return access;
+      }
+    }
     const patchPath = [...path, 'patch'];
-    const patchShape = validateObject(command.patch, patchPath, ['title', 'destination', 'notes', 'extensions']);
+    const patchShape = validateObject(command.patch, patchPath, ticketUpdate ? ['title', 'question', 'type', 'extensions'] : ['title', 'destination', 'notes', 'extensions']);
     if (patchShape) return patchShape;
     if (!isPlainObject(command.patch)) return invalid(patchPath, 'Plain patch required');
     const patch = command.patch;
     if (Object.keys(patch).length === 0) return invalid(patchPath, 'Nonempty patch required');
-    for (const key of ['title', 'destination']) {
+    for (const key of ticketUpdate ? ['title', 'question'] : ['title', 'destination']) {
       if (Object.hasOwn(patch, key) && (typeof patch[key] !== 'string' || patch[key].trim() === '')) {
         return invalid([...patchPath, key], 'Nonblank text required');
       }
     }
+    if (ticketUpdate && Object.hasOwn(patch, 'type') && !['grilling', 'prototype', 'research', 'task'].includes(patch.type as string)) return invalid([...patchPath, 'type'], 'Supported Ticket type required');
     if (Object.hasOwn(patch, 'notes') && typeof patch.notes !== 'string') return invalid([...patchPath, 'notes'], 'String required');
     if (Object.hasOwn(patch, 'extensions')) {
       const error = validateExtensions(patch.extensions, [...patchPath, 'extensions']);

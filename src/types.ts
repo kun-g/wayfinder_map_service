@@ -92,14 +92,35 @@ export interface CreateMapInput {
 }
 // Command subset grows with the accepted implementation slices.
 export type MapPatch = Readonly<Partial<Pick<StoredMapState, 'title' | 'destination' | 'notes' | 'extensions'>>>;
-export type Command = { readonly kind: 'map.update'; readonly patch: MapPatch };
+export interface TicketInput {
+  readonly id: TicketId;
+  readonly title: string;
+  readonly question: string;
+  readonly type: TicketType;
+  readonly extensions?: Extensions;
+}
+export type Access = { readonly claimantId?: ClaimantId };
+export type TicketPatch = Readonly<Partial<Pick<TicketInput, 'title' | 'question' | 'type' | 'extensions'>>>;
+export type Command = { readonly kind: 'map.update'; readonly patch: MapPatch }
+  | { readonly kind: 'ticket.create'; readonly ticket: TicketInput }
+  | ({ readonly kind: 'ticket.update'; readonly ticketId: TicketId; readonly patch: TicketPatch } & Access)
+  | ({ readonly kind: 'dependency.add' | 'dependency.remove'; readonly dependentId: TicketId; readonly prerequisiteId: TicketId } & Access);
 export interface ApplyRequest {
   readonly mapId: MapId;
   readonly expectedRevision: RevisionNumber;
   readonly author: MutationAuthor;
   readonly commands: NonEmpty<Command>;
 }
+export type CommandErrorCode = 'ticket_already_exists' | 'ticket_not_found' | 'ticket_not_open' | 'claim_required' | 'claim_mismatch'
+  | 'self_dependency' | 'dependency_already_exists' | 'dependency_not_found';
+export type CommandRejection = { readonly stage: 'command'; readonly commandIndex: number;
+  readonly code: CommandErrorCode; readonly ticketIds: readonly TicketId[] };
+export type InvariantErrorCode = 'dependency_cycle' | 'dangling_dependency'
+  | 'settled_ticket_has_open_prerequisite' | 'claimed_ticket_has_open_prerequisite';
+export type InvariantRejection = { readonly stage: 'final_state'; readonly code: InvariantErrorCode; readonly ticketIds: readonly TicketId[] };
 export type Rejection = { readonly stage: 'input'; readonly error: InvalidInput }
+  | CommandRejection
+  | InvariantRejection
   | { readonly stage: 'final_state'; readonly code: 'no_changes' };
 export type PrepareResult =
   | { readonly kind: 'prepared'; readonly change: import('./create.js').PreparedCommit; readonly frontier: readonly TicketId[] }
