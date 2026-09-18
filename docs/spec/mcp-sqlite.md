@@ -1,6 +1,6 @@
 # Local MCP and SQLite implementation specification
 
-Status: proposed consolidated implementation handoff, awaiting explicit human confirmation. Child decisions are confirmed; this document does not yet authorize implementation Issues, close the planning Map or claim actual MCP availability.
+Status: accepted implementation handoff, explicitly human-confirmed on 2026-09-18. The live user accepted the consolidated specification and six-slice implementation order. This confirms the contract and authorizes implementation Tickets, not actual service acceptance or exploration adoption.
 
 Date: 2026-09-18. Planning Destination: a minimal client-neutral SQLite-backed MCP service whose real Codex acceptance proves the M1 workflow, immutable history, restart persistence and conflicts before new project exploration Maps rely on it.
 
@@ -15,7 +15,7 @@ Use [CONTEXT.md](../../CONTEXT.md) for domain language, [M1](m1.md) for unchange
 | [Define the headless MCP and service contract](https://github.com/kun-g/wayfinder_map_service/issues/29#issuecomment-5727101846) | Tools, results, access, authorship, lifecycle and failure boundaries |
 | [Define the durable SQLite Adapter contract](https://github.com/kun-g/wayfinder_map_service/issues/30#issuecomment-5727392356) | Runtime, storage ownership, initialization, publication, durability and backup; Q10 withdrawn |
 | [Define real-MCP acceptance and exploration adoption](https://github.com/kun-g/wayfinder_map_service/issues/31#issuecomment-5728664978) | Automated/live evidence, isolated tests and explicit adoption gate |
-| [Synthesize the MCP and SQLite implementation specification](https://github.com/kun-g/wayfinder_map_service/issues/32) | This handoff and its pending human confirmation |
+| [Synthesize the MCP and SQLite implementation specification](https://github.com/kun-g/wayfinder_map_service/issues/32) | This handoff and its live human confirmation |
 
 Later accepted decisions supersede earlier proposals in research/discussion. In particular, do not restore full write snapshots by default, duplicate JSON text for compatibility, or proactive/per-read integrity audits. Research recommendations are not independently normative choices.
 
@@ -250,11 +250,11 @@ Only after L05 and all required gates may new exploration Maps adopt MCP as sole
 
 No tracker switch during bootstrap planning or merely because tools start responding. Implementation Issues/PRs stay in GitHub; existing rollback/deletion Maps remain untouched. Service outage pauses authoritative advancement, with no silent memory/local/GitHub replacement. Incompatibility or unexpected persistence findings block the affected gate; any changed contract returns to the human.
 
-## 13. Proposed implementation slices and completion
+## 13. Implementation slices and completion
 
-After explicit human handoff confirmation, create specified GitHub implementation Issues with native dependencies and scoped acceptance references. Do not create them from an unconfirmed draft. A reversible six-slice sequence is:
+The human has confirmed this handoff and its six-slice order. Create specified GitHub implementation Issues with native dependencies and scoped acceptance references. Ticket boundaries remain reversible implementation organization, not new product semantics:
 
-| Order | Proposed implementation Ticket | Prerequisite | Required evidence |
+| Order | Implementation Ticket | Prerequisite | Required evidence |
 | --- | --- | --- | --- |
 | 1 | Private SQLite initialization and durable Revision Adapter | Confirmed handoff | Runtime pin, initialization/open, representation, CAS/history/isolation, conformance; A01, D01–D06, D08–D09 |
 | 2 | SQLite restart, failure and manual backup guarantees | Slice 1 | Busy/cleanup, controlled termination, unknown receipt groundwork, consistent backup; D07, D10–D13 |
@@ -269,4 +269,4 @@ Preserve strict TypeScript/ESM/Vitest, pure module boundaries, all M1 regression
 
 Specification handoff completion requires explicit human confirmation, publication of this accepted document and recorded resolution/index links before the synthesis Ticket and parent close. Feature completion requires actual implementation and the automated/live gates; adoption completion additionally requires slice 6 evidence. None of these states implies full v1 delivery.
 
-This draft session changed documentation only. No dependencies, runtime pins, source code, MCP settings, database, server, backup, workflow skills or existing product/planning Maps were changed; no M1/integration/live acceptance tests were run as part of synthesis.
+At specification publication, implementation and live acceptance remain unperformed. Synthesis changes documentation and development-tracker records only: no dependencies, runtime pins, source code, MCP settings, database, server, backup, workflow skills or existing product Maps were changed; no M1/integration/live acceptance tests were run as part of synthesis.

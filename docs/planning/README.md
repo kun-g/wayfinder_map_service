@@ -4,7 +4,7 @@ Live planning is tracked in GitHub Issues. This file provides entry points rathe
 
 | Planning Destination | GitHub Map | Accepted specification |
 | --- | --- | --- |
-| Define a minimal local MCP/SQLite service and real Codex acceptance/adoption gate | [Codex MCP and SQLite acceptance planning](https://github.com/kun-g/wayfinder_map_service/issues/27) | [Consolidated handoff](../spec/mcp-sqlite.md) awaiting explicit human confirmation; service/acceptance not delivered |
+| Define a minimal local MCP/SQLite service and real Codex acceptance/adoption gate | [Codex MCP and SQLite acceptance planning](https://github.com/kun-g/wayfinder_map_service/issues/27) | [Accepted implementation handoff](../spec/mcp-sqlite.md), human-confirmed 2026-09-18; service/acceptance not delivered |
 | Define the post-M1 Revision rollback contract | [Revision rollback planning](https://github.com/kun-g/wayfinder_map_service/issues/12) | Not yet accepted; publish as `docs/spec/rollback.md` after explicit human confirmation |
 | Define post-M1 Ticket and permanent Map deletion contracts | [Ticket and Map deletion planning](https://github.com/kun-g/wayfinder_map_service/issues/17) | Not yet accepted; publish as `docs/spec/deletion.md` after explicit human confirmation |
 
