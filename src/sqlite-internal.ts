@@ -16,6 +16,7 @@ const FORMAT_VERSION = 1;
 export interface SQLiteStorage {
   readonly adapter: StateAdapter;
   listMaps(args?: { readonly limit?: number; readonly afterMapId?: MapId }): ListedMaps | { readonly kind: 'rejected'; readonly error: InvalidInput };
+  backup(destination: string): void;
   close(): void;
 }
 export interface MapIndex {
@@ -30,9 +31,12 @@ export interface ListedMaps {
   readonly nextAfterMapId: MapId | null;
 }
 export class SQLiteFailure extends Error {
+  readonly code: 'storage_busy' | 'storage_failure';
   constructor(readonly outcome: 'not_published' | 'unknown', readonly requiresRestart: boolean, cause: unknown) {
     super('SQLite operation failed', { cause });
     this.name = 'SQLiteFailure';
+    this.code = typeof cause === 'object' && cause !== null && 'errcode' in cause
+      && typeof cause.errcode === 'number' && (cause.errcode & 0xff) === 5 ? 'storage_busy' : 'storage_failure';
   }
 }
 
@@ -113,21 +117,37 @@ function configure(db: DatabaseSync) {
     || db.prepare('PRAGMA busy_timeout').get()?.timeout !== 100) throw new Error('Required SQLite settings unavailable');
 }
 
-function open(path: string, temporary = false, beforePublication?: () => void): SQLiteStorage {
+interface TestFaults {
+  readonly beforePublication?: () => void;
+  readonly afterPublication?: () => void;
+  readonly beforeRollback?: () => void;
+  readonly beforeBackup?: () => void;
+  readonly afterBackup?: () => void;
+}
+
+function recognizeFormat(db: DatabaseSync) {
+  if (db.prepare('PRAGMA application_id').get()?.application_id !== APPLICATION_ID
+    || db.prepare('PRAGMA user_version').get()?.user_version !== FORMAT_VERSION) {
+    throw new Error('Not a supported Wayfinder SQLite database');
+  }
+  // Ordinary format recognition, never a history/integrity audit.
+  db.prepare('SELECT map_id, title, destination, head FROM catalog LIMIT 0');
+  db.prepare('SELECT map_id, revision, record FROM revisions LIMIT 0');
+}
+
+function open(path: string, temporary = false, faults: TestFaults = {}): SQLiteStorage {
   requireRuntime();
   checkPath(path, temporary, false);
   const db = connect(path);
   try {
-    if (db.prepare('PRAGMA application_id').get()?.application_id !== APPLICATION_ID
-      || db.prepare('PRAGMA user_version').get()?.user_version !== FORMAT_VERSION) {
-      throw new Error('Not a supported Wayfinder SQLite database');
-    }
-    // Compile the format's ordinary queries; do not enumerate or audit any history.
-    db.prepare('SELECT map_id, title, destination, head FROM catalog LIMIT 0');
-    db.prepare('SELECT map_id, revision, record FROM revisions LIMIT 0');
+    recognizeFormat(db);
     configure(db);
   } catch (error) { db.close(); throw error; }
   let usable = true;
+  function stopConnection() {
+    usable = false;
+    try { db.close(); } catch { /* No subsequent operations, even when close fails. */ }
+  }
   function requireUsable() { if (!usable) throw new Error('SQLite connection closed or unusable; reopen required'); }
   const adapter: StateAdapter = {
     async readCurrent(mapId) {
@@ -154,9 +174,9 @@ function open(path: string, temporary = false, beforePublication?: () => void): 
       const captured = capturePrepared(prepared);
       const revision = revisionFromPrepared(captured);
       const frontier = calculateFrontier(revision.state);
-      db.exec('BEGIN IMMEDIATE');
       let committing = false;
       try {
+        db.exec('BEGIN IMMEDIATE');
         const previous = db.prepare('SELECT head FROM catalog WHERE map_id=?').get(captured.mapId);
         if (captured.kind === 'create' && previous) {
           db.exec('ROLLBACK');
@@ -172,24 +192,58 @@ function open(path: string, temporary = false, beforePublication?: () => void): 
         db.prepare('INSERT INTO revisions VALUES (?, ?, ?)').run(revision.mapId, revision.revision, JSON.stringify(revision));
         if (captured.kind === 'create') db.prepare('INSERT INTO catalog VALUES (?, ?, ?, ?)').run(revision.mapId, revision.state.title, revision.state.destination, revision.revision);
         else db.prepare('UPDATE catalog SET title=?, destination=?, head=? WHERE map_id=?').run(revision.state.title, revision.state.destination, revision.revision, revision.mapId);
-        beforePublication?.();
+        faults.beforePublication?.();
         committing = true;
         db.exec('COMMIT');
+        faults.afterPublication?.();
         return { kind: 'committed', revision, frontier };
       } catch (error) {
+        const unknownOutcome = committing && !db.isTransaction;
         try {
-          if (db.isTransaction) db.exec('ROLLBACK');
-          else if (committing) throw new SQLiteFailure('unknown', true, error);
-        } catch (cleanupError) {
-          usable = false;
-          try { db.close(); } catch { /* Stop operations even if closing fails. */ }
-          throw new SQLiteFailure('unknown', true, cleanupError);
+          if (db.isTransaction) { faults.beforeRollback?.(); db.exec('ROLLBACK'); }
+        } catch {
+          stopConnection();
+          throw new SQLiteFailure(committing ? 'unknown' : 'not_published', true, error);
         }
-        throw error;
+        if (unknownOutcome) {
+          stopConnection();
+          throw new SQLiteFailure('unknown', true, error);
+        }
+        throw new SQLiteFailure('not_published', false, error);
       }
     },
   };
-  return { adapter, close() { if (usable) { usable = false; db.close(); } }, listMaps(args = {}) {
+  return { adapter, backup(destination) {
+    requireUsable();
+    if (['', '-wal', '-shm', '-journal'].some(suffix => destination === path + suffix)) {
+      throw new Error('Active SQLite storage is not a backup destination');
+    }
+    // Reserve only our own fresh empty file. VACUUM INTO refuses nonempty files;
+    // private ancestry prevents other users replacing the reserved destination.
+    checkPath(destination, temporary, true);
+    for (const suffix of ['', '-wal', '-shm', '-journal']) {
+      try { lstatSync(destination + suffix); throw new Error('Backup target or sidecar already exists'); }
+      catch (error) { if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error; }
+    }
+    mkdirSync(dirname(destination), { recursive: true, mode: 0o700 });
+    checkPath(destination, temporary, true);
+    closeSync(openSync(destination, 'wx', 0o600));
+    try {
+      faults.beforeBackup?.();
+      // SQLite's synchronous consistent snapshot mechanism; never raw-file copying,
+      // command replay, or an additional driver/Worker. FULL syncs the output.
+      db.prepare('VACUUM INTO ?').run(pathToFileURL(destination).href);
+      faults.afterBackup?.();
+      checkPath(destination, temporary, false);
+      const completed = new DatabaseSync(pathToFileURL(destination), { readOnly: true });
+      try { recognizeFormat(completed); }
+      finally { completed.close(); }
+    } catch (error) {
+      // Leave the fresh artifact for explicit operator inspection; never call it
+      // successful or remove an older backup. Source mutations are not replayed.
+      throw new Error('SQLite backup failed; output is not a confirmed backup', { cause: error });
+    }
+  }, close() { if (usable) { usable = false; db.close(); } }, listMaps(args = {}) {
     requireUsable();
     const limit = args.limit === undefined ? 20 : args.limit;
     if (!Number.isInteger(limit) || limit < 1 || limit > 100) return { kind: 'rejected', error: invalid(['limit'], 'Integer from 1 through 100 required') };
@@ -209,8 +263,9 @@ function requireRuntime() {
 }
 
 // Internal disposable-storage seam; never exported by the operator entry point.
-export function sqliteLifecycleForTests(beforePublication?: () => void) {
-  return { initialize: (path: string) => initialize(path, true), open: (path: string) => open(path, true, beforePublication) };
+export function sqliteLifecycleForTests(faults: TestFaults | (() => void) = {}) {
+  return { initialize: (path: string) => initialize(path, true),
+    open: (path: string) => open(path, true, typeof faults === 'function' ? { beforePublication: faults } : faults) };
 }
 export function initializeSQLite(path: string): void { initialize(path); }
 export function openSQLite(path: string): SQLiteStorage { return open(path); }

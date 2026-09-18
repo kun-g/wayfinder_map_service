@@ -4,6 +4,8 @@
   "type": "module",
   "engines": { "node": "26.3.0" },
   "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "backup": "npm run build && node dist/sqlite-backup.js",
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
   },
