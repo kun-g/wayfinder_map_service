@@ -1,11 +1,12 @@
 # Issue tracker: GitHub Issues
 
-Implementation and active development planning use [GitHub Issues](https://github.com/kun-g/wayfinder_map_service/issues) in the private repository `kun-g/wayfinder_map_service`. The 2026-09-18 migration moved completed M1 planning to `docs/archive/m1-planning/` and the two deferred planning Maps to native GitHub parent/child Issues. Local `.scratch/` paths are compatibility redirects, not live trackers.
+Implementation uses [GitHub Issues](https://github.com/kun-g/wayfinder_map_service/issues) in the private repository `kun-g/wayfinder_map_service`. The 2026-09-18 migration moved completed M1 planning to `docs/archive/m1-planning/` and the two deferred planning Maps to native GitHub parent/child Issues. Those rollback/deletion Maps remain on GitHub. New exploration Map state uses the product MCP workflow in [exploration-mcp.md](exploration-mcp.md). Local `.scratch/` paths are compatibility redirects, not live trackers.
 
 ## Authority
 
 - Accepted requirements and acceptance definitions: `docs/spec/`. Read `docs/spec/m1.md` for M1 implementation.
-- Current progress, assignees, blockers, planning discussion and resolutions: GitHub Issues.
+- Implementation progress, assignees, blockers and delivery resolutions: GitHub Issues.
+- New exploration Destination, Tickets, Dependencies, Claims, Settlements, Fog and Scope: the product MCP Map described in [exploration-mcp.md](exploration-mcp.md).
 - Completed planning provenance, human confirmations, withdrawn proposals and prototypes: `docs/archive/`. Earlier statements yield to later accepted scope corrections and the current specification.
 - Active planning entry points: `docs/planning/README.md`, [Revision rollback Map](https://github.com/kun-g/wayfinder_map_service/issues/12), and [Ticket and Map deletion Map](https://github.com/kun-g/wayfinder_map_service/issues/17). No rollback/deletion specification is accepted yet. Ticket 06 preserves the inherited rollback baseline; Ticket 07 preserves unconfirmed deletion recommendations.
 
@@ -22,9 +23,9 @@ Approved M1 order: creation/read → atomic Map revision → Ticket/Dependency/F
 
 User instruction (2026-09-18): do not monitor, wait for, or use CodeRabbit as an agent merge/review gate. Acceptance tests, strict type checking, Standards/Spec review, and conflict checks remain the quality gates. This does not authorize disabling the GitHub integration or bypassing repository-required checks.
 
-## Wayfinding operations
+## Existing GitHub planning Maps
 
-Used by the project-local `wayfinder` skill for active planning:
+These operations apply only to the existing rollback/deletion planning Maps. The project-local `wayfinder` skill uses product MCP for new exploration:
 
 - **Map:** an Issue labelled `wayfinder:map` and `planning`, with Destination, Notes, Decisions so far, Not yet specified and Out of scope in its body. Open Tickets are its native sub-issues, queried rather than manually mirrored in a file.
 - **Child Ticket:** one native sub-issue per bounded Question, labelled `wayfinder:grilling`, `wayfinder:prototype`, `wayfinder:research` or `wayfinder:task`. Provision a type label when first needed. Apply `planning`; deferred rollback/deletion also carries `post-m1`.
