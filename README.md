@@ -27,7 +27,7 @@ The local service slice adds the independently/manual-started `npm run --silent 
 
 Track implementation in [GitHub Issues](https://github.com/kun-g/wayfinder_map_service/issues) and the private [M1 project board](https://github.com/users/kun-g/projects/5). Active rollback/deletion planning uses [GitHub planning Maps](docs/planning/README.md). Completed M1 planning decisions and prototype captures are preserved in [the planning archive](docs/archive/m1-planning/README.md).
 
-The integration closeout retains all 56 M1 groups, passes 1,167 tests and records actual installed Codex CLI acceptance across independent sessions, stale-write conflicts and service restart. See the [cumulative acceptance report](docs/implementation/mcp-sqlite-acceptance.md) and [native call evidence](docs/implementation/mcp-sqlite-codex-evidence.json). L01–L04 pass; L05 still requires the live human verdict. Exploration adoption remains separately gated, with no authority switch.
+The integration closeout retains all 56 M1 groups, passes 1,167 tests and records actual installed Codex CLI acceptance across independent sessions, stale-write conflicts and service restart. See the [cumulative acceptance report](docs/implementation/mcp-sqlite-acceptance.md) and [native call evidence](docs/implementation/mcp-sqlite-codex-evidence.json). L01–L05 pass, including the explicit live human verdict recorded on 2026-09-19. Exploration adoption remains separately gated, with no authority switch.
 
 ## Project documents
 

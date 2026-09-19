@@ -2,7 +2,7 @@
 
 范围：[完成自动化集成与真实 Codex 验收](https://github.com/kun-g/wayfinder_map_service/issues/38)，以及[已接受的交接规范](../spec/mcp-sqlite.md)第 11–12 节。原生依赖 Issue 37 已关闭，且本 Issue 在[本次会话领取](https://github.com/kun-g/wayfinder_map_service/issues/38#issuecomment-5731318196)前无人负责。本报告记录第 5 个交付切片的证据；是否采纳探索工作仍由单独设有门禁的 Issue 39 决定。
 
-状态：自动化门禁、独立 Standards/Spec 双轴审查以及完整的已安装 Codex **L01–L04 均已通过**。**L05 正等待真人现场裁决。在取得该裁决且所有必需门禁通过前，Issue 38 必须保持打开状态，本变更也不得以“验收完成”的名义合并。**
+状态：自动化门禁、独立 Standards/Spec 双轴审查以及完整的已安装 Codex **L01–L05 均已通过**。2026-09-19，用户在查看中文验收报告后明确回复“接受”，完成 L05 真人现场裁决。Issue 38 现可按正常 PR 合并、证据记录和显式关闭流程收尾。
 
 ## 确切环境与隔离设置
 
@@ -83,11 +83,11 @@ A 的 thread 为 `01a0b4f1-c05a-7600-8b18-73fa2db7dbca`；B 的独立 thread 为
 | L02 | **通过。** Revision 1 create；Revision 2 批量创建 Destination/Ticket/Dependency/Fog/Scope；Revision 3 领取前置项；Revision 4 Completion 返回 `['Handoff','Next']`，直接观察依赖项解锁；Revision 5 领取依赖项，Revision 6 写入 Finding；Revision 7 显式 reopen 两项，返回 `['Handoff','Prep']`；Revision 8 保留 A 新领取的 Prep。较早 Revision 的完整读取保留 Claim/Settlement 及 introducedAtRevision 4/6；当前 reopen 状态不含 Settlement，也没有隐式级联。 |
 | L03 | **通过。** 独立 B 首先调用目录，保留/发现同一稳定 ID，并读取观察到的 head 8；随后以不同的 codex:B Claim 在 Revision 9 领取，并在 Revision 10 完成 Completion。快照/紧凑结果均被消费，A 的 Prep Claim 得到保留，没有创建替代 Map，也没有按重名标题进行模糊选择。 |
 | L04 | **通过。** 原始 A 刻意以陈旧的 expectedRevision 8 仅写入一次，收到精确的 Conflict/currentRevision 10、失败工具调用状态，且未发布。随后它重读最新 head 及每个已知 Revision，并确认 Revision 11 不存在。真实服务在相同固定端口执行 SIGTERM/停止/重启后，恢复的 A 新 MCP 连接保留精确 head、历史和 Claim，没有过期、接管或额外 Revision；只读重连证明与持久化夹具一致。 |
-| L05 | **待定。尚未收到真人现场裁决；规划确认以及通过的自动化/客户端断言均不能替代该裁决。** |
+| L05 | **通过。** 2026-09-19，用户在查看包含完整环境、自动化结果、原生 MCP 调用和双轴审查结论的中文验收报告后明确回复“接受”。该现场裁决发生在所有必需自动化证据和阻塞项解决之后。 |
 
 ## Standards / Spec 双轴审查与收尾
 
-独立只读审查者以 `1b8d89f277870e24d4b959f1c2cae6c59c218eff` 为固定点检查累计 diff：最初审查 `4833e03`，随后在 `2c9f196` 重新审查修正后的实现。他们检查了源码、断言和文档；没有独立证明命令运行结果，也没有提供 L05。最终发布的现场证据会在请求真人裁决前单独审查。只有全部门禁通过后，才会记录 PR 正常合并、冲突/必需检查、合并后状态以及显式关闭 Issue。CodeRabbit 既不受监控，也不是 Agent 门禁；不会绕过任何仓库必需检查。
+独立只读审查者以 `1b8d89f277870e24d4b959f1c2cae6c59c218eff` 为固定点检查累计 diff：最初审查 `4833e03`，随后在 `2c9f196` 重新审查修正后的实现，并在 `3605615` 审查最终发布的现场证据。他们检查了源码、断言和文档；没有代替用户提供 L05。用户随后于 2026-09-19 明确接受真实工作流。PR 正常合并、冲突/必需检查、合并后状态以及显式关闭 Issue 会在收尾记录中保留。CodeRabbit 既不受监控，也不是 Agent 门禁；不会绕过任何仓库必需检查。
 
 ### Standards
 
@@ -95,6 +95,6 @@ A 的 thread 为 `01a0b4f1-c05a-7600-8b18-73fa2db7dbca`；B 的独立 thread 为
 
 ### Spec
 
-**通过；解决最初 3 项发现后，剩余可操作发现为 0。** 已补充完整的命令/可达最终错误在 SQLite、工具和 HTTP 层的无副作用断言、嵌套数据隔离检查，以及单独的现场前置项 Settlement/依赖项领取流程，并可见解锁后的 Frontier。修正后的现场 head 序列内部一致（A 为 8，B 为 9–10，陈旧值为 8/当前值为 10）。所需客户端启动变更仅影响隔离测试配置。已审查运行器的 L01–L04 随后按上文记录执行通过；L05 仍是真人门禁，单凭审查不能证明 Issue 已完成，也不能授权采纳探索工作。
+**通过；解决最初 3 项发现后，剩余可操作发现为 0。** 已补充完整的命令/可达最终错误在 SQLite、工具和 HTTP 层的无副作用断言、嵌套数据隔离检查，以及单独的现场前置项 Settlement/依赖项领取流程，并可见解锁后的 Frontier。修正后的现场 head 序列内部一致（A 为 8，B 为 9–10，陈旧值为 8/当前值为 10）。所需客户端启动变更仅影响隔离测试配置。已审查运行器的 L01–L04 随后按上文记录执行通过；L05 由 2026-09-19 的明确真人裁决完成。该裁决只完成本 Issue 的验收，不授权提前采纳探索工作。
 
 实现/规划的权威来源仍是 GitHub。未改变探索工作流 skill、既有 rollback/deletion Map、规范项目数据库、永久 MCP 配置、插件、迁移、双写或权威来源切换。已停止并清理的验收夹具不意味着更广泛的 v1 已交付，也不意味着服务持续可用。
