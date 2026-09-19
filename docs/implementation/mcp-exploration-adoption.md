@@ -31,17 +31,21 @@ WAYFINDER_ADOPTION_TEST_ROOT=<private-local-root> \
 WAYFINDER_ADOPTION_TEST_PORT=43139 \
 WAYFINDER_ADOPTION_REPORT=<fresh-report-target> \
 node tests/helpers/codex-wayfinder-adoption.mjs
+WAYFINDER_CODEX_TEST_ROOT=<private-local-root> \
+WAYFINDER_CODEX_TEST_PORT=43142 \
+WAYFINDER_CODEX_REPORT=<fresh-regression-report-target> \
+node tests/helpers/codex-live-acceptance.mjs
 ```
 
-严格 TypeScript、构建、脚本语法和 diff 检查通过。完整套件 **11 个文件 / 1,167 项测试**通过，保留全部 M1 与 MCP/SQLite 验收覆盖。沙箱内首次完整测试因回环地址 `listen EPERM` 产生 19 个 HTTP 失败、其余 1,148 项通过；允许回环后的完整重跑全部通过，该沙箱结果不作为通过证据。
+严格 TypeScript、构建、脚本语法和 diff 检查通过。完整套件 **11 个文件 / 1,167 项测试**通过，保留全部 M1 与 MCP/SQLite 验收覆盖；抽取共享 harness 后再次完整重跑通过。沙箱内首次完整测试因回环地址 `listen EPERM` 产生 19 个 HTTP 失败、其余 1,148 项通过；允许回环后的完整重跑全部通过，该沙箱结果不作为通过证据。
 
 真实采用运行使用仓库、worktree 和临时目录之外的全新私有根目录、0700 根目录、随机环境令牌、固定回环端口和进程局部 Codex MCP 配置。永久 MCP 设置保持不变；运行结束后服务优雅停止且只清理本次夹具。发布证据不含令牌、私有路径或 SQL。
 
-运行器的首个试运行使用系统临时根目录，在任何 Map 写入前被生产路径校验正确拒绝。第二个试运行完成全部真实会话，但最终观察器错误地把 `readCurrent` 状态当作 Revision 包装层，因而未发布报告；夹具已清理。修正只涉及最终观察路径，随后以全新数据库完整重跑。只有最终重跑属于通过证据。
+运行器的首个试运行使用系统临时根目录，在任何 Map 写入前被生产路径校验正确拒绝。第二个试运行完成全部真实会话，但最终观察器错误地把 `readCurrent` 状态当作 Revision 包装层，因而未发布报告；夹具已清理。修正观察路径后的试运行通过。双轴审查进一步指出 outage 探针没有实际断言后备操作为零；现从 Codex JSONL 的已完成操作计算并拒绝任何非消息操作。两个 installed-Codex 运行器共用[仅测试 harness](../../tests/helpers/codex-mcp-harness.mjs)，集中服务生命周期、进程局部配置、结构化结果校验和私密信息检查。最终证据来自共享 harness 上的全新数据库完整重跑；原有 Issue 38 运行器也用全新夹具回归 **44 次原生调用**并通过 L01–L04 断言。旧运行器的 L05 输出仍指它自身不能产生真人裁决；Issue 38 的真人裁决已单独记录在[验收报告](mcp-sqlite-acceptance.md)中。
 
 ## 真实 adopted-workflow 证据
 
-[机器可读证据](mcp-exploration-adoption-evidence.json)记录 **15 次真实原生 MCP 调用**和一次必需服务不可用探针，环境为：服务代码 merge commit `467d452870b1313e695eccd98d2a1ec8d49f3d83`、codex-cli **0.153.0**、Node **26.3.0**、SQLite **3.53.4**、SDK **1.30.0**、协商协议 **2025-06-18**。运行时 skill SHA-256 为 `301d8e9615e9f6b25108ee93e73ed790c65ec8bd08003731001dde362101d63b`。
+[机器可读证据](mcp-exploration-adoption-evidence.json)记录 **15 次真实原生 MCP 调用**和一次必需服务不可用探针，运行检出提交 `891fa18649ffcd98f61192e77fb63ad596bd904a`（基于 Issue 38 的正常合并提交 `467d452870b1313e695eccd98d2a1ec8d49f3d83`），codex-cli **0.153.0**、Node **26.3.0**、SQLite **3.53.4**、SDK **1.30.0**、协商协议 **2025-06-18**。运行时 skill SHA-256 为 `301d8e9615e9f6b25108ee93e73ed790c65ec8bd08003731001dde362101d63b`。
 
 新 Map 的稳定 ID 为 `Adoption.NewExploration.20260919`：
 
@@ -56,7 +60,7 @@ node tests/helpers/codex-wayfinder-adoption.mjs
 | Conflict | 恢复的 A 仅以缓存的 Revision 4 发出一次陈旧写入，收到 expected 4/current 6 Conflict；随后重读 Revision 6 并明确放弃陈旧意图，没有重试、合并、接管或 Revision 7。 |
 | Outage | 服务停止期间，新会话因必需 MCP 权威不可用而以非零状态停止，MCP 调用和后备操作均为 0。服务恢复后，独立会话 C 通过目录重发现并只读确认 Revision 6、两项 Settlement 与不存在的 Revision 7。 |
 
-三条独立 thread 分别为 `01a0b74d-971c-7131-a8a8-a7e4de5c4b4e`、`01a0b74e-4c8a-7912-a241-9bb86c1513c7` 和 `01a0b74f-50b6-7a72-8817-2939c24059d9`；冲突重读恢复第一条 logical session。完整参数、结果、状态及最终观察保存在 JSON 证据中，Agent 最终文字本身不作为证明。
+三条独立 thread 分别为 `01a0b758-dc82-7b01-b2a8-7cc1bb113404`、`01a0b759-55c7-7fb3-a7f9-69c453c52653` 和 `01a0b759-f250-70f2-aada-1713b5f89845`；冲突重读恢复第一条 logical session。完整参数、结果、状态及最终观察保存在 JSON 证据中，Agent 最终文字本身不作为证明。
 
 ## 权威边界
 

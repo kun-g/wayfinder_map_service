@@ -1,98 +1,30 @@
 // Opt-in installed-Codex acceptance. This is not part of npm test and cannot
 // provide L05. Requires authenticated Codex, a private local root and fixed port.
 import assert from 'node:assert/strict';
-import { fork, spawn, execFileSync } from 'node:child_process';
-import { mkdtempSync, realpathSync, rmSync, writeFileSync, readFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { execFileSync } from 'node:child_process';
+import { writeFileSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { randomBytes } from 'node:crypto';
 import { DatabaseSync } from 'node:sqlite';
-import { initializeSQLite, openSQLite } from '../../dist/sqlite-storage.js';
-import { mapTools } from '../../dist/mcp-tools.js';
-import { Ajv } from 'ajv';
+import { initializeSQLite } from '../../dist/sqlite-storage.js';
+import { createCodexMcpHarness } from './codex-mcp-harness.mjs';
 
 const root = process.env.WAYFINDER_CODEX_TEST_ROOT;
 const port = process.env.WAYFINDER_CODEX_TEST_PORT;
 const reportPath = process.env.WAYFINDER_CODEX_REPORT;
 assert(root && port && reportPath, 'Explicit private root, fixed port and fresh report target required');
-assert(/^[1-9][0-9]{0,4}$/.test(port) && Number(port) <= 65535, 'Invalid fixed port');
-const directory = realpathSync(mkdtempSync(join(root, 'wayfinder-codex-acceptance-')));
-const control = realpathSync(mkdtempSync(join(tmpdir(), 'wayfinder-codex-control-')));
-const path = join(directory, 'private', 'maps.sqlite');
-const protocolPath = join(control, 'protocol.jsonl');
-const token = randomBytes(32).toString('hex');
-const env = { ...process.env, WAYFINDER_DATABASE_PATH: path, WAYFINDER_PORT: port,
-  WAYFINDER_TOKEN: token, WAYFINDER_ACTOR_ID: 'acceptance-operator', WAYFINDER_CLIENT_ID: 'codex-live-acceptance',
-  WAYFINDER_ALLOWED_ORIGINS: '[]', WAYFINDER_PROTOCOL_REPORT: protocolPath };
+const repository = fileURLToPath(new URL('../../', import.meta.url));
+const harness = createCodexMcpHarness({ root, directoryPrefix: 'wayfinder-codex-acceptance-', port,
+  serverName: 'wayfinder_acceptance', actorId: 'acceptance-operator', clientId: 'codex-live-acceptance' });
+const { databasePath: path, protocolPath, env, safe, start, stop } = harness;
 const mapId = 'Acceptance.Codex.Workflow';
 const author = { actorId: env.WAYFINDER_ACTOR_ID, clientId: env.WAYFINDER_CLIENT_ID };
-const schemas = new Map(mapTools.map(tool => [tool.name, new Ajv({ strict: false }).compile(tool.outputSchema)]));
 const sessions = [];
-let host;
-function safe(value) {
-  const text = JSON.stringify(value);
-  for (const secret of [token, directory, control, path]) assert(!text.includes(secret), 'Sensitive material in evidence');
-}
-async function start() {
-  const child = fork(fileURLToPath(new URL('../../dist/mcp-start.js', import.meta.url)), [], {
-    execArgv: ['--import', fileURLToPath(new URL('./codex-acceptance-observer.mjs', import.meta.url))],
-    env, stdio: ['ignore', 'pipe', 'pipe', 'ipc'],
-  });
-  const exit = new Promise((resolve, reject) => { child.once('error', reject); child.once('exit', (code, signal) => resolve({ code, signal })); });
-  let logs = '';
-  const ready = new Promise(resolve => {
-    child.stdout.on('data', data => { logs += data; if (logs.includes('Wayfinder local MCP ready')) resolve(); });
-    child.stderr.on('data', data => { logs += data; });
-  });
-  host = { child, exit, logs: () => logs };
-  await Promise.race([ready, exit.then(() => { throw new Error('Service startup failed'); })]);
-}
-async function stop() {
-  if (!host) return;
-  const current = host; host = undefined;
-  current.child.kill('SIGTERM'); assert.deepEqual(await current.exit, { code: 0, signal: null }); safe(current.logs());
-}
-const configuration = ['--ignore-user-config', '--json', '--skip-git-repo-check',
-  '-c', `mcp_servers.wayfinder_acceptance.url="http://127.0.0.1:${port}/mcp"`,
-  '-c', 'mcp_servers.wayfinder_acceptance.required=true',
-  '-c', 'mcp_servers.wayfinder_acceptance.startup_timeout_sec=30',
-  '-c', 'mcp_servers.wayfinder_acceptance.bearer_token_env_var="WAYFINDER_TOKEN"',
-  // The user authorized these four isolated acceptance tools. This applies to
-  // this process only; shell remains read-only and user config is untouched.
-  '-c', 'mcp_servers.wayfinder_acceptance.default_tools_approval_mode="approve"'];
 async function codex(label, prompt, resume) {
-  const args = resume ? ['exec', 'resume', ...configuration, resume, '-']
-    : ['exec', ...configuration, '-C', control, '-s', 'read-only', '-'];
-  const child = spawn('codex', args, { env, cwd: control, stdio: ['pipe', 'pipe', 'pipe'] });
-  let stdout = ''; let stderr = '';
-  child.stdout.on('data', chunk => { stdout += chunk; }); child.stderr.on('data', chunk => { stderr += chunk; });
-  child.stdin.end('Use only the four wayfinder_acceptance MCP tools. No shell, browser, other tools or delegation. '
+  const execution = await harness.execute({ label, resume, prompt: 'Use only the four wayfinder_acceptance MCP tools. No shell, browser, other tools or delegation. '
     + 'These are isolated test fixtures, not real project work or a human verdict. Execute the specified operations in order using returned revisions. '
-    + 'Stop and report any unexpected rejection. Never automatically replay a write or take over another Claim.\n' + prompt);
-  const code = await new Promise((resolve, reject) => { child.once('error', reject); child.once('exit', resolve); });
-  assert.equal(code, 0, 'Codex process failed');
-  safe(stderr);
-  const events = stdout.trim().split('\n').map(line => JSON.parse(line));
-  assert(events.some(event => event.type === 'turn.completed'), 'Codex turn incomplete');
-  const items = events.filter(event => event.type === 'item.completed').map(event => event.item);
-  assert(items.every(item => ['agent_message', 'mcp_tool_call'].includes(item.type)), 'Unexpected non-MCP operation');
-  const calls = items.filter(item => item.type === 'mcp_tool_call');
-  assert(calls.length > 0, 'No actual Codex tool calls');
-  for (const call of calls) {
-    assert.equal(call.server, 'wayfinder_acceptance'); assert.equal(call.error, null);
-    assert.deepEqual(call.result.content, []);
-    assert(schemas.get(call.tool)?.(call.result.structured_content), 'Codex result violates output schema');
-    // Codex JSONL exposes the error envelope as call status; its result
-    // projection retains content/structured_content but omits isError.
-    assert.equal(call.status === 'failed', !['found', 'listed', 'committed'].includes(call.result.structured_content.kind));
-  }
-  const session = { label, threadId: events.find(event => event.type === 'thread.started')?.thread_id ?? resume,
-    calls: calls.map(({ tool, arguments: args, result, status }) => ({ tool, arguments: args, result, status })),
-    finalMessage: items.filter(item => item.type === 'agent_message').at(-1)?.text };
-  safe(session); sessions.push(session);
-  console.log(`Installed Codex ${label}: ${calls.length} real MCP calls completed`);
-  return session;
+    + 'Stop and report any unexpected rejection. Never automatically replay a write or take over another Claim.\n' + prompt });
+  sessions.push(execution.record);
+  return execution.record;
 }
 const ticket = (id, type = 'task') => ({ kind: 'ticket.create', ticket: { id, title: id, question: `Verify ${id}?`, type } });
 const acquire = (ticketId, claimantId) => ({ kind: 'claim.acquire', ticketId, claimantId });
@@ -106,16 +38,7 @@ const call = (name, args) => `${name} ${JSON.stringify(args)}`;
 const apply = (expectedRevision, commands) => call('map_apply', { mapId, expectedRevision, commands, includeSnapshot: true });
 const read = revision => call('map_read', { mapId, ...(revision === undefined ? {} : { revision }) });
 const payloads = session => session.calls.map(item => item.result.structured_content);
-async function known() {
-  const storage = openSQLite(path);
-  try {
-    const current = await storage.adapter.readCurrent(mapId);
-    assert.equal(current.kind, 'found');
-    const history = await Promise.all(Array.from({ length: current.value.currentRevision }, (_, i) => storage.adapter.readRevision(mapId, i + 1)));
-    assert(history.every(item => item.kind === 'found'));
-    return { current, history, catalog: storage.listMaps(), next: await storage.adapter.readRevision(mapId, current.value.currentRevision + 1) };
-  } finally { storage.close(); }
-}
+const known = () => harness.known(mapId);
 try {
   initializeSQLite(path); await start();
   const a = await codex('A-workflow', [call('map_list', {}),
@@ -184,7 +107,7 @@ try {
   const protocols = readFileSync(protocolPath, 'utf8').trim().split('\n').map(line => JSON.parse(line).protocolVersion);
   assert(protocols.length >= 4, 'Actual initialize negotiation not observed');
   const report = { status: 'L01-L04 passed; L05 pending live human verdict',
-    serverCommit: execFileSync('git', ['rev-parse', 'HEAD'], { cwd: fileURLToPath(new URL('../../', import.meta.url)), encoding: 'utf8' }).trim(),
+    serverCommit: execFileSync('git', ['rev-parse', 'HEAD'], { cwd: repository, encoding: 'utf8' }).trim(),
     installedClient: execFileSync('codex', ['--version'], { encoding: 'utf8' }).trim(), node: process.version, sqliteVersion,
     sdk: '1.30.0', protocolVersions: [...new Set(protocols)], mapId, sessions,
     assertions: ['once-only schema-valid compact/snapshot results', 'Frontier/Claim/Completion/Finding/explicit reopen/history',
@@ -194,5 +117,5 @@ try {
   console.log('L01–L04 actual installed-Codex assertions passed; L05 requires a live human verdict');
 } finally {
   await stop();
-  rmSync(directory, { recursive: true }); rmSync(control, { recursive: true });
+  harness.cleanup();
 }

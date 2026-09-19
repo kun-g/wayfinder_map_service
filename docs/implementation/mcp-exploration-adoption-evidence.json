@@ -1,6 +1,6 @@
 {
   "status": "adopted workflow proof passed",
-  "serverCommit": "467d452870b1313e695eccd98d2a1ec8d49f3d83",
+  "serverCommit": "891fa18649ffcd98f61192e77fb63ad596bd904a",
   "installedClient": "codex-cli 0.153.0",
   "node": "v26.3.0",
   "sqliteVersion": "3.53.4",
@@ -13,7 +13,7 @@
   "sessions": [
     {
       "label": "A-chart-and-research",
-      "threadId": "01a0b74d-971c-7131-a8a8-a7e4de5c4b4e",
+      "threadId": "01a0b758-dc82-7b01-b2a8-7cc1bb113404",
       "calls": [
         {
           "tool": "map_list",
@@ -115,7 +115,7 @@
                 "author": {
                   "actorId": "adoption-operator",
                   "clientId": "codex-wayfinder-adoption",
-                  "occurredAt": "2026-09-19T01:35:34.279Z"
+                  "occurredAt": "2026-09-19T01:47:46.135Z"
                 },
                 "changes": [
                   {
@@ -224,7 +224,7 @@
                 "author": {
                   "actorId": "adoption-operator",
                   "clientId": "codex-wayfinder-adoption",
-                  "occurredAt": "2026-09-19T01:35:38.189Z"
+                  "occurredAt": "2026-09-19T01:47:48.533Z"
                 },
                 "changes": [
                   {
@@ -341,7 +341,7 @@
                 "author": {
                   "actorId": "adoption-operator",
                   "clientId": "codex-wayfinder-adoption",
-                  "occurredAt": "2026-09-19T01:35:45.758Z"
+                  "occurredAt": "2026-09-19T01:47:53.441Z"
                 },
                 "changes": [
                   {
@@ -445,7 +445,7 @@
                 "author": {
                   "actorId": "adoption-operator",
                   "clientId": "codex-wayfinder-adoption",
-                  "occurredAt": "2026-09-19T01:35:45.758Z"
+                  "occurredAt": "2026-09-19T01:47:53.441Z"
                 },
                 "changes": [
                   {
@@ -533,15 +533,17 @@
           "status": "completed"
         }
       ],
-      "finalMessage": "- Stable Map ID: `Adoption.NewExploration.20260919`\n- Retained revision: **4**, confirmed by `map_read`.\n- **SourceReview Finding:** “Primary-source evidence is sufficient for the isolated adoption proof.” Limitation: evidence covers the local workflow only.\n- **Synthesis:** newly unlocked in the frontier; open, unclaimed, and not performed."
+      "finalMessage": "Map **`Adoption.NewExploration.20260919`** is at retained revision **4**, confirmed by `map_read`.\n\n`SourceReview` is settled with the Finding: “Primary-source evidence is sufficient for the isolated adoption proof.” Its stated limitation is that the evidence covers the local workflow only. `Synthesis` is newly unlocked and remains open; I did not perform it."
     },
     {
       "label": "B-independent-resume",
-      "threadId": "01a0b74e-4c8a-7912-a241-9bb86c1513c7",
+      "threadId": "01a0b759-55c7-7fb3-a7f9-69c453c52653",
       "calls": [
         {
           "tool": "map_list",
-          "arguments": {},
+          "arguments": {
+            "limit": 100
+          },
           "result": {
             "content": [],
             "structured_content": {
@@ -576,7 +578,7 @@
                 "author": {
                   "actorId": "adoption-operator",
                   "clientId": "codex-wayfinder-adoption",
-                  "occurredAt": "2026-09-19T01:35:45.758Z"
+                  "occurredAt": "2026-09-19T01:47:53.441Z"
                 },
                 "changes": [
                   {
@@ -757,7 +759,7 @@
                 "author": {
                   "actorId": "adoption-operator",
                   "clientId": "codex-wayfinder-adoption",
-                  "occurredAt": "2026-09-19T01:36:33.435Z"
+                  "occurredAt": "2026-09-19T01:48:20.906Z"
                 },
                 "changes": [
                   {
@@ -855,11 +857,11 @@
           "status": "completed"
         }
       ],
-      "finalMessage": "Completed on unique Map `Adoption.NewExploration.20260919`.\n\n- Listing exhausted; default-read revision **4**.\n- Claimed Synthesis as `adoption:B`: **4 → 5**.\n- Settled with the exact supplied payload: **5 → 6**.\n- Final default-read confirmed revision **6**, Synthesis settled, and empty frontier.\n\nSourceReview remained unchanged. No replacement Map, replay, merge, or takeover occurred."
+      "finalMessage": "Found the unique Map, `Adoption.NewExploration.20260919`. Independent session B claimed and settled `Synthesis` using the returned revisions. The final default read shows revision 6, with `Synthesis` settled and `SourceReview` unchanged."
     },
     {
       "label": "A-conflict-reread",
-      "threadId": "01a0b74d-971c-7131-a8a8-a7e4de5c4b4e",
+      "threadId": "01a0b758-dc82-7b01-b2a8-7cc1bb113404",
       "calls": [
         {
           "tool": "map_apply",
@@ -905,7 +907,7 @@
                 "author": {
                   "actorId": "adoption-operator",
                   "clientId": "codex-wayfinder-adoption",
-                  "occurredAt": "2026-09-19T01:36:33.435Z"
+                  "occurredAt": "2026-09-19T01:48:20.906Z"
                 },
                 "changes": [
                   {
@@ -1003,11 +1005,11 @@
           "status": "completed"
         }
       ],
-      "finalMessage": "The single stale request returned the expected Conflict: revision **4** versus current **6**.\n\nDefault-read confirmed and retained revision **6** for `Adoption.NewExploration.20260919`. The stale note was not published; its intention is abandoned. No retry, merge, takeover, or further write was performed."
+      "finalMessage": "The single stale `map_apply` request returned the expected conflict: revision **4** was supplied, and the Map was at revision **6**. A default read confirmed revision 6; the original notes remain unchanged. I abandoned the stale note intention and made no further write."
     },
     {
       "label": "C-after-outage",
-      "threadId": "01a0b74f-50b6-7a72-8817-2939c24059d9",
+      "threadId": "01a0b759-f250-70f2-aada-1713b5f89845",
       "calls": [
         {
           "tool": "map_list",
@@ -1046,7 +1048,7 @@
                 "author": {
                   "actorId": "adoption-operator",
                   "clientId": "codex-wayfinder-adoption",
-                  "occurredAt": "2026-09-19T01:36:33.435Z"
+                  "occurredAt": "2026-09-19T01:48:20.906Z"
                 },
                 "changes": [
                   {
@@ -1144,7 +1146,7 @@
           "status": "completed"
         }
       ],
-      "finalMessage": "Rediscovered `Adoption.NewExploration.20260919` by exact title and default-read it. Both responses confirm **revision 6**.\n\nBoth Settlements are present:\n- **SourceReview** — finding, introduced at revision 4: evidence is sufficient for the isolated adoption proof, limited to the local workflow.\n- **Synthesis** — completion, introduced at revision 6: an independent session resumed and completed synthesis; `resumedByIndependentSession: true`.\n\nReturned revision data retained. No writes performed."
+      "finalMessage": "Confirmed. The Map **“Adoption proof: primary-source evaluation”** has stable ID `Adoption.NewExploration.20260919` and is at **revision 6**. Both `SourceReview` and `Synthesis` have Settlements. I made no write."
     }
   ],
   "unavailableEvidence": {
