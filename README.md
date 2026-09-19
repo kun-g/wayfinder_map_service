@@ -15,7 +15,7 @@ M1 Map core is complete on `main` as of 2026-09-18: the six implementation Issue
 
 The accepted handoff is [docs/spec/m1.md](docs/spec/m1.md); the wider v1 product contract is [docs/spec/v1.md](docs/spec/v1.md).
 
-The next local slice has an [accepted MCP/SQLite implementation handoff](docs/spec/mcp-sqlite.md), human-confirmed on 2026-09-18; see [Codex MCP and SQLite acceptance planning](https://github.com/kun-g/wayfinder_map_service/issues/27) for its decisions. SQLite is selected for this local slice only; there is no implemented/accepted Wayfinder MCP connection yet, and new exploration Maps do not switch authority until real Codex acceptance.
+The local slice follows the [accepted MCP/SQLite implementation handoff](docs/spec/mcp-sqlite.md), human-confirmed on 2026-09-18; see [Codex MCP and SQLite acceptance planning](https://github.com/kun-g/wayfinder_map_service/issues/27) for its decisions. SQLite is selected for this local slice only. The Wayfinder MCP connection and real Codex acceptance are implemented; new exploration Maps remain under the existing authority until the separately gated [workflow adoption Issue](https://github.com/kun-g/wayfinder_map_service/issues/39) completes.
 
 The first persistence slice implemented a private SQLite Adapter on pinned Node.js 26.3.0. Its separate operator entry point is `src/sqlite-storage.ts`: `initializeSQLite(path)` explicitly creates a fresh database, and `openSQLite(path)` opens only a supported existing database. The domain entry point remains pure. See [storage verification and operator constraints](docs/implementation/sqlite-storage.md).
 
@@ -26,6 +26,8 @@ The headless tool slice exposes exactly `map_create`, `map_list`, `map_read` and
 The local service slice adds the independently/manual-started `npm run --silent start` command and `startLocalMcpService(configuration)` in `src/mcp-service.ts`. It opens supported existing private SQLite storage only, serves authenticated Streamable HTTP at a fixed `127.0.0.1:<port>/mcp`, enforces request/tool admission limits and drains active work on SIGINT/SIGTERM. See [operator configuration and real HTTP lifecycle evidence](docs/implementation/local-mcp-service.md). Automated SDK-client HTTP tests are not installed Codex acceptance; no connection settings or exploration authority have changed.
 
 Track implementation in [GitHub Issues](https://github.com/kun-g/wayfinder_map_service/issues) and the private [M1 project board](https://github.com/users/kun-g/projects/5). Active rollback/deletion planning uses [GitHub planning Maps](docs/planning/README.md). Completed M1 planning decisions and prototype captures are preserved in [the planning archive](docs/archive/m1-planning/README.md).
+
+The integration closeout retains all 56 M1 groups, passes 1,167 tests and records actual installed Codex CLI acceptance across independent sessions, stale-write conflicts and service restart. See the [cumulative acceptance report](docs/implementation/mcp-sqlite-acceptance.md) and [native call evidence](docs/implementation/mcp-sqlite-codex-evidence.json). L01–L05 pass, including the explicit live human verdict recorded on 2026-09-19. Exploration adoption remains separately gated, with no authority switch.
 
 ## Project documents
 

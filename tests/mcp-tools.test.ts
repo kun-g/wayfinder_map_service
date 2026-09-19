@@ -13,6 +13,7 @@ import { sqliteLifecycleForTests } from '../src/sqlite-internal.js';
 import type { SQLiteStorage } from '../src/sqlite-storage.js';
 import { calculateFrontier, parseId, prepareApply } from '../src/index.js';
 import type { Command, NonEmpty, Revision, TicketType } from '../src/index.js';
+import { rejectionSeed, rejectionCases } from './helpers/mcp-rejection-cases.js';
 
 const cleanups: (() => void | Promise<void>)[] = [];
 afterEach(async () => { for (const cleanup of cleanups.splice(0).reverse()) await cleanup(); });
@@ -215,7 +216,8 @@ test('P01/P05/D05: public shape/ID/Revision/unknown/system paths agree with sche
 });
 
 test('P01: every M1 command schema validates nested shape and the real whole-shape decoder rejects malformed later input before semantics', async () => {
-  const f = await fixture(); await f.create();
+  const f = await fixture(); await f.create(); await f.create('Acceptance.Other');
+  const before = await observe(f.storage, 1);
   const valid = [ticket('A'), { kind: 'ticket.update', ticketId: 'A', patch: { title: 'Updated', type: 'task', extensions: {} } },
     { kind: 'dependency.add', dependentId: 'A', prerequisiteId: 'B', claimantId: 'work' }, { kind: 'dependency.remove', dependentId: 'A', prerequisiteId: 'B' },
     { kind: 'claim.acquire', ticketId: 'A', claimantId: 'work' }, { kind: 'claim.release', ticketId: 'A', claimantId: 'work' },
@@ -231,6 +233,7 @@ test('P01: every M1 command schema validates nested shape and the real whole-sha
     expect((await f.apply([{ kind: 'claim.acquire', ticketId: 'Missing', claimantId: 'work' }, malformed], 1)).structuredContent).toMatchObject({
       rejection: { stage: 'input', error: { path: ['commands', 1, 'system'] } },
     });
+    expect(await observe(f.storage, 1)).toEqual(before);
   }
   const badSettlements = [
     { ...settlement('task'), outcome: { kind: 'finding', statement: 'Mismatch' } },
@@ -244,6 +247,17 @@ test('P01: every M1 command schema validates nested shape and the real whole-sha
     const command = { kind: 'ticket.settle', ticketId: 'A', ticketType: index === 2 ? 'research' : 'task', claimantId: 'work', settlement: value };
     expect(schemas.get('map_apply')!.input({ mapId: 'Acceptance.Alpha', expectedRevision: 1, commands: [command] })).toBe(false);
     expect((await f.apply([command], 1)).structuredContent).toMatchObject({ rejection: { stage: 'input', error: { code: 'invalid_input' } } });
+    expect(await observe(f.storage, 1)).toEqual(before);
+  }
+});
+
+test('D05/P05: complete command-error and reachable final-invariant matrix through real M1/SQLite tools publishes nothing', async () => {
+  const f = await fixture(); await f.create(); await f.create('Acceptance.Other');
+  expect((await f.apply(rejectionSeed, 1)).structuredContent!.kind).toBe('committed');
+  const before = await observe(f.storage, 2);
+  for (const scenario of rejectionCases) {
+    expect((await f.apply(scenario.commands, 2)).structuredContent, scenario.label).toEqual({ kind: 'rejected', rejection: scenario.rejection });
+    expect(await observe(f.storage, 2), scenario.label).toEqual(before);
   }
 });
 
