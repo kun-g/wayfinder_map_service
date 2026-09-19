@@ -1,0 +1,1164 @@
+{
+  "status": "adopted workflow proof passed",
+  "serverCommit": "467d452870b1313e695eccd98d2a1ec8d49f3d83",
+  "installedClient": "codex-cli 0.153.0",
+  "node": "v26.3.0",
+  "sqliteVersion": "3.53.4",
+  "sdk": "1.30.0",
+  "protocolVersions": [
+    "2025-06-18"
+  ],
+  "skillSha256": "301d8e9615e9f6b25108ee93e73ed790c65ec8bd08003731001dde362101d63b",
+  "mapId": "Adoption.NewExploration.20260919",
+  "sessions": [
+    {
+      "label": "A-chart-and-research",
+      "threadId": "01a0b74d-971c-7131-a8a8-a7e4de5c4b4e",
+      "calls": [
+        {
+          "tool": "map_list",
+          "arguments": {},
+          "result": {
+            "content": [],
+            "structured_content": {
+              "kind": "listed",
+              "maps": [],
+              "nextAfterMapId": null
+            }
+          },
+          "status": "completed"
+        },
+        {
+          "tool": "map_create",
+          "arguments": {
+            "mapId": "Adoption.NewExploration.20260919",
+            "title": "Adoption proof: primary-source evaluation",
+            "destination": "Decide whether primary-source evaluation is ready for implementation",
+            "notes": "New exploration uses the project-local Wayfinder MCP workflow as sole authority."
+          },
+          "result": {
+            "content": [],
+            "structured_content": {
+              "kind": "committed",
+              "mapId": "Adoption.NewExploration.20260919",
+              "revision": 1,
+              "changes": [
+                {
+                  "commandIndex": 0,
+                  "command": "map.create",
+                  "subjectId": "Adoption.NewExploration.20260919"
+                }
+              ]
+            }
+          },
+          "status": "completed"
+        },
+        {
+          "tool": "map_apply",
+          "arguments": {
+            "mapId": "Adoption.NewExploration.20260919",
+            "expectedRevision": 1,
+            "commands": [
+              {
+                "kind": "ticket.create",
+                "ticket": {
+                  "id": "SourceReview",
+                  "title": "Review primary sources",
+                  "question": "What do primary sources establish?",
+                  "type": "research"
+                }
+              },
+              {
+                "kind": "ticket.create",
+                "ticket": {
+                  "id": "Synthesis",
+                  "title": "Synthesize readiness",
+                  "question": "Is the evidence ready for implementation?",
+                  "type": "task"
+                }
+              },
+              {
+                "kind": "dependency.add",
+                "dependentId": "Synthesis",
+                "prerequisiteId": "SourceReview"
+              },
+              {
+                "kind": "content.add",
+                "section": "fog",
+                "item": {
+                  "id": "FollowOn",
+                  "text": "A later question may emerge from the source review",
+                  "references": []
+                }
+              },
+              {
+                "kind": "content.add",
+                "section": "scopeExclusions",
+                "item": {
+                  "id": "LegacyMigration",
+                  "text": "Do not migrate existing GitHub planning Maps",
+                  "references": []
+                }
+              }
+            ],
+            "includeSnapshot": true
+          },
+          "result": {
+            "content": [],
+            "structured_content": {
+              "kind": "committed",
+              "revision": {
+                "mapId": "Adoption.NewExploration.20260919",
+                "revision": 2,
+                "priorRevision": 1,
+                "kind": "apply",
+                "author": {
+                  "actorId": "adoption-operator",
+                  "clientId": "codex-wayfinder-adoption",
+                  "occurredAt": "2026-09-19T01:35:34.279Z"
+                },
+                "changes": [
+                  {
+                    "commandIndex": 0,
+                    "command": "ticket.create",
+                    "subjectId": "SourceReview"
+                  },
+                  {
+                    "commandIndex": 1,
+                    "command": "ticket.create",
+                    "subjectId": "Synthesis"
+                  },
+                  {
+                    "commandIndex": 2,
+                    "command": "dependency.add",
+                    "subjectId": "Synthesis"
+                  },
+                  {
+                    "commandIndex": 3,
+                    "command": "content.add",
+                    "subjectId": "FollowOn"
+                  },
+                  {
+                    "commandIndex": 4,
+                    "command": "content.add",
+                    "subjectId": "LegacyMigration"
+                  }
+                ],
+                "state": {
+                  "id": "Adoption.NewExploration.20260919",
+                  "title": "Adoption proof: primary-source evaluation",
+                  "destination": "Decide whether primary-source evaluation is ready for implementation",
+                  "notes": "New exploration uses the project-local Wayfinder MCP workflow as sole authority.",
+                  "extensions": {},
+                  "fog": [
+                    {
+                      "id": "FollowOn",
+                      "text": "A later question may emerge from the source review",
+                      "references": []
+                    }
+                  ],
+                  "scopeExclusions": [
+                    {
+                      "id": "LegacyMigration",
+                      "text": "Do not migrate existing GitHub planning Maps",
+                      "references": []
+                    }
+                  ],
+                  "tickets": [
+                    {
+                      "id": "SourceReview",
+                      "title": "Review primary sources",
+                      "question": "What do primary sources establish?",
+                      "type": "research",
+                      "extensions": {},
+                      "prerequisites": [],
+                      "status": "open",
+                      "claim": null
+                    },
+                    {
+                      "id": "Synthesis",
+                      "title": "Synthesize readiness",
+                      "question": "Is the evidence ready for implementation?",
+                      "type": "task",
+                      "extensions": {},
+                      "prerequisites": [
+                        "SourceReview"
+                      ],
+                      "status": "open",
+                      "claim": null
+                    }
+                  ],
+                  "currentRevision": 2
+                }
+              },
+              "frontier": [
+                "SourceReview"
+              ]
+            }
+          },
+          "status": "completed"
+        },
+        {
+          "tool": "map_apply",
+          "arguments": {
+            "mapId": "Adoption.NewExploration.20260919",
+            "expectedRevision": 2,
+            "commands": [
+              {
+                "kind": "claim.acquire",
+                "ticketId": "SourceReview",
+                "claimantId": "adoption:A"
+              }
+            ],
+            "includeSnapshot": true
+          },
+          "result": {
+            "content": [],
+            "structured_content": {
+              "kind": "committed",
+              "revision": {
+                "mapId": "Adoption.NewExploration.20260919",
+                "revision": 3,
+                "priorRevision": 2,
+                "kind": "apply",
+                "author": {
+                  "actorId": "adoption-operator",
+                  "clientId": "codex-wayfinder-adoption",
+                  "occurredAt": "2026-09-19T01:35:38.189Z"
+                },
+                "changes": [
+                  {
+                    "commandIndex": 0,
+                    "command": "claim.acquire",
+                    "subjectId": "SourceReview"
+                  }
+                ],
+                "state": {
+                  "id": "Adoption.NewExploration.20260919",
+                  "title": "Adoption proof: primary-source evaluation",
+                  "destination": "Decide whether primary-source evaluation is ready for implementation",
+                  "notes": "New exploration uses the project-local Wayfinder MCP workflow as sole authority.",
+                  "extensions": {},
+                  "fog": [
+                    {
+                      "id": "FollowOn",
+                      "text": "A later question may emerge from the source review",
+                      "references": []
+                    }
+                  ],
+                  "scopeExclusions": [
+                    {
+                      "id": "LegacyMigration",
+                      "text": "Do not migrate existing GitHub planning Maps",
+                      "references": []
+                    }
+                  ],
+                  "tickets": [
+                    {
+                      "id": "SourceReview",
+                      "title": "Review primary sources",
+                      "question": "What do primary sources establish?",
+                      "type": "research",
+                      "extensions": {},
+                      "prerequisites": [],
+                      "status": "open",
+                      "claim": "adoption:A"
+                    },
+                    {
+                      "id": "Synthesis",
+                      "title": "Synthesize readiness",
+                      "question": "Is the evidence ready for implementation?",
+                      "type": "task",
+                      "extensions": {},
+                      "prerequisites": [
+                        "SourceReview"
+                      ],
+                      "status": "open",
+                      "claim": null
+                    }
+                  ],
+                  "currentRevision": 3
+                }
+              },
+              "frontier": []
+            }
+          },
+          "status": "completed"
+        },
+        {
+          "tool": "map_apply",
+          "arguments": {
+            "mapId": "Adoption.NewExploration.20260919",
+            "expectedRevision": 3,
+            "commands": [
+              {
+                "kind": "ticket.settle",
+                "ticketId": "SourceReview",
+                "ticketType": "research",
+                "claimantId": "adoption:A",
+                "settlement": {
+                  "outcome": {
+                    "kind": "finding",
+                    "statement": "Primary-source evidence is sufficient for the isolated adoption proof",
+                    "limitations": "Evidence covers the local workflow only"
+                  },
+                  "evidence": [],
+                  "references": [
+                    {
+                      "locator": "docs/spec/mcp-sqlite.md#12-live-codex-evidence-and-adoption-gate",
+                      "label": "Accepted adoption gate"
+                    }
+                  ],
+                  "provenance": {
+                    "method": "Review accepted project specification",
+                    "sources": [
+                      {
+                        "locator": "docs/spec/mcp-sqlite.md",
+                        "label": "Accepted specification"
+                      }
+                    ]
+                  },
+                  "extensions": {}
+                }
+              },
+              {
+                "kind": "content.remove",
+                "section": "fog",
+                "itemId": "FollowOn"
+              }
+            ],
+            "includeSnapshot": true
+          },
+          "result": {
+            "content": [],
+            "structured_content": {
+              "kind": "committed",
+              "revision": {
+                "mapId": "Adoption.NewExploration.20260919",
+                "revision": 4,
+                "priorRevision": 3,
+                "kind": "apply",
+                "author": {
+                  "actorId": "adoption-operator",
+                  "clientId": "codex-wayfinder-adoption",
+                  "occurredAt": "2026-09-19T01:35:45.758Z"
+                },
+                "changes": [
+                  {
+                    "commandIndex": 0,
+                    "command": "ticket.settle",
+                    "subjectId": "SourceReview"
+                  },
+                  {
+                    "commandIndex": 1,
+                    "command": "content.remove",
+                    "subjectId": "FollowOn"
+                  }
+                ],
+                "state": {
+                  "id": "Adoption.NewExploration.20260919",
+                  "title": "Adoption proof: primary-source evaluation",
+                  "destination": "Decide whether primary-source evaluation is ready for implementation",
+                  "notes": "New exploration uses the project-local Wayfinder MCP workflow as sole authority.",
+                  "extensions": {},
+                  "fog": [],
+                  "scopeExclusions": [
+                    {
+                      "id": "LegacyMigration",
+                      "text": "Do not migrate existing GitHub planning Maps",
+                      "references": []
+                    }
+                  ],
+                  "tickets": [
+                    {
+                      "id": "SourceReview",
+                      "title": "Review primary sources",
+                      "question": "What do primary sources establish?",
+                      "type": "research",
+                      "extensions": {},
+                      "prerequisites": [],
+                      "status": "settled",
+                      "claim": null,
+                      "settlement": {
+                        "outcome": {
+                          "kind": "finding",
+                          "statement": "Primary-source evidence is sufficient for the isolated adoption proof",
+                          "limitations": "Evidence covers the local workflow only"
+                        },
+                        "evidence": [],
+                        "references": [
+                          {
+                            "locator": "docs/spec/mcp-sqlite.md#12-live-codex-evidence-and-adoption-gate",
+                            "label": "Accepted adoption gate"
+                          }
+                        ],
+                        "provenance": {
+                          "method": "Review accepted project specification",
+                          "sources": [
+                            {
+                              "locator": "docs/spec/mcp-sqlite.md",
+                              "label": "Accepted specification"
+                            }
+                          ]
+                        },
+                        "extensions": {},
+                        "introducedAtRevision": 4
+                      }
+                    },
+                    {
+                      "id": "Synthesis",
+                      "title": "Synthesize readiness",
+                      "question": "Is the evidence ready for implementation?",
+                      "type": "task",
+                      "extensions": {},
+                      "prerequisites": [
+                        "SourceReview"
+                      ],
+                      "status": "open",
+                      "claim": null
+                    }
+                  ],
+                  "currentRevision": 4
+                }
+              },
+              "frontier": [
+                "Synthesis"
+              ]
+            }
+          },
+          "status": "completed"
+        },
+        {
+          "tool": "map_read",
+          "arguments": {
+            "mapId": "Adoption.NewExploration.20260919"
+          },
+          "result": {
+            "content": [],
+            "structured_content": {
+              "kind": "found",
+              "revision": {
+                "mapId": "Adoption.NewExploration.20260919",
+                "revision": 4,
+                "priorRevision": 3,
+                "kind": "apply",
+                "author": {
+                  "actorId": "adoption-operator",
+                  "clientId": "codex-wayfinder-adoption",
+                  "occurredAt": "2026-09-19T01:35:45.758Z"
+                },
+                "changes": [
+                  {
+                    "commandIndex": 0,
+                    "command": "ticket.settle",
+                    "subjectId": "SourceReview"
+                  },
+                  {
+                    "commandIndex": 1,
+                    "command": "content.remove",
+                    "subjectId": "FollowOn"
+                  }
+                ],
+                "state": {
+                  "id": "Adoption.NewExploration.20260919",
+                  "title": "Adoption proof: primary-source evaluation",
+                  "destination": "Decide whether primary-source evaluation is ready for implementation",
+                  "notes": "New exploration uses the project-local Wayfinder MCP workflow as sole authority.",
+                  "extensions": {},
+                  "fog": [],
+                  "scopeExclusions": [
+                    {
+                      "id": "LegacyMigration",
+                      "text": "Do not migrate existing GitHub planning Maps",
+                      "references": []
+                    }
+                  ],
+                  "tickets": [
+                    {
+                      "id": "SourceReview",
+                      "title": "Review primary sources",
+                      "question": "What do primary sources establish?",
+                      "type": "research",
+                      "extensions": {},
+                      "prerequisites": [],
+                      "status": "settled",
+                      "claim": null,
+                      "settlement": {
+                        "outcome": {
+                          "kind": "finding",
+                          "statement": "Primary-source evidence is sufficient for the isolated adoption proof",
+                          "limitations": "Evidence covers the local workflow only"
+                        },
+                        "evidence": [],
+                        "references": [
+                          {
+                            "locator": "docs/spec/mcp-sqlite.md#12-live-codex-evidence-and-adoption-gate",
+                            "label": "Accepted adoption gate"
+                          }
+                        ],
+                        "provenance": {
+                          "method": "Review accepted project specification",
+                          "sources": [
+                            {
+                              "locator": "docs/spec/mcp-sqlite.md",
+                              "label": "Accepted specification"
+                            }
+                          ]
+                        },
+                        "extensions": {},
+                        "introducedAtRevision": 4
+                      }
+                    },
+                    {
+                      "id": "Synthesis",
+                      "title": "Synthesize readiness",
+                      "question": "Is the evidence ready for implementation?",
+                      "type": "task",
+                      "extensions": {},
+                      "prerequisites": [
+                        "SourceReview"
+                      ],
+                      "status": "open",
+                      "claim": null
+                    }
+                  ],
+                  "currentRevision": 4
+                }
+              },
+              "frontier": [
+                "Synthesis"
+              ]
+            }
+          },
+          "status": "completed"
+        }
+      ],
+      "finalMessage": "- Stable Map ID: `Adoption.NewExploration.20260919`\n- Retained revision: **4**, confirmed by `map_read`.\n- **SourceReview Finding:** “Primary-source evidence is sufficient for the isolated adoption proof.” Limitation: evidence covers the local workflow only.\n- **Synthesis:** newly unlocked in the frontier; open, unclaimed, and not performed."
+    },
+    {
+      "label": "B-independent-resume",
+      "threadId": "01a0b74e-4c8a-7912-a241-9bb86c1513c7",
+      "calls": [
+        {
+          "tool": "map_list",
+          "arguments": {},
+          "result": {
+            "content": [],
+            "structured_content": {
+              "kind": "listed",
+              "maps": [
+                {
+                  "mapId": "Adoption.NewExploration.20260919",
+                  "title": "Adoption proof: primary-source evaluation",
+                  "destination": "Decide whether primary-source evaluation is ready for implementation",
+                  "currentRevision": 4
+                }
+              ],
+              "nextAfterMapId": null
+            }
+          },
+          "status": "completed"
+        },
+        {
+          "tool": "map_read",
+          "arguments": {
+            "mapId": "Adoption.NewExploration.20260919"
+          },
+          "result": {
+            "content": [],
+            "structured_content": {
+              "kind": "found",
+              "revision": {
+                "mapId": "Adoption.NewExploration.20260919",
+                "revision": 4,
+                "priorRevision": 3,
+                "kind": "apply",
+                "author": {
+                  "actorId": "adoption-operator",
+                  "clientId": "codex-wayfinder-adoption",
+                  "occurredAt": "2026-09-19T01:35:45.758Z"
+                },
+                "changes": [
+                  {
+                    "commandIndex": 0,
+                    "command": "ticket.settle",
+                    "subjectId": "SourceReview"
+                  },
+                  {
+                    "commandIndex": 1,
+                    "command": "content.remove",
+                    "subjectId": "FollowOn"
+                  }
+                ],
+                "state": {
+                  "id": "Adoption.NewExploration.20260919",
+                  "title": "Adoption proof: primary-source evaluation",
+                  "destination": "Decide whether primary-source evaluation is ready for implementation",
+                  "notes": "New exploration uses the project-local Wayfinder MCP workflow as sole authority.",
+                  "extensions": {},
+                  "fog": [],
+                  "scopeExclusions": [
+                    {
+                      "id": "LegacyMigration",
+                      "text": "Do not migrate existing GitHub planning Maps",
+                      "references": []
+                    }
+                  ],
+                  "tickets": [
+                    {
+                      "id": "SourceReview",
+                      "title": "Review primary sources",
+                      "question": "What do primary sources establish?",
+                      "type": "research",
+                      "extensions": {},
+                      "prerequisites": [],
+                      "status": "settled",
+                      "claim": null,
+                      "settlement": {
+                        "outcome": {
+                          "kind": "finding",
+                          "statement": "Primary-source evidence is sufficient for the isolated adoption proof",
+                          "limitations": "Evidence covers the local workflow only"
+                        },
+                        "evidence": [],
+                        "references": [
+                          {
+                            "locator": "docs/spec/mcp-sqlite.md#12-live-codex-evidence-and-adoption-gate",
+                            "label": "Accepted adoption gate"
+                          }
+                        ],
+                        "provenance": {
+                          "method": "Review accepted project specification",
+                          "sources": [
+                            {
+                              "locator": "docs/spec/mcp-sqlite.md",
+                              "label": "Accepted specification"
+                            }
+                          ]
+                        },
+                        "extensions": {},
+                        "introducedAtRevision": 4
+                      }
+                    },
+                    {
+                      "id": "Synthesis",
+                      "title": "Synthesize readiness",
+                      "question": "Is the evidence ready for implementation?",
+                      "type": "task",
+                      "extensions": {},
+                      "prerequisites": [
+                        "SourceReview"
+                      ],
+                      "status": "open",
+                      "claim": null
+                    }
+                  ],
+                  "currentRevision": 4
+                }
+              },
+              "frontier": [
+                "Synthesis"
+              ]
+            }
+          },
+          "status": "completed"
+        },
+        {
+          "tool": "map_apply",
+          "arguments": {
+            "mapId": "Adoption.NewExploration.20260919",
+            "expectedRevision": 4,
+            "commands": [
+              {
+                "kind": "claim.acquire",
+                "ticketId": "Synthesis",
+                "claimantId": "adoption:B"
+              }
+            ]
+          },
+          "result": {
+            "content": [],
+            "structured_content": {
+              "kind": "committed",
+              "mapId": "Adoption.NewExploration.20260919",
+              "revision": 5,
+              "changes": [
+                {
+                  "commandIndex": 0,
+                  "command": "claim.acquire",
+                  "subjectId": "Synthesis"
+                }
+              ]
+            }
+          },
+          "status": "completed"
+        },
+        {
+          "tool": "map_apply",
+          "arguments": {
+            "mapId": "Adoption.NewExploration.20260919",
+            "expectedRevision": 5,
+            "commands": [
+              {
+                "kind": "ticket.settle",
+                "ticketId": "Synthesis",
+                "ticketType": "task",
+                "claimantId": "adoption:B",
+                "settlement": {
+                  "outcome": {
+                    "kind": "completion",
+                    "statement": "Independent session resumed and completed synthesis",
+                    "resultingFacts": {
+                      "resumedByIndependentSession": true
+                    }
+                  },
+                  "evidence": [],
+                  "references": [],
+                  "provenance": {
+                    "method": "Independent installed-Codex adoption proof",
+                    "sources": []
+                  },
+                  "extensions": {}
+                }
+              }
+            ]
+          },
+          "result": {
+            "content": [],
+            "structured_content": {
+              "kind": "committed",
+              "mapId": "Adoption.NewExploration.20260919",
+              "revision": 6,
+              "changes": [
+                {
+                  "commandIndex": 0,
+                  "command": "ticket.settle",
+                  "subjectId": "Synthesis"
+                }
+              ]
+            }
+          },
+          "status": "completed"
+        },
+        {
+          "tool": "map_read",
+          "arguments": {
+            "mapId": "Adoption.NewExploration.20260919"
+          },
+          "result": {
+            "content": [],
+            "structured_content": {
+              "kind": "found",
+              "revision": {
+                "mapId": "Adoption.NewExploration.20260919",
+                "revision": 6,
+                "priorRevision": 5,
+                "kind": "apply",
+                "author": {
+                  "actorId": "adoption-operator",
+                  "clientId": "codex-wayfinder-adoption",
+                  "occurredAt": "2026-09-19T01:36:33.435Z"
+                },
+                "changes": [
+                  {
+                    "commandIndex": 0,
+                    "command": "ticket.settle",
+                    "subjectId": "Synthesis"
+                  }
+                ],
+                "state": {
+                  "id": "Adoption.NewExploration.20260919",
+                  "title": "Adoption proof: primary-source evaluation",
+                  "destination": "Decide whether primary-source evaluation is ready for implementation",
+                  "notes": "New exploration uses the project-local Wayfinder MCP workflow as sole authority.",
+                  "extensions": {},
+                  "fog": [],
+                  "scopeExclusions": [
+                    {
+                      "id": "LegacyMigration",
+                      "text": "Do not migrate existing GitHub planning Maps",
+                      "references": []
+                    }
+                  ],
+                  "tickets": [
+                    {
+                      "id": "SourceReview",
+                      "title": "Review primary sources",
+                      "question": "What do primary sources establish?",
+                      "type": "research",
+                      "extensions": {},
+                      "prerequisites": [],
+                      "status": "settled",
+                      "claim": null,
+                      "settlement": {
+                        "outcome": {
+                          "kind": "finding",
+                          "statement": "Primary-source evidence is sufficient for the isolated adoption proof",
+                          "limitations": "Evidence covers the local workflow only"
+                        },
+                        "evidence": [],
+                        "references": [
+                          {
+                            "locator": "docs/spec/mcp-sqlite.md#12-live-codex-evidence-and-adoption-gate",
+                            "label": "Accepted adoption gate"
+                          }
+                        ],
+                        "provenance": {
+                          "method": "Review accepted project specification",
+                          "sources": [
+                            {
+                              "locator": "docs/spec/mcp-sqlite.md",
+                              "label": "Accepted specification"
+                            }
+                          ]
+                        },
+                        "extensions": {},
+                        "introducedAtRevision": 4
+                      }
+                    },
+                    {
+                      "id": "Synthesis",
+                      "title": "Synthesize readiness",
+                      "question": "Is the evidence ready for implementation?",
+                      "type": "task",
+                      "extensions": {},
+                      "prerequisites": [
+                        "SourceReview"
+                      ],
+                      "status": "settled",
+                      "claim": null,
+                      "settlement": {
+                        "outcome": {
+                          "kind": "completion",
+                          "statement": "Independent session resumed and completed synthesis",
+                          "resultingFacts": {
+                            "resumedByIndependentSession": true
+                          }
+                        },
+                        "evidence": [],
+                        "references": [],
+                        "provenance": {
+                          "method": "Independent installed-Codex adoption proof",
+                          "sources": []
+                        },
+                        "extensions": {},
+                        "introducedAtRevision": 6
+                      }
+                    }
+                  ],
+                  "currentRevision": 6
+                }
+              },
+              "frontier": []
+            }
+          },
+          "status": "completed"
+        }
+      ],
+      "finalMessage": "Completed on unique Map `Adoption.NewExploration.20260919`.\n\n- Listing exhausted; default-read revision **4**.\n- Claimed Synthesis as `adoption:B`: **4 → 5**.\n- Settled with the exact supplied payload: **5 → 6**.\n- Final default-read confirmed revision **6**, Synthesis settled, and empty frontier.\n\nSourceReview remained unchanged. No replacement Map, replay, merge, or takeover occurred."
+    },
+    {
+      "label": "A-conflict-reread",
+      "threadId": "01a0b74d-971c-7131-a8a8-a7e4de5c4b4e",
+      "calls": [
+        {
+          "tool": "map_apply",
+          "arguments": {
+            "mapId": "Adoption.NewExploration.20260919",
+            "expectedRevision": 4,
+            "commands": [
+              {
+                "kind": "map.update",
+                "patch": {
+                  "notes": "Stale intention must not publish"
+                }
+              }
+            ]
+          },
+          "result": {
+            "content": [],
+            "structured_content": {
+              "kind": "conflict",
+              "conflict": {
+                "mapId": "Adoption.NewExploration.20260919",
+                "expectedRevision": 4,
+                "currentRevision": 6
+              }
+            }
+          },
+          "status": "failed"
+        },
+        {
+          "tool": "map_read",
+          "arguments": {
+            "mapId": "Adoption.NewExploration.20260919"
+          },
+          "result": {
+            "content": [],
+            "structured_content": {
+              "kind": "found",
+              "revision": {
+                "mapId": "Adoption.NewExploration.20260919",
+                "revision": 6,
+                "priorRevision": 5,
+                "kind": "apply",
+                "author": {
+                  "actorId": "adoption-operator",
+                  "clientId": "codex-wayfinder-adoption",
+                  "occurredAt": "2026-09-19T01:36:33.435Z"
+                },
+                "changes": [
+                  {
+                    "commandIndex": 0,
+                    "command": "ticket.settle",
+                    "subjectId": "Synthesis"
+                  }
+                ],
+                "state": {
+                  "id": "Adoption.NewExploration.20260919",
+                  "title": "Adoption proof: primary-source evaluation",
+                  "destination": "Decide whether primary-source evaluation is ready for implementation",
+                  "notes": "New exploration uses the project-local Wayfinder MCP workflow as sole authority.",
+                  "extensions": {},
+                  "fog": [],
+                  "scopeExclusions": [
+                    {
+                      "id": "LegacyMigration",
+                      "text": "Do not migrate existing GitHub planning Maps",
+                      "references": []
+                    }
+                  ],
+                  "tickets": [
+                    {
+                      "id": "SourceReview",
+                      "title": "Review primary sources",
+                      "question": "What do primary sources establish?",
+                      "type": "research",
+                      "extensions": {},
+                      "prerequisites": [],
+                      "status": "settled",
+                      "claim": null,
+                      "settlement": {
+                        "outcome": {
+                          "kind": "finding",
+                          "statement": "Primary-source evidence is sufficient for the isolated adoption proof",
+                          "limitations": "Evidence covers the local workflow only"
+                        },
+                        "evidence": [],
+                        "references": [
+                          {
+                            "locator": "docs/spec/mcp-sqlite.md#12-live-codex-evidence-and-adoption-gate",
+                            "label": "Accepted adoption gate"
+                          }
+                        ],
+                        "provenance": {
+                          "method": "Review accepted project specification",
+                          "sources": [
+                            {
+                              "locator": "docs/spec/mcp-sqlite.md",
+                              "label": "Accepted specification"
+                            }
+                          ]
+                        },
+                        "extensions": {},
+                        "introducedAtRevision": 4
+                      }
+                    },
+                    {
+                      "id": "Synthesis",
+                      "title": "Synthesize readiness",
+                      "question": "Is the evidence ready for implementation?",
+                      "type": "task",
+                      "extensions": {},
+                      "prerequisites": [
+                        "SourceReview"
+                      ],
+                      "status": "settled",
+                      "claim": null,
+                      "settlement": {
+                        "outcome": {
+                          "kind": "completion",
+                          "statement": "Independent session resumed and completed synthesis",
+                          "resultingFacts": {
+                            "resumedByIndependentSession": true
+                          }
+                        },
+                        "evidence": [],
+                        "references": [],
+                        "provenance": {
+                          "method": "Independent installed-Codex adoption proof",
+                          "sources": []
+                        },
+                        "extensions": {},
+                        "introducedAtRevision": 6
+                      }
+                    }
+                  ],
+                  "currentRevision": 6
+                }
+              },
+              "frontier": []
+            }
+          },
+          "status": "completed"
+        }
+      ],
+      "finalMessage": "The single stale request returned the expected Conflict: revision **4** versus current **6**.\n\nDefault-read confirmed and retained revision **6** for `Adoption.NewExploration.20260919`. The stale note was not published; its intention is abandoned. No retry, merge, takeover, or further write was performed."
+    },
+    {
+      "label": "C-after-outage",
+      "threadId": "01a0b74f-50b6-7a72-8817-2939c24059d9",
+      "calls": [
+        {
+          "tool": "map_list",
+          "arguments": {},
+          "result": {
+            "content": [],
+            "structured_content": {
+              "kind": "listed",
+              "maps": [
+                {
+                  "mapId": "Adoption.NewExploration.20260919",
+                  "title": "Adoption proof: primary-source evaluation",
+                  "destination": "Decide whether primary-source evaluation is ready for implementation",
+                  "currentRevision": 6
+                }
+              ],
+              "nextAfterMapId": null
+            }
+          },
+          "status": "completed"
+        },
+        {
+          "tool": "map_read",
+          "arguments": {
+            "mapId": "Adoption.NewExploration.20260919"
+          },
+          "result": {
+            "content": [],
+            "structured_content": {
+              "kind": "found",
+              "revision": {
+                "mapId": "Adoption.NewExploration.20260919",
+                "revision": 6,
+                "priorRevision": 5,
+                "kind": "apply",
+                "author": {
+                  "actorId": "adoption-operator",
+                  "clientId": "codex-wayfinder-adoption",
+                  "occurredAt": "2026-09-19T01:36:33.435Z"
+                },
+                "changes": [
+                  {
+                    "commandIndex": 0,
+                    "command": "ticket.settle",
+                    "subjectId": "Synthesis"
+                  }
+                ],
+                "state": {
+                  "id": "Adoption.NewExploration.20260919",
+                  "title": "Adoption proof: primary-source evaluation",
+                  "destination": "Decide whether primary-source evaluation is ready for implementation",
+                  "notes": "New exploration uses the project-local Wayfinder MCP workflow as sole authority.",
+                  "extensions": {},
+                  "fog": [],
+                  "scopeExclusions": [
+                    {
+                      "id": "LegacyMigration",
+                      "text": "Do not migrate existing GitHub planning Maps",
+                      "references": []
+                    }
+                  ],
+                  "tickets": [
+                    {
+                      "id": "SourceReview",
+                      "title": "Review primary sources",
+                      "question": "What do primary sources establish?",
+                      "type": "research",
+                      "extensions": {},
+                      "prerequisites": [],
+                      "status": "settled",
+                      "claim": null,
+                      "settlement": {
+                        "outcome": {
+                          "kind": "finding",
+                          "statement": "Primary-source evidence is sufficient for the isolated adoption proof",
+                          "limitations": "Evidence covers the local workflow only"
+                        },
+                        "evidence": [],
+                        "references": [
+                          {
+                            "locator": "docs/spec/mcp-sqlite.md#12-live-codex-evidence-and-adoption-gate",
+                            "label": "Accepted adoption gate"
+                          }
+                        ],
+                        "provenance": {
+                          "method": "Review accepted project specification",
+                          "sources": [
+                            {
+                              "locator": "docs/spec/mcp-sqlite.md",
+                              "label": "Accepted specification"
+                            }
+                          ]
+                        },
+                        "extensions": {},
+                        "introducedAtRevision": 4
+                      }
+                    },
+                    {
+                      "id": "Synthesis",
+                      "title": "Synthesize readiness",
+                      "question": "Is the evidence ready for implementation?",
+                      "type": "task",
+                      "extensions": {},
+                      "prerequisites": [
+                        "SourceReview"
+                      ],
+                      "status": "settled",
+                      "claim": null,
+                      "settlement": {
+                        "outcome": {
+                          "kind": "completion",
+                          "statement": "Independent session resumed and completed synthesis",
+                          "resultingFacts": {
+                            "resumedByIndependentSession": true
+                          }
+                        },
+                        "evidence": [],
+                        "references": [],
+                        "provenance": {
+                          "method": "Independent installed-Codex adoption proof",
+                          "sources": []
+                        },
+                        "extensions": {},
+                        "introducedAtRevision": 6
+                      }
+                    }
+                  ],
+                  "currentRevision": 6
+                }
+              },
+              "frontier": []
+            }
+          },
+          "status": "completed"
+        }
+      ],
+      "finalMessage": "Rediscovered `Adoption.NewExploration.20260919` by exact title and default-read it. Both responses confirm **revision 6**.\n\nBoth Settlements are present:\n- **SourceReview** — finding, introduced at revision 4: evidence is sufficient for the isolated adoption proof, limited to the local workflow.\n- **Synthesis** — completion, introduced at revision 6: an independent session resumed and completed synthesis; `resumedByIndependentSession: true`.\n\nReturned revision data retained. No writes performed."
+    }
+  ],
+  "unavailableEvidence": {
+    "label": "authority-unavailable",
+    "exitCode": 1,
+    "mcpCalls": 0,
+    "fallbackOperations": 0
+  },
+  "assertions": [
+    "new exploration catalog check/create/stable handle and atomic initial frontier",
+    "Claim before work and typed research Settlement with provenance",
+    "independent session catalog discovery/default read/distinct Claimant/atomic advance",
+    "stale Conflict reread with deliberate abandonment and no replay/merge/takeover",
+    "required service outage pauses with no fallback; later rediscovery retains exact state",
+    "existing GitHub planning Maps are scope-excluded and not migrated or dual-written"
+  ]
+}

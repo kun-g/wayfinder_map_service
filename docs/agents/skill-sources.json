@@ -17,8 +17,8 @@
     {
       "source": "https://raw.githubusercontent.com/mattpocock/skills/3cca18b368ae95cdbdebbff572ccafa662551015/skills/engineering/wayfinder/SKILL.md",
       "dest": "wayfinder/SKILL.md",
-      "lineCount": 103,
-      "method": "web raw text, line-complete; formatting normalized"
+      "lineCount": 81,
+      "method": "web raw text, line-complete; repository-owned Issue 39 MCP authority overlay"
     },
     {
       "source": "https://raw.githubusercontent.com/mattpocock/skills/3cca18b368ae95cdbdebbff572ccafa662551015/skills/engineering/grill-with-docs/SKILL.md",

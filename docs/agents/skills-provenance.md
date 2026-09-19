@@ -15,7 +15,7 @@ Installed skills:
 
 The files were copied from the already verified project-local snapshot in `tomorrow-supply-station`. That snapshot was fetched from the fixed upstream commit and contains no business rules from the source project. `docs/agents/skill-sources.json` records each upstream source; `docs/agents/installed-skill-hashes.json` records the expected SHA-256 hashes. The upstream MIT license is preserved at `THIRD_PARTY_LICENSES/Matt-Pocock-MIT.txt`.
 
-The repository adds host metadata under each skill's `agents/openai.yaml`. This metadata came from the user's current OpenAI-compatible installation and controls display names and invocation policy without changing workflow instructions. The `triage` frontmatter drops the legacy `disable-model-invocation` key; its equivalent explicit-only policy lives in `triage/agents/openai.yaml`. These compatibility changes are repository-owned overlays and are reflected in the installed hashes.
+The repository adds host metadata under each skill's `agents/openai.yaml`. This metadata came from the user's current OpenAI-compatible installation and controls display names and invocation policy. The `triage` frontmatter drops the legacy `disable-model-invocation` key; its equivalent explicit-only policy lives in `triage/agents/openai.yaml`. Issue 39 adds a repository-owned `wayfinder` workflow overlay that points new exploration to `docs/agents/exploration-mcp.md` while preserving GitHub for implementation and the two inherited planning Maps. These overlays are recorded in `skill-sources.json` and reflected in the installed hashes.
 
 The repository-local copies are the runtime dependency. Global skills under a user's home directory are irrelevant to reproducibility and may differ.
 
