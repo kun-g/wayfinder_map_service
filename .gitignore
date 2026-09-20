@@ -2,3 +2,4 @@ node_modules/
 .vitest/
 coverage/
 dist/
+src/workflow.generated.ts

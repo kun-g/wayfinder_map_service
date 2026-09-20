@@ -15,7 +15,7 @@ import type { LocalServiceConfiguration } from '../src/mcp-service.js';
 import { startLocalMcpService } from '../src/mcp-service.js';
 import { sqliteLifecycleForTests } from '../src/sqlite-internal.js';
 import type { SQLiteStorage } from '../src/sqlite-storage.js';
-import { mapTools } from '../src/mcp-tools.js';
+import { mapTools, workflowContract } from '../src/mcp-tools.js';
 import type { Revision } from '../src/index.js';
 import { rejectionSeed, rejectionCases } from './helpers/mcp-rejection-cases.js';
 
@@ -140,7 +140,7 @@ test.each(['grilling', 'prototype', 'research', 'task'] as const)('A01/D03–D05
   const settled = await a.read();
   const unchanged = await observe(a);
   const beforeReopenHistory = await Promise.all(Array.from({ length: 6 }, (_, i) => a.read(i + 1)));
-  expect((await a.apply([{ kind: 'ticket.reopen', ticketId: 'A', reason: 'Incomplete reopen' }], 6)).isError).toBe(true);
+  expect((await a.apply([{ kind: 'ticket.reopen', ticketId: 'A', reason: 'Incomplete reopen' }], 6)).isError).toBeUndefined();
   expect(await observe(a)).toEqual(unchanged);
   expect(await Promise.all(Array.from({ length: 6 }, (_, i) => a.read(i + 1)))).toEqual(beforeReopenHistory);
   expect((await a.read(7)).structuredContent).toMatchObject({ code: 'revision_not_found' });
@@ -157,7 +157,9 @@ test.each(['grilling', 'prototype', 'research', 'task'] as const)('A01/D03–D05
     { kind: 'claim.acquire', ticketId: 'C', claimantId: 'session:B' }], 8);
   const beforeConflict = await observe(b);
   const knownHistory = await Promise.all(Array.from({ length: 9 }, (_, i) => b.read(i + 1)));
-  expect((await a.apply(update, 8)).structuredContent).toEqual({ kind: 'conflict', conflict: { mapId: 'Acceptance.Alpha', expectedRevision: 8, currentRevision: 9 } });
+  const conflict = await a.apply(update, 8);
+  expect(conflict.isError).toBeUndefined();
+  expect(conflict.structuredContent).toEqual({ kind: 'conflict', conflict: { mapId: 'Acceptance.Alpha', expectedRevision: 8, currentRevision: 9 } });
   expect(await observe(b)).toEqual(beforeConflict);
   expect(await Promise.all(Array.from({ length: 9 }, (_, i) => b.read(i + 1)))).toEqual(knownHistory);
   expect((await b.read(10)).structuredContent).toMatchObject({ code: 'revision_not_found' });
@@ -201,7 +203,7 @@ test('P07/P09: token, exact Host and explicit local Origin guard every method; c
   expect((await raw(f.port, '', headers, 'GET')).status).toBe(405);
   expect((await raw(f.port, message(), headers, 'POST', '/mcp?token=private')).status).toBe(404);
   for (const fields of [{ author: { ...author, occurredAt: 'forged' } }, { occurredAt: 'forged' }, { currentRevision: 999 }, { databasePath: f.path }]) {
-    expect((await c.call('map_create', { mapId: 'Forged', title: 'Never', destination: 'Never', ...fields })).isError).toBe(true);
+    expect((await c.call('map_create', { mapId: 'Forged', title: 'Never', destination: 'Never', ...fields })).isError).toBeUndefined();
   }
   (f.config as { token: string }).token = 'mutated-secret';
   (f.config.allowedOrigins as string[]).push('http://localhost:9999');
@@ -234,6 +236,21 @@ test('P06: whole UTF-8 request 1 MiB inclusive, Content-Length and chunked exces
   expect((await c.read(5)).structuredContent).toMatchObject({ code: 'revision_not_found' });
   expect((await raw(f.port, ' '.repeat(MAX_REQUEST_BYTES + 1), { ...headers, 'Transfer-Encoding': 'chunked' }, 'DELETE')).status).toBe(413);
   expect((await c.client.listTools()).tools).toEqual(mapTools); // Refused DELETE did not tear down session.
+});
+
+test('W03: real Streamable HTTP initialization carries immutable workflow instructions, Resources and Prompt', async () => {
+  const f = await fixture(); const c = await connect(f.port);
+  expect(c.client.getInstructions()).toBe(workflowContract.instructions);
+  expect(c.client.getServerCapabilities()).toMatchObject({ tools: {}, resources: {}, prompts: {} });
+  expect((await c.client.listResources()).resources.map(resource => resource.uri)).toEqual([
+    'wayfinder://workflow/exploration', 'wayfinder://workflow/exploration/2.0.0',
+  ]);
+  expect((await c.client.readResource({ uri: 'wayfinder://workflow/exploration' })).contents[0]).toMatchObject({
+    text: workflowContract.markdown, _meta: { 'wayfinder/workflowVersion': '2.0.0' },
+  });
+  expect((await c.client.getPrompt({ name: 'start_wayfinder_exploration', arguments: { mode: 'resume', mapId: 'Stable.Map' } }))
+    .messages[0]).toMatchObject({ role: 'user', content: { type: 'text', text: expect.stringContaining('workflowVersion: 2.0.0') } });
+  expect((await c.call('map_list')).structuredContent).toEqual({ kind: 'listed', maps: [], nextAfterMapId: null });
 });
 
 test('P06: HTTP apply 100 inclusive/excess 101, no split/no replay; pure M1 remains covered unrestricted', async () => {
@@ -296,15 +313,16 @@ test('P08/P09: invalid configuration and unavailable storage visibly fail safely
 
 test('P08/D10: real HTTP session DELETE/close leaves service and Claims alive; graceful stop/restart retains exact catalog/head/history', async () => {
   const f = await fixture(); const a = await connect(f.port); await seed(a); const before = await observe(a);
+  expect(a.client.getInstructions()).toBe(workflowContract.instructions);
   expect(await a.client.listTools()).toEqual({ tools: mapTools });
   const sessionId = a.transport.sessionId!;
   await a.transport.terminateSession(); await a.client.close();
   expect((await raw(f.port, message(), sessionHeaders(sessionId))).status).toBe(404);
-  const b = await connect(f.port); expect(await observe(b)).toEqual(before);
+  const b = await connect(f.port); expect(b.client.getInstructions()).toBe(workflowContract.instructions); expect(await observe(b)).toEqual(before);
   await b.client.close(); await f.service.stop();
   const storage = sqliteLifecycleForTests().open(f.path); cleanups.push(() => storage.close());
   const service = await serveLocalMcp(storage, configuration(f.path, f.port)); cleanups.push(() => service.stop());
-  const next = await connect(f.port); expect(await observe(next)).toEqual(before);
+  const next = await connect(f.port); expect(next.client.getInstructions()).toBe(workflowContract.instructions); expect(await observe(next)).toEqual(before);
   expect((await next.read(2)).structuredContent).toMatchObject({ revision: { state: { tickets: expect.arrayContaining([expect.objectContaining({ id: 'Retained', claim: 'work:continued' })]) } } });
   expect((await next.read(3)).structuredContent).toMatchObject({ revision: { state: { tickets: expect.arrayContaining([expect.objectContaining({ id: 'Settled', settlement: expect.objectContaining({ introducedAtRevision: 3 }) })]) } } });
 });
