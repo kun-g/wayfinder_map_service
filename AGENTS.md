@@ -2,7 +2,7 @@
 
 Start by reading `README.md`, `CONTEXT.md`, and `docs/spec/v1.md`. Read relevant files under `docs/adr/` before changing architecture or product semantics.
 
-M1 and the local MCP/SQLite service are accepted. New exploration Maps use the product MCP workflow in `docs/agents/exploration-mcp.md`. Rollback and deletion remain separate post-M1 iterations on their existing GitHub planning Maps; read `docs/planning/README.md` before resuming either effort. Keep deployment, OAuth, PostgreSQL, rendering, and plugin packaging outside the accepted local slice unless the user changes the scope.
+M1 and the local MCP/SQLite service are accepted. `docs/agents/exploration-mcp.md` is the authored source for maintainers changing the product workflow; a compatible connected client operates from the MCP server's versioned initialization instructions and tool metadata without reading that repository file. Rollback and deletion remain separate post-M1 iterations on their existing GitHub planning Maps; read `docs/planning/README.md` before resuming either effort. Keep deployment, OAuth, PostgreSQL, rendering, and plugin packaging outside the accepted local slice unless the user changes the scope.
 
 Use the domain language in `CONTEXT.md`. Record a newly settled domain term there. Add an ADR only for a hard-to-reverse, surprising trade-off with meaningful alternatives.
 
@@ -10,7 +10,7 @@ Use the domain language in `CONTEXT.md`. Record a newly settled domain term ther
 
 ### Issue tracker
 
-Implementation uses GitHub Issues in `kun-g/wayfinder_map_service`; the existing rollback/deletion planning Maps also remain there. Read `docs/agents/issue-tracker.md` before querying or mutating GitHub. New exploration Map state uses Wayfinder MCP; read `docs/agents/exploration-mcp.md` before creating, finding, resuming or advancing one. The private M1 Project board and synchronization rules are documented in `docs/agents/issue-tracker.md`.
+Implementation uses GitHub Issues in `kun-g/wayfinder_map_service`; the existing rollback/deletion planning Maps also remain there. Read `docs/agents/issue-tracker.md` before querying or mutating GitHub. New exploration Map state uses Wayfinder MCP. Repository maintainers read `docs/agents/exploration-mcp.md` before changing its workflow; ordinary compatible clients follow the connected server contract when creating, finding, resuming or advancing a Map. The private M1 Project board and synchronization rules are documented in `docs/agents/issue-tracker.md`.
 
 ### Triage labels
 

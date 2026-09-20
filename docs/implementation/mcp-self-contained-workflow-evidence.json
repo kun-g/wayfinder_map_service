@@ -1,0 +1,140 @@
+{
+  "schemaVersion": 1,
+  "recordedAt": "2026-09-20",
+  "issue": "https://github.com/kun-g/wayfinder_map_service/issues/46",
+  "planningMap": {
+    "mapId": "Wayfinder.McpSelfContained",
+    "revision": 12
+  },
+  "workflowVersion": "2.0.0",
+  "baselineCommit": "e6b2b2c816efcc9d439ea48fcac9643c99656458",
+  "environment": {
+    "node": "26.3.0",
+    "sqlite": "3.53.2",
+    "mcpSdk": "1.30.0",
+    "protocolFixture": "2025-11-25"
+  },
+  "automated": {
+    "status": "pass",
+    "commands": [
+      "npm run --silent build",
+      "npm run --silent typecheck",
+      "npm test"
+    ],
+    "testFiles": 12,
+    "tests": 1171,
+    "failed": 0,
+    "assertions": {
+      "workflowBuildAndRefusals": "pass",
+      "initializationInstructions": "pass",
+      "exactFourGeneratedTools": "pass",
+      "stableAndVersionedResources": "pass",
+      "promptBranchesAndZeroStorageEffects": "pass",
+      "streamableHttp": "pass",
+      "domainOutcomesWithoutIsError": "pass",
+      "infrastructureFailuresWithIsError": "pass",
+      "readinessVersion": "pass",
+      "reconnectAndRestart": "pass",
+      "regressions": "pass"
+    }
+  },
+  "realClients": {
+    "status": "accepted",
+    "chatgptWeb": "not_run_separately_synchronized_with_desktop_connector",
+    "codexCli": "2.0.0_independent_research_and_task_settled",
+    "chatgptDesktop": "synchronized_remote_connector_create_and_structured_conflict_passed",
+    "resources": {
+      "protocolSdk": "available",
+      "chatgptWeb": "not_run_separately",
+      "codexCli": "undocumented",
+      "chatgptDesktop": "undocumented_for_synchronized_remote_connector"
+    },
+    "prompts": {
+      "protocolSdk": "available",
+      "chatgptWeb": "not_run_separately",
+      "codexCli": "undocumented",
+      "chatgptDesktop": "undocumented_for_synchronized_remote_connector"
+    },
+    "codexHostPersistentConfiguration": "not_applicable_by_human_decision_2026-09-20",
+    "humanVerdict": {
+      "decision": "accepted",
+      "occurredAt": "2026-09-20",
+      "mapClaimRevision": 7,
+      "mapSettlementRevision": 8,
+      "finalFrontier": []
+    }
+  },
+  "workflowHistory": {
+    "1.0.0": "ChatGPT Web create succeeded; first Codex attempt lacked its custom provider and a later attempt probed incomplete commands",
+    "1.1.0": "isolated Codex diagnosis exposed nested source object guidance gap",
+    "1.2.0": {
+      "selectedMapId": "self-contained-cross-client-acceptance-1.3",
+      "beforeStaleProbeRevision": 6,
+      "conflictExpectedRevision": 2,
+      "conflictCurrentRevision": 6,
+      "afterAutomaticResubmissionRevision": 7,
+      "unexpectedMutation": "notes set to stale-intent-probe",
+      "result": "fail_conflict_request_was_automatically_resubmitted"
+    },
+    "2.0.0": {
+      "mapId": "self-contained-cross-client-acceptance-2.0",
+      "chatgptCreate": {
+        "revision": 2,
+        "frontier": [
+          "research-service-workflow"
+        ],
+        "clientReportedVersion": "M1",
+        "serverInitializationVersion": "2.0.0",
+        "result": "map_created_client_version_prose_inaccurate"
+      },
+      "researchSession": {
+        "claimRevision": 3,
+        "settlementRevision": 4,
+        "firstSettlementAttempt": "rejected_nested_finding_shape_no_revision",
+        "result": "settled"
+      },
+      "taskSession": {
+        "claimRevision": 5,
+        "settlementRevision": 6,
+        "firstSettlementAttempt": "rejected_resultingFacts_array_no_revision",
+        "result": "settled"
+      },
+      "conflict": {
+        "expectedRevision": 2,
+        "currentRevision": 6,
+        "firstSurface": "generic_runtime_exception_due_to_isError",
+        "firstSurfaceMapMutation": false,
+        "approvedEnvelopeChange": "domain_results_without_isError",
+        "retestSurface": "structured_conflict",
+        "retestMapMutation": false
+      },
+      "restartPersistence": {
+        "currentRevision": 6,
+        "contiguousHistory": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6
+        ],
+        "frontier": [
+          "grilling-human-acceptance"
+        ],
+        "result": "pass"
+      },
+      "humanAcceptance": {
+        "verdict": "accepted",
+        "claimRevision": 7,
+        "settlementRevision": 8,
+        "allTicketsSettled": true,
+        "frontier": []
+      }
+    }
+  },
+  "redaction": {
+    "credentialsIncluded": false,
+    "privatePathsIncluded": false,
+    "mapBodiesIncluded": false
+  }
+}

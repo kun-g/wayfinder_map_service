@@ -8,6 +8,7 @@ import { fileURLToPath } from 'node:url';
 import { DatabaseSync } from 'node:sqlite';
 import { initializeSQLite } from '../../dist/sqlite-storage.js';
 import { startLocalMcpService } from '../../dist/mcp-service.js';
+import { workflowContract } from '../../dist/mcp-tools.js';
 import { createHttpTestClient } from './mcp-http-client.mjs';
 
 // Explicit isolated private/local operator-path acceptance, never a canonical DB.
@@ -53,6 +54,7 @@ try {
   }
   assert.equal(existsSync(absent), false);
   const host = command(path, port); await Promise.race([host.ready, host.exit.then(() => { throw new Error('Service exited before ready'); })]);
+  assert.match(host.logs(), new RegExp(`ready workflowVersion=${workflowContract.workflowVersion.replaceAll('.', '\\.')}`)); safe(host.logs());
   const a = await createHttpTestClient(port, privateToken);
   assert.equal(a.negotiatedProtocol, '2025-11-25');
   assert.deepEqual((await a.client.listTools()).tools.map(tool => tool.name), ['map_create', 'map_list', 'map_read', 'map_apply']);

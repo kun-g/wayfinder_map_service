@@ -1,5 +1,6 @@
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
-import { CallToolRequestSchema, ErrorCode, ListToolsRequestSchema, McpError } from '@modelcontextprotocol/sdk/types.js';
+import { CallToolRequestSchema, ErrorCode, GetPromptRequestSchema, ListPromptsRequestSchema, ListResourcesRequestSchema,
+  ListToolsRequestSchema, McpError, ReadResourceRequestSchema } from '@modelcontextprotocol/sdk/types.js';
 import type { CallToolRequest, CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 import { calculateFrontier, decodeApplyRequest, prepareApply, prepareCreate } from './index.js';
 import type { CreateMapInput, InvalidInput, MapId, MutationAuthor } from './types.js';
@@ -7,8 +8,10 @@ import type { SQLiteStorage } from './sqlite-storage.js';
 import { SQLiteFailure } from './sqlite-storage.js';
 import { invalid, isPlainObject, validateAuthor, validateId, validateObject } from './values.js';
 import { mapTools } from './mcp-schemas.js';
+import { workflowContract } from './workflow.generated.js';
 
 export { mapTools } from './mcp-schemas.js';
+export { workflowContract } from './workflow.generated.js';
 export interface ToolAuthorConfiguration { readonly actorId: string; readonly clientId: string }
 // The HTTP host owns admission/draining, including work whose response is lost.
 export type ToolCallControl = (call: () => Promise<CallToolResult>) => Promise<CallToolResult>;
@@ -22,8 +25,40 @@ export function createMapMcpServer(storage: SQLiteStorage, configuration: ToolAu
   }
   const identity = { actorId: configuration.actorId, clientId: configuration.clientId };
   const author = (): MutationAuthor => ({ ...identity, occurredAt: new Date().toISOString() } as MutationAuthor);
-  const server = new Server({ name: 'wayfinder-map', version: '0.1.0' }, { capabilities: { tools: {} } });
+  const server = new Server({ name: 'wayfinder-map', version: '0.1.0' }, {
+    capabilities: { tools: {}, resources: {}, prompts: {} }, instructions: workflowContract.instructions,
+  });
   server.setRequestHandler(ListToolsRequestSchema, () => ({ tools: structuredClone(mapTools) }));
+  const stableResourceUri = 'wayfinder://workflow/exploration';
+  const versionedResourceUri = `${stableResourceUri}/${workflowContract.workflowVersion}`;
+  const resources = [stableResourceUri, versionedResourceUri].map(uri => ({
+    uri, name: 'Wayfinder exploration workflow', description: `Complete Wayfinder exploration workflow ${workflowContract.workflowVersion}`,
+    mimeType: 'text/markdown', _meta: { 'wayfinder/workflowVersion': workflowContract.workflowVersion },
+  }));
+  server.setRequestHandler(ListResourcesRequestSchema, () => ({ resources: structuredClone(resources) }));
+  server.setRequestHandler(ReadResourceRequestSchema, request => {
+    if (request.params.uri !== stableResourceUri && request.params.uri !== versionedResourceUri) {
+      throw new McpError(ErrorCode.InvalidParams, 'Unknown workflow Resource');
+    }
+    return { contents: [{ uri: request.params.uri, mimeType: 'text/markdown', text: workflowContract.markdown,
+      _meta: { 'wayfinder/workflowVersion': workflowContract.workflowVersion } }] };
+  });
+  const prompt = { name: 'start_wayfinder_exploration', description: `Start or resume Wayfinder workflow ${workflowContract.workflowVersion}`,
+    arguments: [{ name: 'mode', description: 'create or resume', required: true },
+      { name: 'mapId', description: 'Optional stable Map ID', required: false }],
+    _meta: { 'wayfinder/workflowVersion': workflowContract.workflowVersion } };
+  server.setRequestHandler(ListPromptsRequestSchema, () => ({ prompts: [structuredClone(prompt)] }));
+  server.setRequestHandler(GetPromptRequestSchema, request => {
+    if (request.params.name !== prompt.name) throw new McpError(ErrorCode.InvalidParams, 'Unknown workflow Prompt');
+    const args = request.params.arguments ?? {};
+    if (Object.keys(args).some(key => !['mode', 'mapId'].includes(key)) || !['create', 'resume'].includes(args.mode ?? '')) {
+      throw new McpError(ErrorCode.InvalidParams, 'Prompt mode must be create or resume');
+    }
+    if (args.mapId !== undefined && validateId(args.mapId, ['mapId'])) throw new McpError(ErrorCode.InvalidParams, 'Invalid stable Map ID');
+    const selection = args.mapId === undefined ? '' : ` Stable Map ID: ${args.mapId}.`;
+    return { description: prompt.description, messages: [{ role: 'user' as const, content: { type: 'text' as const,
+      text: `${workflowContract.prompt}\n\nworkflowVersion: ${workflowContract.workflowVersion}. Mode: ${args.mode}.${selection}` } }] };
+  });
   const callTool = async (request: CallToolRequest): Promise<CallToolResult> => {
     const tool = mapTools.find(tool => tool.name === request.params.name);
     if (!tool) throw new McpError(ErrorCode.InvalidParams, 'Unknown Map tool');
@@ -104,5 +139,5 @@ function inputFailure(error: InvalidInput): CallToolResult {
 }
 function envelope<T extends { readonly kind: string }>(result: T): CallToolResult {
   return { content: [], structuredContent: structuredClone(result) as Record<string, unknown>,
-    ...(['committed', 'found', 'listed'].includes(result.kind) ? {} : { isError: true }) };
+    ...(result.kind === 'infrastructure_error' ? { isError: true } : {}) };
 }

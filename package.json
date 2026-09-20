@@ -6,11 +6,13 @@
     "node": "26.3.0"
   },
   "scripts": {
-    "build": "tsc -p tsconfig.build.json",
+    "workflow:build": "node scripts/build-workflow.mjs",
+    "build": "npm run --silent workflow:build && tsc -p tsconfig.build.json",
     "backup": "npm run --silent build && node dist/sqlite-backup.js",
+    "chatgpt:test": "npm run --silent build && node scripts/local-chatgpt-test.mjs",
     "start": "npm run --silent build && node dist/mcp-start.js",
-    "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "typecheck": "npm run --silent workflow:build && tsc --noEmit",
+    "test": "npm run --silent workflow:build && vitest run"
   },
   "devDependencies": {
     "@types/node": "26.6.1",

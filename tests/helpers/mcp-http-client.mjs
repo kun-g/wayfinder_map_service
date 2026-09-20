@@ -7,17 +7,19 @@ import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/
 export async function createHttpTestClient(port, token) {
   const client = new Client({ name: 'wayfinder-http-test', version: '0.1.0' });
   let negotiatedProtocol;
+  let initializeResult;
   const transport = new StreamableHTTPClientTransport(new URL(`http://127.0.0.1:${port}/mcp`), {
     requestInit: { headers: { Authorization: `Bearer ${token}`, Connection: 'close' } },
     reconnectionOptions: { maxRetries: 0, maxReconnectionDelay: 1000, initialReconnectionDelay: 100, reconnectionDelayGrowFactor: 1 },
     fetch: async (url, options) => {
       const response = await fetch(url, options);
       if (options?.body && JSON.parse(options.body).method === 'initialize' && response.ok) {
-        negotiatedProtocol = (await response.clone().json()).result.protocolVersion;
+        initializeResult = (await response.clone().json()).result;
+        negotiatedProtocol = initializeResult.protocolVersion;
       }
       return response;
     },
   });
   await client.connect(transport);
-  return { client, transport, negotiatedProtocol };
+  return { client, transport, negotiatedProtocol, initializeResult };
 }

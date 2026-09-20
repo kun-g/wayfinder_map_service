@@ -134,9 +134,9 @@ Preserve the structured M1 ReadResult, PrepareResult, CommitResult and Rejection
 
 | Class | Required treatment |
 | --- | --- |
-| Argument validation, business rejection, missing object, stale Revision | Structured tool error with isError true; preserve applicable M1 fields/codes |
+| Argument validation, business rejection, missing object, stale Revision | Ordinary structured tool result with no `isError`; preserve applicable M1 fields/codes so clients do not collapse the domain result into a generic runtime exception |
 | Unknown tool or malformed protocol request | Protocol error, not a fabricated domain rejection |
-| Storage/transport/service failure | Distinct infrastructure diagnosis; safe fields only, not SQL, private paths or credentials |
+| Storage/transport/service failure | Distinct infrastructure diagnosis with `isError: true`; safe fields only, not SQL, private paths or credentials |
 | Proven non-publication | State/history unchanged; do not label uncertain outcomes as this class |
 | Commit/response interruption with unproven outcome | Unknown outcome; authoritative reread before any decision, no automatic replay |
 
@@ -270,3 +270,66 @@ Preserve strict TypeScript/ESM/Vitest, pure module boundaries, all M1 regression
 Specification handoff completion requires explicit human confirmation, publication of this accepted document and recorded resolution/index links before the synthesis Ticket and parent close. Feature completion requires actual implementation and the automated/live gates; adoption completion additionally requires slice 6 evidence. None of these states implies full v1 delivery.
 
 At specification publication, implementation and live acceptance remain unperformed. Synthesis changes documentation and development-tracker records only: no dependencies, runtime pins, source code, MCP settings, database, server, backup, workflow skills or existing product Maps were changed; no M1/integration/live acceptance tests were run as part of synthesis.
+
+## 14. Post-adoption self-contained workflow publication
+
+Status: accepted follow-on slice, human-confirmed on 2026-09-19 after the original six slices and exploration adoption were completed. The accepted product Map is `Wayfinder.McpSelfContained`, current planning closeout Revision 12. This section is additive: it does not rewrite the original handoff's exclusions, implementation order or historical acceptance claims. It authorizes a later implementation Issue for workflow publication and cross-client acceptance.
+
+### 14.1 Boundary and compatibility
+
+Retain exactly `map_create`, `map_list`, `map_read` and `map_apply` as the only business tools. Their input/output schemas, M1 commands, SQLite representation, HTTP authentication, admission limits and once-only structured results remain unchanged. Do not add a `workflow_get` tool or workflow/version fields to Map tool payloads.
+
+A fully compatible client must make initialization `instructions` and tool metadata available to the model. Merely connecting to and calling tools is protocol connectivity, not proof of the complete Wayfinder workflow. Generic MCP Resources and Prompts are optional affordances: their absence in a particular client is recorded accurately but does not make the core workflow fail.
+
+This follow-on slice includes an isolated ChatGPT Desktop acceptance through the account-synchronized remote plugin/developer-mode connector also visible on the web surface. A separate persistent Codex-host configuration regression is not required: independent installed Codex CLI sessions already exercise the same server workflow, while host configuration persistence adds no server self-containment evidence. This does not claim that the synchronized remote connector and Codex-host configuration are the same technical path. The slice does not deliver marketplace distribution, general plugin packaging, OAuth, a production tunnel or deployment. Any public test relay remains a foreground, explicitly test-only operator facility with its separately documented access limitations.
+
+### 14.2 Authoritative workflow and generated surfaces
+
+`docs/agents/exploration-mcp.md` is the sole authored workflow source. It carries the current `workflowVersion: 2.0.0` and stable named blocks from which the build deterministically derives all runtime guidance:
+
+- Initialization `instructions` begin with an independently complete safety core no longer than 512 characters. It states the sole-authority/outage boundary, full catalog check and create-once rule, authoritative reread after resumption/uncertainty, Frontier/Claim gate, latest-revision/no-replay rule, the post-Conflict human reauthorization gate and live-human Settlement boundary. A concise method summary follows it.
+- Each of the four tool descriptions is locally sufficient for its operation. `map_list` requires full pagination before creation and rejects title-as-handle selection; `map_create` is create-once and uncertain results require discovery/reread; `map_read` is the authority after resumption, conflict and uncertainty; `map_apply` states latest `expectedRevision`, Claim/Settlement boundaries, and that a Conflict voids the old request until the human sees the new Revision and issues a new request.
+- The complete authoritative Markdown is exposed at stable URI `wayfinder://workflow/exploration` and a current-build immutable SemVer alias (currently `wayfinder://workflow/exploration/2.0.0`) with a Markdown media type. The service need not retain older workflow bodies.
+- The optional `start_wayfinder_exploration` Prompt accepts `mode=create|resume` and an optional stable Map ID. It only produces an entry message, has no storage side effect and contains no safety rule absent from instructions/tool metadata.
+- An optional external Wayfinder Skill is an invocation/method adapter only. It must not require a repository-relative file, duplicate the workflow body or become necessary for correct operation.
+
+Protocol-level text is English; clients may answer users in their language. Resource and Prompt support never substitutes for initialization instructions and locally sufficient tool metadata.
+
+### 14.3 Versioning, build and release
+
+The workflow has an independent SemVer named `workflowVersion`; do not call it a Map Revision. The initial test publication was `1.0.0`; `1.1.0` added complete-command guidance after real Codex exposed partial validation probing; `1.2.0` made nested Reference/Provenance/Evidence shapes explicit. Current `2.0.0` changes mandatory Conflict behavior after a real ChatGPT run reread a newer Revision but automatically resubmitted the stale intention: a Conflict now voids the rejected request and requires the client to report and stop until the human issues a new request after seeing the new Revision. Increase major for a changed mandatory rule, tool sequence or existing-client behavior; minor for backward-compatible guidance or optional capability; patch for editorial/example/reference changes that preserve behavior. Every authored workflow change increases at least patch. Never decrease or reuse a version, including when restoring earlier behavior.
+
+The build extracts and validates the named blocks and emits an immutable asset into `dist`; generated runtime copies are not committed. The service must run from built artifacts without the repository source path and captures one workflow contract for the process lifetime. Workflow changes require rebuild and restart; there is no hot reload or list-changed promise. A new connection receives the new instructions, Resources must be reread, and ChatGPT plugin snapshots follow their own rescan/republication lifecycle.
+
+Build/check gates reject invalid or non-incremented SemVer, missing/duplicate/out-of-order blocks, a safety core over 512 characters, any business tool set other than the accepted four, a Prompt with side effects or unique safety rules, Resource/source divergence, version decrease/reuse and runtime source-path dependence. A failed workflow build never falls back to stale guidance. Transient internal comparison hashes are allowed for CI but are not public versions or URIs.
+
+Expose `workflowVersion` after the safety core in initialization instructions, in Resource metadata/body, in Prompt output, in fixed safe readiness output and in acceptance evidence. Do not expose workflow bodies, private paths, credentials or Map content in logs. The project root `CHANGELOG.md` is the single release log and includes a Workflow subsection for version, behavior and compatibility changes; the authoritative workflow file contains no separate changelog.
+
+### 14.4 Automated acceptance
+
+Preserve A01, D01–D13 and P01–P09. Add executable assertions for:
+
+- deterministic extraction, exact current workflow SemVer, named-block validation and all build refusal branches;
+- exact initialization instructions and declared capabilities through in-process SDK and real Streamable HTTP;
+- `tools/list` still returning exactly the four accepted tools with the generated local descriptions;
+- stable/versioned Resource equality with the complete authoritative Markdown and process-lifetime immutability;
+- Prompt `create`/`resume`/optional-ID branches and zero storage effects;
+- fixed safe readiness version, reconnect/restart behavior and no source-path runtime dependency;
+- instructions that make the stale request void and require a post-reread human request after Conflict, while retaining no-retry/no-fallback behavior across proven non-publication, unknown outcome, lost receipt, busy and stopping scenarios.
+
+Protocol SDK tests must cover Resources and Prompts even when a real target client does not expose them. Existing storage, domain, HTTP security, limit, shutdown and failure tests remain regression gates rather than duplicated workflow tests.
+
+### 14.5 Real cross-client and human gate
+
+Use one fresh private database and one shared acceptance Map. Do not install/inject the Wayfinder Skill, `AGENTS.md`, this repository's workflow document or copied tool-order/safety text. Preserve every attempt and failure in evidence; manual repair calls cannot turn a failed product behavior into a pass.
+
+1. ChatGPT Desktop, through the actual account-synchronized remote MCP plugin/developer-mode surface, pages the complete catalog, creates the Map once and atomically publishes Tickets, Dependencies, Fog and Scope Exclusions. The synchronized web surface need not repeat the same journey solely for sampling.
+2. An independent installed Codex CLI session discovers the same stable Map, default-reads it, Claims a Frontier AFK Ticket and writes a type-correct Finding or Completion.
+3. The original ChatGPT session makes one intentional stale write, receives Conflict, rereads, reports the new Revision and stops. It makes no later write unless the human issues a new request after seeing that Revision; the stale instruction cannot pre-authorize a retry, merge, takeover or replacement Map.
+4. One HITL Ticket remains unsettled before the live user's verdict and receives a Decision/rationale only after that verdict.
+5. During service unavailability the affected client stops with no file, conversation, GitHub or alternate authority; after restart new sessions confirm the same Revision, history and Claims. Controlled unknown-outcome/lost-receipt/busy/stopping boundaries remain automated HTTP evidence rather than destructive live-client exercises.
+6. Resources and Prompts are reported per exercised client as `available`, `unavailable` or `undocumented`; unavailable/undocumented optional surfaces do not fail the core gate and must not be reported as supported. The distinct persistent Codex-host configuration path is explicitly not applicable to this slice and is not reported as exercised.
+
+One complete journey is sufficient; it naturally uses multiple independent sessions but need not be repeated solely for sampling. Retain native initialize protocol/instructions/capabilities and `workflowVersion`, client/server/runtime versions, session identities, tool parameters/results, database Revision/Frontier/Claim/Settlement/history comparisons, failed attempts and redaction checks. Agent prose or screenshots alone are not evidence.
+
+Publish a new implementation report and machine-readable evidence without rewriting `mcp-sqlite-acceptance.md`, `mcp-exploration-adoption.md` or their evidence. After all automated and real-client gates pass, the live user must explicitly accept the evidence. Only that verdict completes this follow-on slice and authorizes README/release claims of the accepted self-contained workflow version.

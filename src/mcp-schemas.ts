@@ -1,5 +1,6 @@
 import type { Tool } from '@modelcontextprotocol/sdk/types.js';
 import { immutableClone } from './immutable.js';
+import { workflowContract } from './workflow.generated.js';
 
 type Schema = Record<string, unknown>;
 const object = (properties: Record<string, Schema>, required = Object.keys(properties)): Schema =>
@@ -82,17 +83,17 @@ const root = (schema: Schema): Tool['inputSchema'] => ({ type: 'object', ...sche
 const writeOutput = [object({ kind: literal('committed'), mapId: id, revision, changes }),
   object({ kind: literal('committed'), revision: fullRevision, frontier: array(id) })];
 const definitions: Tool[] = [
-  { name: 'map_create', description: 'Create a stable-ID Map with its Destination at Revision 1.',
+  { name: 'map_create', description: workflowContract.toolDescriptions.map_create,
     inputSchema: root(object({ mapId: id, title: text, destination: text, notes: string, extensions, includeSnapshot: { type: 'boolean', default: false } }, ['mapId', 'title', 'destination'])),
     outputSchema: root({ oneOf: [...writeOutput, ...errors] }) },
-  { name: 'map_list', description: 'Discover Maps in ASCII stable-ID order; titles are not handles.',
+  { name: 'map_list', description: workflowContract.toolDescriptions.map_list,
     inputSchema: root(object({ limit: { type: 'integer', minimum: 1, maximum: 100, default: 20 }, afterMapId: id }, [])),
     outputSchema: root({ oneOf: [object({ kind: literal('listed'), maps: array(object({ mapId: id, title: text, destination: text, currentRevision: revision })),
       nextAfterMapId: { anyOf: [id, literal(null)] } }), ...errors] }) },
-  { name: 'map_read', description: 'Read the observed current full Revision, or explicitly pinned immutable history.',
+  { name: 'map_read', description: workflowContract.toolDescriptions.map_read,
     inputSchema: root(object({ mapId: id, revision }, ['mapId'])),
     outputSchema: root({ oneOf: [object({ kind: literal('found'), revision: fullRevision, frontier: array(id) }), ...errors] }) },
-  { name: 'map_apply', description: 'Atomically apply ordered M1 commands against expectedRevision. Reread conflicts or unknown outcomes before deciding; never automatically replay.',
+  { name: 'map_apply', description: workflowContract.toolDescriptions.map_apply,
     inputSchema: root(object({ mapId: id, expectedRevision: revision, commands: array({ oneOf: commands }, { minItems: 1, maxItems: 100 }), includeSnapshot: { type: 'boolean', default: false } }, ['mapId', 'expectedRevision', 'commands'])),
     outputSchema: root({ oneOf: [...writeOutput, ...errors] }) },
 ];

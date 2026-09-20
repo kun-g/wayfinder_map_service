@@ -1,4 +1,4 @@
-import { mkdtempSync, realpathSync, rmSync } from 'node:fs';
+import { mkdtempSync, readFileSync, realpathSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
@@ -8,7 +8,7 @@ import { CallToolResultSchema, ErrorCode, LATEST_PROTOCOL_VERSION } from '@model
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 import { Ajv } from 'ajv';
 import { afterEach, expect, test } from 'vitest';
-import { createMapMcpServer, mapTools } from '../src/mcp-tools.js';
+import { createMapMcpServer, mapTools, workflowContract } from '../src/mcp-tools.js';
 import { sqliteLifecycleForTests } from '../src/sqlite-internal.js';
 import type { SQLiteStorage } from '../src/sqlite-storage.js';
 import { calculateFrontier, parseId, prepareApply } from '../src/index.js';
@@ -53,7 +53,7 @@ async function fixture(faults: Parameters<typeof sqliteLifecycleForTests>[0] = {
     expect(result.structuredContent).toBeDefined();
     expect(schemas.get(name)!.output(result.structuredContent), JSON.stringify(schemas.get(name)!.output.errors)).toBe(true);
     const kind = result.structuredContent!.kind;
-    expect(result.isError === true).toBe(!['found', 'listed', 'committed'].includes(kind as string));
+    expect(result.isError === true).toBe(kind === 'infrastructure_error');
     return result;
   }
   const create = (mapId = 'Acceptance.Alpha', includeSnapshot?: boolean) => call('map_create', { mapId, title: 'Repeated title', destination: 'Verified tools', ...(includeSnapshot === undefined ? {} : { includeSnapshot }) });
@@ -103,6 +103,46 @@ test('P01/P02: SDK discovers exactly four complete schemas, once-only compact/de
       commands: [{ kind: 'map.update', patch: { notes: `Step ${current.revision}` } }], ...(includeSnapshot === undefined ? {} : { includeSnapshot }) });
     expect(typeof result.structuredContent!.revision).toBe(includeSnapshot ? 'object' : 'number');
   }
+});
+
+test('W01/W02: initialization, generated tool guidance, Resources and side-effect-free Prompt expose workflow 2.0.0', async () => {
+  const f = await fixture();
+  expect(f.client.getInstructions()).toBe(workflowContract.instructions);
+  expect(f.client.getInstructions()!.startsWith(workflowContract.safetyCore)).toBe(true);
+  expect([...workflowContract.safetyCore].length).toBeLessThanOrEqual(512);
+  expect(workflowContract.safetyCore).toContain('old request is void until a human sees the new Revision and issues a new request');
+  expect(workflowContract.toolDescriptions.map_apply).toContain('The stale instruction cannot authorize a later write');
+  expect(f.client.getServerCapabilities()).toMatchObject({ tools: {}, resources: {}, prompts: {} });
+  expect((await f.client.listTools()).tools).toEqual(mapTools);
+  expect(Object.fromEntries(mapTools.map(tool => [tool.name, tool.description]))).toEqual(workflowContract.toolDescriptions);
+
+  const listed = await f.client.listResources();
+  expect(listed.resources.map(resource => resource.uri)).toEqual([
+    'wayfinder://workflow/exploration', 'wayfinder://workflow/exploration/2.0.0',
+  ]);
+  for (const resource of listed.resources) {
+    expect(resource).toMatchObject({ mimeType: 'text/markdown', _meta: { 'wayfinder/workflowVersion': '2.0.0' } });
+    expect(await f.client.readResource({ uri: resource.uri })).toEqual({ contents: [{ uri: resource.uri,
+      mimeType: 'text/markdown', text: readFileSync('docs/agents/exploration-mcp.md', 'utf8'),
+      _meta: { 'wayfinder/workflowVersion': '2.0.0' } }] });
+  }
+
+  expect(await f.client.listPrompts()).toEqual({ prompts: [{ name: 'start_wayfinder_exploration',
+    description: 'Start or resume Wayfinder workflow 2.0.0', arguments: [
+      { name: 'mode', description: 'create or resume', required: true },
+      { name: 'mapId', description: 'Optional stable Map ID', required: false },
+    ], _meta: { 'wayfinder/workflowVersion': '2.0.0' } }] });
+  const before = await f.storage.listMaps({});
+  for (const arguments_ of [{ mode: 'create' }, { mode: 'resume', mapId: 'Stable.Map' }]) {
+    const result = await f.client.getPrompt({ name: 'start_wayfinder_exploration', arguments: arguments_ });
+    expect(result.messages).toHaveLength(1);
+    expect(result.messages[0]).toMatchObject({ role: 'user', content: { type: 'text' } });
+    expect((result.messages[0]!.content as { text: string }).text).toContain(`Mode: ${arguments_.mode}`);
+    expect((result.messages[0]!.content as { text: string }).text).toContain('workflowVersion: 2.0.0');
+  }
+  expect(await f.storage.listMaps({})).toEqual(before);
+  await expect(f.client.getPrompt({ name: 'start_wayfinder_exploration', arguments: { mode: 'invalid' } })).rejects.toThrow();
+  await expect(f.client.readResource({ uri: 'wayfinder://workflow/missing' })).rejects.toThrow();
 });
 
 test.each(['grilling', 'prototype', 'research', 'task'] as const)('P01/P02/P03: real M1 %s Settlement, Claims, dependencies, content, reopen and pinned history', async type => {
@@ -261,7 +301,7 @@ test('D05/P05: complete command-error and reachable final-invariant matrix throu
   }
 });
 
-test('P05/D05: structured lifecycle/Claim/dependency/invariant/no-op/conflict rejection preserves full history, unrelated Map and proposed-next absence', async () => {
+test('P05/D05: ordinary structured lifecycle/Claim/dependency/invariant/no-op/conflict outcomes preserve full history, unrelated Map and proposed-next absence', async () => {
   const f = await fixture(); await f.create(); await f.create('Acceptance.Other');
   await f.apply([ticket('A'), ticket('B'), { kind: 'dependency.add', dependentId: 'B', prerequisiteId: 'A' }, { kind: 'claim.acquire', ticketId: 'A', claimantId: 'work' }], 1);
   const cases: [unknown[], Record<string, unknown>][] = [
@@ -342,7 +382,9 @@ test('P05/D05: authoritative second head comparison rejects losing prepared writ
   const before = await observe(f.storage, 1);
   const results = await Promise.all([f.apply([ticket('A')], 1), f.apply([ticket('B')], 1)]);
   expect(results.filter(result => result.structuredContent!.kind === 'committed')).toHaveLength(1);
-  expect(results.find(result => result.isError)?.structuredContent).toEqual({ kind: 'conflict', conflict: { mapId: 'Acceptance.Alpha', expectedRevision: 1, currentRevision: 2 } });
+  const conflict = results.find(result => result.structuredContent!.kind === 'conflict');
+  expect(conflict?.isError).toBeUndefined();
+  expect(conflict?.structuredContent).toEqual({ kind: 'conflict', conflict: { mapId: 'Acceptance.Alpha', expectedRevision: 1, currentRevision: 2 } });
   const after = await observe(f.storage, 2);
   expect(after[0]!.history[0]).toEqual(before[0]!.history[0]);
   expect(after[0]!.history[2]).toMatchObject({ kind: 'not_found', code: 'revision_not_found' });

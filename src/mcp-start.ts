@@ -1,4 +1,5 @@
 import { LocalServiceFailure, startLocalMcpService } from './mcp-service.js';
+import { workflowContract } from './workflow.generated.js';
 
 async function main() {
   const port = process.env.WAYFINDER_PORT;
@@ -10,7 +11,7 @@ async function main() {
     token: process.env.WAYFINDER_TOKEN!, actorId: process.env.WAYFINDER_ACTOR_ID!, clientId: process.env.WAYFINDER_CLIENT_ID!,
     allowedOrigins: allowedOrigins as string[],
   });
-  console.log('Wayfinder local MCP ready');
+  console.log(`Wayfinder local MCP ready workflowVersion=${workflowContract.workflowVersion}`);
   let stopping = false;
   const stop = () => {
     if (stopping) return;

@@ -1,4 +1,40 @@
+---
+workflowVersion: 2.0.0
+---
+
 # New exploration Maps through Wayfinder MCP
+
+<!-- wayfinder:safety-core:start -->
+Wayfinder MCP alone owns Map state; if down, stop—no fallback. Before create, fully page `map_list`; IDs are handles; create once. On resume or uncertainty, `map_read` current state. Claim only a returned Frontier Ticket before work. Apply only against latest observed Revision. On conflict, reread, report, and stop: old request is void until a human sees the new Revision and issues a new request. Never replay, merge, or take over. Settle HITL Tickets only after live human verdict.
+<!-- wayfinder:safety-core:end -->
+
+<!-- wayfinder:instructions-summary:start -->
+Use `map_create`, `map_list`, `map_read`, and `map_apply` only. Retain stable Map and Claimant IDs plus each committed Revision within the logical session. Create specified Tickets before Dependencies in one ordered batch, keep imprecise uncertainty in Fog, and record typed Settlements with compact Evidence, References, and Provenance. Construct each command completely from the tool input schema before calling; validation failures are not a field-discovery mechanism. Resources and Prompts are optional explanations; correctness does not depend on reading them.
+<!-- wayfinder:instructions-summary:end -->
+
+## Generated tool guidance
+
+<!-- wayfinder:tool:map_create:start -->
+Create one new stable-ID Map at Revision 1 after `map_list` has been paged to the end and confirmed the intended Map does not exist. Titles are not handles. On a duplicate or uncertain result, discover and `map_read`; never create a replacement. Then use the returned Revision in one ordered `map_apply` that publishes current Tickets before Dependencies, Fog, and Scope Exclusions.
+<!-- wayfinder:tool:map_create:end -->
+
+<!-- wayfinder:tool:map_list:start -->
+Discover Maps in ASCII stable-ID order. Before any create decision, follow `nextAfterMapId` through every page. Treat matching titles only as hints and retain the selected `mapId` as the authoritative handle; if several titles match and the stable ID is unknown, ask the human. Listing is discovery, not a current-state read.
+<!-- wayfinder:tool:map_list:end -->
+
+<!-- wayfinder:tool:map_read:start -->
+Read the authoritative current full Revision by omitting `revision`, or explicitly inspect immutable history. Default-read after resumption, conflict, an uncertain write/lost receipt, or rediscovery. Retain the returned Revision and Frontier; do not treat conversation, files, GitHub, an older response, or a catalog entry as current Map state.
+<!-- wayfinder:tool:map_read:end -->
+
+<!-- wayfinder:tool:map_apply:start -->
+Atomically apply complete ordered commands only against the latest observed `expectedRevision`; never probe required fields with partial calls. Claim shape: `{"kind":"claim.acquire","ticketId":"...","claimantId":"..."}`. Settle shape: `{"kind":"ticket.settle","ticketId":"...","ticketType":"research|task|grilling|prototype","claimantId":"...","settlement":{"outcome":{...},"evidence":[...],"references":[...],"provenance":{"method":"...","sources":[...]},"extensions":{}}}`. Outcomes are `finding` with `statement` and optional `limitations` for research, `completion` with `statement` and `resultingFacts` for task, or `decision` with `statement` and `rationale` for grilling/prototype. Every Reference/source is an object `{"locator":"...","label":"..."}` (`label` optional), never a string. Evidence shape is `{"statement":"...","references":[...],"provenance":{"method":"...","sources":[...]},"extensions":{}}`; Provenance is required when Evidence references are empty. Research requires at least one Evidence or Reference. Work only a returned Frontier Ticket and Claim it before work; HITL decisions require the live human verdict. A Conflict voids the rejected request: reread, report the new Revision, and stop until the human issues a new request after seeing it. The stale instruction cannot authorize a later write. On proven non-publication or unknown outcome, reread and never auto-retry, replay, merge, take over, or fall back.
+<!-- wayfinder:tool:map_apply:end -->
+
+## Optional Prompt entry
+
+<!-- wayfinder:prompt:start -->
+Start or resume a Wayfinder exploration using only the server instructions and the four Map tools. For create mode, first page the complete catalog and create only if the intended stable Map is absent. For resume mode, locate the stable Map ID when needed and read its current Revision. Report the observed `workflowVersion` and proceed from the returned Frontier; an optional Map ID is a handle, not a title search.
+<!-- wayfinder:prompt:end -->
 
 After the accepted local MCP/SQLite workflow adoption, every **new exploration Map** uses the product MCP service as its sole state authority. This applies to Wayfinder planning started after adoption. GitHub remains authoritative for implementation Issues and PRs. The existing Revision rollback and Ticket/Map deletion planning Maps remain on GitHub until a separately accepted migration; never copy or dual-write them.
 
@@ -42,7 +78,7 @@ Settlement preserves the method's decision boundary:
 
 ## Conflicts, uncertainty and outages
 
-- On Conflict, reread current state and the relevant history. Decide whether the original intention is already satisfied or still valid against the new Frontier. Any later write is a new deliberate request using the reread Revision; never replay, merge or take over automatically.
+- On Conflict, the rejected commands and their intention are void. Reread current state and relevant history, report the Conflict and new Revision to the human, then stop. Do not decide that the old intention remains valid and do not write again until the human, after seeing the new Revision, issues a new request. The instruction that caused the stale write cannot pre-authorize that post-reread request.
 - On an infrastructure result with unknown outcome, reread before deciding. If the service cannot be reached, stop authoritative advancement until it returns. Local memory, files and GitHub are not fallbacks.
 - A proven non-publication still requires a deliberate later request; it does not authorize an automatic retry.
 - Claims do not expire with a client connection. A different session uses a distinct Claimant and cannot take over. Release or clear requires the explicit M1 command and reason.

@@ -7,7 +7,7 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Ajv } from 'ajv';
 import { openSQLite } from '../../dist/sqlite-storage.js';
-import { mapTools } from '../../dist/mcp-tools.js';
+import { mapTools, workflowContract } from '../../dist/mcp-tools.js';
 
 export function createCodexMcpHarness(options) {
   const { root, directoryPrefix, port, serverName, actorId, clientId, workingDirectory, startupTimeoutSeconds = 30 } = options;
@@ -49,6 +49,7 @@ export function createCodexMcpHarness(options) {
     });
     host = { child, exit, logs: () => logs };
     await Promise.race([ready, exit.then(() => { throw new Error('Service startup failed'); })]);
+    assert.match(logs, new RegExp(`ready workflowVersion=${workflowContract.workflowVersion.replaceAll('.', '\\.')}`));
   }
 
   async function stop() {
@@ -82,7 +83,7 @@ export function createCodexMcpHarness(options) {
       assert.equal(call.error, null);
       assert.deepEqual(call.result.content, []);
       assert(schemas.get(call.tool)?.(call.result.structured_content), 'Codex result violates output schema');
-      assert.equal(call.status === 'failed', !['found', 'listed', 'committed'].includes(call.result.structured_content.kind));
+      assert.equal(call.status === 'failed', call.result.structured_content.kind === 'infrastructure_error');
     }
     const record = { label, threadId: events.find(event => event.type === 'thread.started')?.thread_id ?? resume,
       calls: calls.map(({ tool, arguments: args, result, status }) => ({ tool, arguments: args, result, status })),

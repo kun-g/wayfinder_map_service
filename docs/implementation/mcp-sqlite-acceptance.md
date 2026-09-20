@@ -14,7 +14,7 @@
 
 可选启用的[已安装 Codex 运行器](../../tests/helpers/codex-live-acceptance.mjs)会启动真实、独立的 `dist/mcp-start.js` 前台进程。Codex 接收进程局部的 `-c` HTTP 配置并使用 `bearer_token_env_var`；`--ignore-user-config` 保持永久 MCP 设置不变，并排除其他已配置服务器。其只读沙箱保持启用。临时批准只适用于四个已获授权的隔离验收工具，使用[官方 MCP 配置](https://learn.chatgpt.com/docs/extend/mcp?surface=cli)。运行器验证没有发生 shell、浏览器、其他工具或委派操作。两个会话分别独立创建，未 fork，也未互相提供对方的对话。[被动、仅测试观察器](../../tests/helpers/codex-acceptance-observer.mjs)只记录 initialize 响应中的协议版本；它既不处理或更改请求，也不增加服务器端点或传输层。
 
-这是与实际安装的 **CLI** 之间的互操作性验收，不是桌面 UI 或 ChatGPT 验收。Codex JSONL 将结果键投影为 `content`/`structured_content`，并通过失败调用状态表达工具错误；该投影不会保留线上的 `isError` 字段。自动化协议/HTTP 测试另行断言原始 `isError` 信封及输出 schema。结构化业务载荷保持唯一，无需文本后备即可消费。
+这是与实际安装的 **CLI** 之间的互操作性验收，不是桌面 UI 或 ChatGPT 验收。Codex JSONL 将结果键投影为 `content`/`structured_content`。后续真实 ChatGPT 验收发现，`isError: true` 会把结构化领域结果折叠为泛化运行时异常，因此已确认将 Conflict、Rejected、Not Found 等领域结果作为普通工具结果返回，只有基础设施失败保留错误状态。自动化协议/HTTP 测试断言该信封分类及输出 schema。结构化业务载荷保持唯一，无需文本后备即可消费。
 
 ## 命令与结果
 
@@ -63,7 +63,7 @@ WAYFINDER_CODEX_TEST_ROOT=<private-local-acceptance-root> WAYFINDER_CODEX_TEST_P
 | P02 | T/H：一次且仅一次的结构化载荷、`content []`，验证紧凑默认/false 及显式完整变体符合输出 schema；后续推进后仍固定在精确的已提交 N/Frontier。紧凑结果不重复回执、文本或图。 |
 | P03 | T/H：区分 current 与显式请求的完整历史，使用服务返回的 expected head，提供不同的 invalid/missing/conflict 错误码；读取历史 Claim/Settlement 不会恢复状态；没有“全部历史”工具。 |
 | P04 | S/T/H：覆盖空值、默认值、1 和 100 的 limit；拒绝 0、101、小数及非数字；ASCII 区分大小写的键集排序；不存在的 cursor 边界；有更多页/末页 cursor；字段连贯且允许重名。独立 HTTP 目录续页使用稳定 ID。 |
-| P05 | T/H：参数/业务工具错误保留 path/stage/index/ID/head 和 isError；未知或畸形协议调用保持 JSON-RPC 错误。区分安全的 BUSY、已证明未发布、结果未知及重启基础设施状态，不暴露私有 cause、SQL 或正文文本。 |
+| P05 | T/H：参数/业务领域结果保留 path/stage/index/ID/head 且不设 `isError`；未知或畸形协议调用保持 JSON-RPC 错误。区分安全的 BUSY、已证明未发布、结果未知及重启基础设施状态；只有基础设施失败设 `isError`，不暴露私有 cause、SQL 或正文文本。 |
 | P06 | H/T：覆盖声明长度、分块和多字节三种恰好 1 MiB 的请求，以及明确超限的 POST/DELETE 413；100 条命令在一个 Revision 中成功，101 条被拒绝；独立会话间四个活动调用可执行，第五个明确拒绝；断开连接的工作仍占用槽位；没有静默排队、重试、拆分或强制转换。纯 M1 仍接受 101 条命令。 |
 | P07 | H/T：仅绑定回环地址，并要求配置的精确 Host；POST/GET/DELETE 缺失或错误 token/Host 均被禁止；Origin 缺失或精确匹配时允许，任意值、null、未列出值及多余尾缀均禁止。记录并验证操作者配置；调用方提供的 author/client/time/system 字段被拒绝且不发布。 |
 | P08 | H/生产命令冒烟：覆盖无效端口、token、author、origin、存储就绪、错误/不支持的格式，以及固定端口冲突可见且不替换端口；会话关闭/DELETE 后独立服务和 Claim 仍存在；DELETE 排空多个请求且不重新开放接纳；优雅停止拒绝新调用、完成已有工作并关闭存储。 |
